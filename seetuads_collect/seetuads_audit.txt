@@ -1,0 +1,1231 @@
+=== ARBORESCENCE APP / COMPONENTS / LIB ===
+C:\Users\PC\SeetuAds\app\globals.css
+C:\Users\PC\SeetuAds\app\layout.tsx
+C:\Users\PC\SeetuAds\app\not-found.tsx
+C:\Users\PC\SeetuAds\app\page.tsx
+C:\Users\PC\SeetuAds\app\admin\layout.tsx
+C:\Users\PC\SeetuAds\app\admin\page.tsx
+C:\Users\PC\SeetuAds\app\admin\campaigns\campaigns-data-table.tsx
+C:\Users\PC\SeetuAds\app\admin\campaigns\page.tsx
+C:\Users\PC\SeetuAds\app\admin\campaigns\new\campaign-form.tsx
+C:\Users\PC\SeetuAds\app\admin\campaigns\new\page.tsx
+C:\Users\PC\SeetuAds\app\admin\locations\locations-data-table.tsx
+C:\Users\PC\SeetuAds\app\admin\locations\page.tsx
+C:\Users\PC\SeetuAds\app\admin\locations\new\page.tsx
+C:\Users\PC\SeetuAds\app\admin\media\media-data-table.tsx
+C:\Users\PC\SeetuAds\app\admin\media\page.tsx
+C:\Users\PC\SeetuAds\app\admin\media\new\page.tsx
+C:\Users\PC\SeetuAds\app\admin\partners\page.tsx
+C:\Users\PC\SeetuAds\app\admin\partners\partners-data-table.tsx
+C:\Users\PC\SeetuAds\app\admin\partners\new\page.tsx
+C:\Users\PC\SeetuAds\app\admin\players\page.tsx
+C:\Users\PC\SeetuAds\app\admin\players\players-data-table.tsx
+C:\Users\PC\SeetuAds\app\admin\players\new\page.tsx
+C:\Users\PC\SeetuAds\app\admin\playlists\page.tsx
+C:\Users\PC\SeetuAds\app\admin\screens\page.tsx
+C:\Users\PC\SeetuAds\app\admin\screens\screens-data-table.tsx
+C:\Users\PC\SeetuAds\app\admin\screens\new\page.tsx
+C:\Users\PC\SeetuAds\app\admin\settings\page.tsx
+C:\Users\PC\SeetuAds\app\admin\zones\page.tsx
+C:\Users\PC\SeetuAds\app\admin\zones\zones-data-table.tsx
+C:\Users\PC\SeetuAds\app\admin\zones\new\page.tsx
+C:\Users\PC\SeetuAds\app\admin\zones\[id]\edit\page.tsx
+C:\Users\PC\SeetuAds\app\advertiser\layout.tsx
+C:\Users\PC\SeetuAds\app\advertiser\campaigns\page.tsx
+C:\Users\PC\SeetuAds\app\advertiser\campaigns\new\page.tsx
+C:\Users\PC\SeetuAds\app\advertiser\dashboard\page.tsx
+C:\Users\PC\SeetuAds\app\advertiser\media\page.tsx
+C:\Users\PC\SeetuAds\app\api\admin\media\route.ts
+C:\Users\PC\SeetuAds\app\api\admin\screens\route.ts
+C:\Users\PC\SeetuAds\app\api\admin\screens\[id]\playlist\route.ts
+C:\Users\PC\SeetuAds\app\api\campaigns\route.ts
+C:\Users\PC\SeetuAds\app\api\campaigns\[id]\route.ts
+C:\Users\PC\SeetuAds\app\api\media\route.ts
+C:\Users\PC\SeetuAds\app\api\media\[id]\route.ts
+C:\Users\PC\SeetuAds\app\api\player\heartbeat\route.ts
+C:\Users\PC\SeetuAds\app\api\player\log\route.ts
+C:\Users\PC\SeetuAds\app\api\player\playlist\route.ts
+C:\Users\PC\SeetuAds\app\api\upload\route.ts
+C:\Users\PC\SeetuAds\app\api\webhooks\clerk\route.ts
+C:\Users\PC\SeetuAds\app\boutiques\page.tsx
+C:\Users\PC\SeetuAds\app\campagnes\page.tsx
+C:\Users\PC\SeetuAds\app\carte\page.tsx
+C:\Users\PC\SeetuAds\app\dashboard\page.tsx
+C:\Users\PC\SeetuAds\app\player\page.tsx
+C:\Users\PC\SeetuAds\app\player\player-view.tsx
+C:\Users\PC\SeetuAds\app\register\page.tsx
+C:\Users\PC\SeetuAds\app\sign-in\[[...sign-in]]\page.tsx
+C:\Users\PC\SeetuAds\app\sign-up\[[...sign-up]]\page.tsx
+C:\Users\PC\SeetuAds\app\stats\page.tsx
+C:\Users\PC\SeetuAds\components\admin\data-table.tsx
+C:\Users\PC\SeetuAds\components\admin\form-input.tsx
+C:\Users\PC\SeetuAds\components\admin\sidebar.tsx
+C:\Users\PC\SeetuAds\components\home\landing-content.tsx
+C:\Users\PC\SeetuAds\components\ui\button.tsx
+C:\Users\PC\SeetuAds\components\ui\card.tsx
+C:\Users\PC\SeetuAds\components\ui\Shell.tsx
+C:\Users\PC\SeetuAds\lib\actions.ts
+C:\Users\PC\SeetuAds\lib\permissions.ts
+C:\Users\PC\SeetuAds\lib\prisma.ts
+C:\Users\PC\SeetuAds\lib\utils.ts
+
+=== PACKAGE.JSON ===
+{
+  "name": "seetuads",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:seed": "node scripts/seed.js",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.7.6",
+    "@prisma/client": "^5.22.0",
+    "@vercel/blob": "^2.8.0",
+    "clsx": "^2.1.0",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.460.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "svix": "^1.99.1",
+    "tailwind-merge": "^2.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.0",
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.0"
+  }
+}
+
+=== PRISMA SCHEMA ===
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String              @id @default(uuid())
+  clerkUserId     String              @unique @map("clerk_user_id")
+  role            UserRole            @default(ADVERTISER)
+  email           String?
+  firstName       String?             @map("first_name")
+  lastName        String?             @map("last_name")
+  phone           String?
+  avatarUrl       String?             @map("avatar_url")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  advertiser      Advertiser?
+  auditLogs       AuditLog[]
+  assignedTickets MaintenanceTicket[] @relation("AssignedTo")
+  reportedTickets MaintenanceTicket[] @relation("ReportedBy")
+  notifications   Notification[]
+  partner         Partner?
+
+  @@map("users")
+}
+
+model Advertiser {
+  id          String           @id @default(uuid())
+  userId      String           @unique @map("user_id")
+  companyName String           @map("company_name")
+  contactName String?          @map("contact_name")
+  phone       String?
+  email       String
+  industry    String?
+  address     String?
+  city        String           @default("Dakar")
+  country     String           @default("Senegal")
+  status      AdvertiserStatus @default(PENDING)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaigns   Campaign[]
+  media       Media[]
+  payments    Payment[]
+
+  @@map("advertisers")
+}
+
+model Partner {
+  id           String          @id @default(uuid())
+  userId       String          @unique @map("user_id")
+  businessName String          @map("business_name")
+  ownerName    String?         @map("owner_name")
+  phone        String
+  email        String?
+  businessType String?         @map("business_type")
+  address      String?
+  city         String          @default("Dakar")
+  latitude     Decimal?        @db.Decimal(10, 8)
+  longitude    Decimal?        @db.Decimal(11, 8)
+  status       EntityStatus    @default(PENDING)
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  contracts    Contract[]
+  locations    Location[]
+  payouts      PartnerPayout[]
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("partners")
+}
+
+model Location {
+  id           String       @id @default(uuid())
+  partnerId    String       @map("partner_id")
+  name         String
+  businessType String?      @map("business_type")
+  address      String
+  city         String       @default("Dakar")
+  district     String?
+  latitude     Decimal?     @db.Decimal(10, 8)
+  longitude    Decimal?     @db.Decimal(11, 8)
+  description  String?
+  photos       Json?        @default("[]")
+  status       EntityStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  partner      Partner      @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  screens      Screen[]
+
+  @@map("locations")
+}
+
+model Zone {
+  id           String        @id @default(uuid())
+  name         String
+  city         String        @default("Dakar")
+  district     String?
+  description  String?
+  latitude     Decimal?      @db.Decimal(10, 8)
+  longitude    Decimal?      @db.Decimal(11, 8)
+  radiusMeters Int           @default(1000) @map("radius_meters")
+  status       EntityStatus  @default(ACTIVE)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  pricingRules PricingRule[]
+  screens      Screen[]
+
+  @@map("zones")
+}
+
+model Screen {
+  id                    String                 @id @default(uuid())
+  locationId            String                 @map("location_id")
+  zoneId                String?                @map("zone_id")
+  screenCode            String                 @unique @map("screen_code")
+  name                  String?
+  widthPx               Int                    @default(1920) @map("width_px")
+  heightPx              Int                    @default(1080) @map("height_px")
+  resolution            String                 @default("1920x1080")
+  orientation           String                 @default("landscape")
+  status                ScreenStatus           @default(OFFLINE)
+  installationDate      DateTime?              @map("installation_date") @db.Date
+  monthlyPartnerFee     Decimal                @default(20000.00) @map("monthly_partner_fee") @db.Decimal(12, 2)
+  inventoryLoopSeconds  Int                    @default(120) @map("inventory_loop_seconds")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  campaignScreens       CampaignScreen[]
+  contracts             Contract[]
+  inventoryReservations InventoryReservation[]
+  maintenanceTickets    MaintenanceTicket[]
+  partnerPayouts        PartnerPayout[]
+  playbackLogs          PlaybackLog[]
+  player                Player?
+  playlists             Playlist[]
+  pricingRules          PricingRule[]
+  screenCosts           ScreenCost[]
+  location              Location               @relation(fields: [locationId], references: [id])
+  zone                  Zone?                  @relation(fields: [zoneId], references: [id])
+
+  @@map("screens")
+}
+
+model Player {
+  id                 String              @id @default(uuid())
+  screenId           String?             @unique @map("screen_id")
+  deviceId           String              @unique @map("device_id")
+  serialNumber       String?             @map("serial_number")
+  appVersion         String              @default("1.0.0") @map("app_version")
+  osVersion          String?             @map("os_version")
+  lastHeartbeat      DateTime?           @map("last_heartbeat")
+  status             PlayerStatus        @default(UNREGISTERED)
+  lastIp             String?             @map("last_ip")
+  storageStatus      Json?               @map("storage_status")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  maintenanceTickets MaintenanceTicket[]
+  playbackLogs       PlaybackLog[]
+  screen             Screen?             @relation(fields: [screenId], references: [id])
+
+  @@map("players")
+}
+
+model Media {
+  id              String          @id @default(uuid())
+  advertiserId    String          @map("advertiser_id")
+  name            String
+  fileUrl         String          @map("file_url")
+  fileType        String          @map("file_type")
+  mimeType        String?         @map("mime_type")
+  widthPx         Int?            @map("width_px")
+  heightPx        Int?            @map("height_px")
+  durationSeconds Int             @default(15) @map("duration_seconds")
+  fileSizeBytes   BigInt?         @map("file_size_bytes")
+  status          MediaStatus     @default(UPLOADED)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  campaignMedia   CampaignMedia[]
+  advertiser      Advertiser      @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  playbackLogs    PlaybackLog[]
+  playlistItems   PlaylistItem[]
+
+  @@map("media")
+}
+
+model Campaign {
+  id                    String                 @id @default(uuid())
+  advertiserId          String                 @map("advertiser_id")
+  name                  String
+  objective             String?
+  startDate             DateTime               @map("start_date") @db.Date
+  endDate               DateTime               @map("end_date") @db.Date
+  spotDuration          Int                    @default(15) @map("spot_duration")
+  frequencyPerLoop      Int                    @default(1) @map("frequency_per_loop")
+  status                CampaignStatus         @default(DRAFT)
+  estimatedPrice        Decimal?               @map("estimated_price") @db.Decimal(12, 2)
+  finalPrice            Decimal?               @map("final_price") @db.Decimal(12, 2)
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  campaignMedia         CampaignMedia[]
+  campaignScreens       CampaignScreen[]
+  advertiser            Advertiser             @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  inventoryReservations InventoryReservation[]
+  payments              Payment[]
+  playbackLogs          PlaybackLog[]
+  playlistItems         PlaylistItem[]
+
+  @@map("campaigns")
+}
+
+model CampaignScreen {
+  id              String       @id @default(uuid())
+  campaignId      String       @map("campaign_id")
+  screenId        String       @map("screen_id")
+  status          EntityStatus @default(ACTIVE)
+  reservedSeconds Int          @default(15) @map("reserved_seconds")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  campaign        Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  screen          Screen       @relation(fields: [screenId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, screenId])
+  @@map("campaign_screens")
+}
+
+model CampaignMedia {
+  id              String   @id @default(uuid())
+  campaignId      String   @map("campaign_id")
+  mediaId         String   @map("media_id")
+  displayOrder    Int      @default(1) @map("display_order")
+  durationSeconds Int      @default(15) @map("duration_seconds")
+  createdAt       DateTime @default(now()) @map("created_at")
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  media           Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, mediaId, displayOrder])
+  @@map("campaign_media")
+}
+
+model Playlist {
+  id          String         @id @default(uuid())
+  screenId    String         @map("screen_id")
+  version     Int            @default(1)
+  status      EntityStatus   @default(ACTIVE)
+  generatedAt DateTime       @default(now()) @map("generated_at")
+  publishedAt DateTime?      @map("published_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  items       PlaylistItem[]
+  screen      Screen         @relation(fields: [screenId], references: [id], onDelete: Cascade)
+
+  @@unique([screenId, version])
+  @@map("playlists")
+}
+
+model PlaylistItem {
+  id              String    @id @default(uuid())
+  playlistId      String    @map("playlist_id")
+  campaignId      String?   @map("campaign_id")
+  mediaId         String    @map("media_id")
+  position        Int
+  durationSeconds Int       @default(15) @map("duration_seconds")
+  startDate       DateTime? @map("start_date") @db.Date
+  endDate         DateTime? @map("end_date") @db.Date
+  createdAt       DateTime  @default(now()) @map("created_at")
+  campaign        Campaign? @relation(fields: [campaignId], references: [id])
+  media           Media     @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  playlist        Playlist  @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@map("playlist_items")
+}
+
+model InventoryReservation {
+  id              String            @id @default(uuid())
+  campaignId      String            @map("campaign_id")
+  screenId        String            @map("screen_id")
+  startDate       DateTime          @map("start_date") @db.Date
+  endDate         DateTime          @map("end_date") @db.Date
+  reservedSeconds Int               @default(15) @map("reserved_seconds")
+  status          ReservationStatus @default(TEMPORARY)
+  expiresAt       DateTime?         @map("expires_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  campaign        Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  screen          Screen            @relation(fields: [screenId], references: [id], onDelete: Cascade)
+
+  @@map("inventory_reservations")
+}
+
+model PlaybackLog {
+  id              String         @id @default(uuid())
+  playerId        String         @map("player_id")
+  screenId        String         @map("screen_id")
+  campaignId      String?        @map("campaign_id")
+  mediaId         String         @map("media_id")
+  startedAt       DateTime       @map("started_at")
+  endedAt         DateTime?      @map("ended_at")
+  durationSeconds Int?           @map("duration_seconds")
+  status          PlaybackStatus @default(PLAYED)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  campaign        Campaign?      @relation(fields: [campaignId], references: [id])
+  media           Media          @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  player          Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  screen          Screen         @relation(fields: [screenId], references: [id], onDelete: Cascade)
+
+  @@map("playback_logs")
+}
+
+model Payment {
+  id                   String          @id @default(uuid())
+  advertiserId         String          @map("advertiser_id")
+  campaignId           String?         @map("campaign_id")
+  amount               Decimal         @db.Decimal(12, 2)
+  currency             String          @default("XOF")
+  provider             PaymentProvider
+  transactionReference String?         @map("transaction_reference")
+  externalId           String?         @map("external_id")
+  status               PaymentStatus   @default(PENDING)
+  paidAt               DateTime?       @map("paid_at")
+  metadata             Json?           @default("{}")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+  advertiser           Advertiser      @relation(fields: [advertiserId], references: [id])
+  campaign             Campaign?       @relation(fields: [campaignId], references: [id])
+
+  @@map("payments")
+}
+
+model PartnerPayout {
+  id                   String          @id @default(uuid())
+  partnerId            String          @map("partner_id")
+  screenId             String?         @map("screen_id")
+  periodStart          DateTime        @map("period_start") @db.Date
+  periodEnd            DateTime        @map("period_end") @db.Date
+  amount               Decimal         @db.Decimal(12, 2)
+  paymentMethod        PaymentProvider @map("payment_method")
+  transactionReference String?         @map("transaction_reference")
+  status               PayoutStatus    @default(PENDING)
+  paidAt               DateTime?       @map("paid_at")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+  partner              Partner         @relation(fields: [partnerId], references: [id])
+  screen               Screen?         @relation(fields: [screenId], references: [id])
+
+  @@map("partner_payouts")
+}
+
+model Contract {
+  id            String         @id @default(uuid())
+  partnerId     String         @map("partner_id")
+  screenId      String?        @map("screen_id")
+  startDate     DateTime       @map("start_date") @db.Date
+  endDate       DateTime       @map("end_date") @db.Date
+  monthlyAmount Decimal        @default(20000.00) @map("monthly_amount") @db.Decimal(12, 2)
+  status        ContractStatus @default(DRAFT)
+  documentUrl   String?        @map("document_url")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  partner       Partner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  screen        Screen?        @relation(fields: [screenId], references: [id])
+
+  @@map("contracts")
+}
+
+model MaintenanceTicket {
+  id          String         @id @default(uuid())
+  screenId    String?        @map("screen_id")
+  playerId    String?        @map("player_id")
+  reportedBy  String?        @map("reported_by")
+  title       String
+  description String?
+  priority    TicketPriority @default(MEDIUM)
+  status      TicketStatus   @default(OPEN)
+  assignedTo  String?        @map("assigned_to")
+  openedAt    DateTime       @default(now()) @map("opened_at")
+  resolvedAt  DateTime?      @map("resolved_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  assignee    User?          @relation("AssignedTo", fields: [assignedTo], references: [id])
+  player      Player?        @relation(fields: [playerId], references: [id])
+  reporter    User?          @relation("ReportedBy", fields: [reportedBy], references: [id])
+  screen      Screen?        @relation(fields: [screenId], references: [id])
+
+  @@map("maintenance_tickets")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType @default(INFO)
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  readAt    DateTime?        @map("read_at")
+  link      String?
+  createdAt DateTime         @default(now()) @map("created_at")
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json?    @default("{}")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model PricingRule {
+  id                  String   @id @default(uuid())
+  name                String
+  zoneId              String?  @map("zone_id")
+  screenId            String?  @map("screen_id")
+  basePrice           Decimal  @default(50000.00) @map("base_price") @db.Decimal(12, 2)
+  durationMultiplier  Decimal  @default(1.0) @map("duration_multiplier") @db.Decimal(5, 2)
+  frequencyMultiplier Decimal  @default(1.0) @map("frequency_multiplier") @db.Decimal(5, 2)
+  zoneMultiplier      Decimal  @default(1.0) @map("zone_multiplier") @db.Decimal(5, 2)
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  screen              Screen?  @relation(fields: [screenId], references: [id])
+  zone                Zone?    @relation(fields: [zoneId], references: [id])
+
+  @@map("pricing_rules")
+}
+
+model ScreenCost {
+  id          String    @id @default(uuid())
+  screenId    String    @map("screen_id")
+  costType    String    @map("cost_type")
+  amount      Decimal   @db.Decimal(12, 2)
+  currency    String    @default("XOF")
+  isActual    Boolean   @default(false) @map("is_actual")
+  periodStart DateTime? @map("period_start") @db.Date
+  periodEnd   DateTime? @map("period_end") @db.Date
+  description String?
+  receiptUrl  String?   @map("receipt_url")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  screen      Screen    @relation(fields: [screenId], references: [id], onDelete: Cascade)
+
+  @@map("screen_costs")
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  ADVERTISER
+  PARTNER
+}
+
+enum AdvertiserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum EntityStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  SUSPENDED
+}
+
+enum ScreenStatus {
+  ONLINE
+  OFFLINE
+  WARNING
+  MAINTENANCE
+  DECOMMISSIONED
+}
+
+enum PlayerStatus {
+  ONLINE
+  OFFLINE
+  SYNCING
+  ERROR
+  UNREGISTERED
+}
+
+enum MediaStatus {
+  UPLOADED
+  PROCESSING
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING_REVIEW
+  AWAITING_PAYMENT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum ReservationStatus {
+  TEMPORARY
+  CONFIRMED
+  EXPIRED
+  CANCELLED
+}
+
+enum PlaybackStatus {
+  PLAYED
+  INTERRUPTED
+  FAILED
+  SKIPPED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  WAVE
+  ORANGE_MONEY
+  BANK_TRANSFER
+  CASH
+  OTHER
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  ESCALATED
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  SUCCESS
+  ERROR
+}
+
+=== SEED.JS ===
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log("🌱 Seeding database...");
+
+  // ─── 0. USERS (nécessaires pour les relations) ────────
+  const users = await Promise.all([
+    prisma.user.create({
+      data: {
+        clerkUserId: "clerk_user_1",
+        role: "PARTNER",
+        email: "partner1@seetuads.sn",
+        firstName: "Amadou",
+        lastName: "Diallo",
+        phone: "+221 77 123 45 67",
+      },
+    }),
+    prisma.user.create({
+      data: {
+        clerkUserId: "clerk_user_2",
+        role: "PARTNER",
+        email: "partner2@seetuads.sn",
+        firstName: "Fatou",
+        lastName: "Ndiaye",
+        phone: "+221 76 234 56 78",
+      },
+    }),
+    prisma.user.create({
+      data: {
+        clerkUserId: "clerk_user_3",
+        role: "PARTNER",
+        email: "partner3@seetuads.sn",
+        firstName: "Ibrahima",
+        lastName: "Sow",
+        phone: "+221 70 345 67 89",
+      },
+    }),
+    prisma.user.create({
+      data: {
+        clerkUserId: "clerk_user_4",
+        role: "PARTNER",
+        email: "partner4@seetuads.sn",
+        firstName: "Ousmane",
+        lastName: "Fall",
+        phone: "+221 78 456 78 90",
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${users.length} users`);
+
+  // ─── 1. ZONES ─────────────────────────────────────────
+  const zones = await Promise.all([
+    prisma.zone.create({
+      data: {
+        name: "Plateau",
+        city: "Dakar",
+        district: "Plateau",
+        description: "Centre administratif et commercial de Dakar",
+        radiusMeters: 1500,
+        status: "ACTIVE",
+      },
+    }),
+    prisma.zone.create({
+      data: {
+        name: "Almadies",
+        city: "Dakar",
+        district: "Les Almadies",
+        description: "Zone touristique et residentielle",
+        radiusMeters: 2000,
+        status: "ACTIVE",
+      },
+    }),
+    prisma.zone.create({
+      data: {
+        name: "Medina",
+        city: "Dakar",
+        district: "Medina",
+        description: "Quartier historique et commercant",
+        radiusMeters: 1200,
+        status: "ACTIVE",
+      },
+    }),
+    prisma.zone.create({
+      data: {
+        name: "Mermoz",
+        city: "Dakar",
+        district: "Mermoz-Sacre-Coeur",
+        description: "Zone residentielle",
+        radiusMeters: 1800,
+        status: "PENDING",
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${zones.length} zones`);
+
+  // ─── 2. PARTNERS ──────────────────────────────────────
+  const partners = await Promise.all([
+    prisma.partner.create({
+      data: {
+        userId: users[0].id,
+        businessName: "Cafe de la Plage",
+        ownerName: "Amadou Diallo",
+        phone: "+221 77 123 45 67",
+        email: "contact@cafedelaplage.sn",
+        businessType: "RESTAURANT",
+        address: "Route des Almadies, Ngor",
+        city: "Dakar",
+        latitude: 14.7419,
+        longitude: -17.5112,
+        status: "ACTIVE",
+      },
+    }),
+    prisma.partner.create({
+      data: {
+        userId: users[1].id,
+        businessName: "Supermarche Casino",
+        ownerName: "Fatou Ndiaye",
+        phone: "+221 76 234 56 78",
+        email: "casino@supermarche.sn",
+        businessType: "SUPERMARKET",
+        address: "Avenue Lamine Gueye, Plateau",
+        city: "Dakar",
+        latitude: 14.6678,
+        longitude: -17.4369,
+        status: "ACTIVE",
+      },
+    }),
+    prisma.partner.create({
+      data: {
+        userId: users[2].id,
+        businessName: "Pharmacie du Centre",
+        ownerName: "Dr. Ibrahima Sow",
+        phone: "+221 70 345 67 89",
+        email: "pharmacie@centre.sn",
+        businessType: "PHARMACY",
+        address: "Rue Vincens, Plateau",
+        city: "Dakar",
+        latitude: 14.6645,
+        longitude: -17.4333,
+        status: "ACTIVE",
+      },
+    }),
+    prisma.partner.create({
+      data: {
+        userId: users[3].id,
+        businessName: "Station Total Mermoz",
+        ownerName: "Ousmane Fall",
+        phone: "+221 78 456 78 90",
+        email: "total.mermoz@petrol.sn",
+        businessType: "GAS_STATION",
+        address: "Boulevard du Centenaire, Mermoz",
+        city: "Dakar",
+        latitude: 14.7056,
+        longitude: -17.4689,
+        status: "PENDING",
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${partners.length} partners`);
+
+  // ─── 3. LOCATIONS ─────────────────────────────────────
+  const locations = await Promise.all([
+    prisma.location.create({
+      data: {
+        partnerId: partners[0].id,
+        name: "Cafe de la Plage - Terrasse",
+        businessType: "RESTAURANT",
+        address: "Route des Almadies, Ngor",
+        city: "Dakar",
+        district: "Les Almadies",
+        latitude: 14.7419,
+        longitude: -17.5112,
+        description: "Grande terrasse avec vue sur l'ocean",
+        photos: JSON.stringify(["https://example.com/photo1.jpg"]),
+        status: "ACTIVE",
+      },
+    }),
+    prisma.location.create({
+      data: {
+        partnerId: partners[1].id,
+        name: "Supermarche Casino - Entree",
+        businessType: "SUPERMARKET",
+        address: "Avenue Lamine Gueye, Plateau",
+        city: "Dakar",
+        district: "Plateau",
+        latitude: 14.6678,
+        longitude: -17.4369,
+        description: "Entree principale du supermarche",
+        photos: JSON.stringify(["https://example.com/photo2.jpg"]),
+        status: "ACTIVE",
+      },
+    }),
+    prisma.location.create({
+      data: {
+        partnerId: partners[2].id,
+        name: "Pharmacie du Centre - Vitrine",
+        businessType: "PHARMACY",
+        address: "Rue Vincens, Plateau",
+        city: "Dakar",
+        district: "Plateau",
+        latitude: 14.6645,
+        longitude: -17.4333,
+        description: "Vitrine principale",
+        photos: JSON.stringify(["https://example.com/photo3.jpg"]),
+        status: "ACTIVE",
+      },
+    }),
+    prisma.location.create({
+      data: {
+        partnerId: partners[3].id,
+        name: "Station Total Mermoz - Boutique",
+        businessType: "GAS_STATION",
+        address: "Boulevard du Centenaire, Mermoz",
+        city: "Dakar",
+        district: "Mermoz-Sacre-Coeur",
+        latitude: 14.7056,
+        longitude: -17.4689,
+        description: "Boutique de la station-service",
+        photos: JSON.stringify(["https://example.com/photo4.jpg"]),
+        status: "PENDING",
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${locations.length} locations`);
+
+  // ─── 4. SCREENS ───────────────────────────────────────
+  const screens = await Promise.all([
+    prisma.screen.create({
+      data: {
+        locationId: locations[0].id,
+        zoneId: zones[1].id,
+        screenCode: "SCR-ALM-001",
+        name: "Ecran Terrasse Almadies",
+        widthPx: 1920,
+        heightPx: 1080,
+        resolution: "1920x1080",
+        orientation: "landscape",
+        status: "ONLINE",
+        installationDate: new Date("2024-01-15"),
+        monthlyPartnerFee: 25000.0,
+        inventoryLoopSeconds: 120,
+      },
+    }),
+    prisma.screen.create({
+      data: {
+        locationId: locations[1].id,
+        zoneId: zones[0].id,
+        screenCode: "SCR-PLT-001",
+        name: "Ecran Entree Casino",
+        widthPx: 1920,
+        heightPx: 1080,
+        resolution: "1920x1080",
+        orientation: "landscape",
+        status: "ONLINE",
+        installationDate: new Date("2024-02-20"),
+        monthlyPartnerFee: 30000.0,
+        inventoryLoopSeconds: 120,
+      },
+    }),
+    prisma.screen.create({
+      data: {
+        locationId: locations[2].id,
+        zoneId: zones[0].id,
+        screenCode: "SCR-PLT-002",
+        name: "Ecran Pharmacie Plateau",
+        widthPx: 1920,
+        heightPx: 1080,
+        resolution: "1920x1080",
+        orientation: "portrait",
+        status: "OFFLINE",
+        installationDate: new Date("2024-03-10"),
+        monthlyPartnerFee: 20000.0,
+        inventoryLoopSeconds: 120,
+      },
+    }),
+    prisma.screen.create({
+      data: {
+        locationId: locations[3].id,
+        zoneId: zones[3].id,
+        screenCode: "SCR-MER-001",
+        name: "Ecran Station Mermoz",
+        widthPx: 1920,
+        heightPx: 1080,
+        resolution: "1920x1080",
+        orientation: "landscape",
+        status: "WARNING",
+        installationDate: new Date("2024-04-05"),
+        monthlyPartnerFee: 22000.0,
+        inventoryLoopSeconds: 120,
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${screens.length} screens`);
+
+  // ─── 5. PLAYERS ───────────────────────────────────────
+  const players = await Promise.all([
+    prisma.player.create({
+      data: {
+        screenId: screens[0].id,
+        deviceId: "DEV-ALM-001-A",
+        serialNumber: "SN123456789",
+        appVersion: "2.1.0",
+        osVersion: "Android 12",
+        lastHeartbeat: new Date(),
+        status: "ONLINE",
+        lastIp: "192.168.1.101",
+        storageStatus: JSON.stringify({ used: 45, total: 128, unit: "GB" }),
+      },
+    }),
+    prisma.player.create({
+      data: {
+        screenId: screens[1].id,
+        deviceId: "DEV-PLT-001-B",
+        serialNumber: "SN987654321",
+        appVersion: "2.1.0",
+        osVersion: "Android 13",
+        lastHeartbeat: new Date(),
+        status: "ONLINE",
+        lastIp: "192.168.1.102",
+        storageStatus: JSON.stringify({ used: 62, total: 128, unit: "GB" }),
+      },
+    }),
+    prisma.player.create({
+      data: {
+        screenId: screens[2].id,
+        deviceId: "DEV-PLT-002-C",
+        serialNumber: "SN456789123",
+        appVersion: "2.0.5",
+        osVersion: "Android 11",
+        lastHeartbeat: new Date(Date.now() - 86400000),
+        status: "OFFLINE",
+        lastIp: "192.168.1.103",
+        storageStatus: JSON.stringify({ used: 30, total: 64, unit: "GB" }),
+      },
+    }),
+    prisma.player.create({
+      data: {
+        screenId: screens[3].id,
+        deviceId: "DEV-MER-001-D",
+        serialNumber: "SN789123456",
+        appVersion: "2.1.0",
+        osVersion: "Android 12",
+        lastHeartbeat: new Date(Date.now() - 3600000),
+        status: "ERROR",
+        lastIp: "192.168.1.104",
+        storageStatus: JSON.stringify({ used: 110, total: 128, unit: "GB" }),
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${players.length} players`);
+
+  // ─── 6. PRICING RULES ─────────────────────────────────
+  const pricingRules = await Promise.all([
+    prisma.pricingRule.create({
+      data: {
+        name: "Tarif Standard Plateau",
+        zoneId: zones[0].id,
+        basePrice: 50000.0,
+        durationMultiplier: 1.0,
+        frequencyMultiplier: 1.0,
+        zoneMultiplier: 1.5,
+        active: true,
+      },
+    }),
+    prisma.pricingRule.create({
+      data: {
+        name: "Tarif Standard Almadies",
+        zoneId: zones[1].id,
+        basePrice: 60000.0,
+        durationMultiplier: 1.0,
+        frequencyMultiplier: 1.0,
+        zoneMultiplier: 1.8,
+        active: true,
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${pricingRules.length} pricing rules`);
+
+  console.log("\n🎉 Seed completed successfully!");
+  console.log("\n📊 Summary:");
+  console.log(`   Users:     ${users.length}`);
+  console.log(`   Zones:     ${zones.length}`);
+  console.log(`   Partners:  ${partners.length}`);
+  console.log(`   Locations: ${locations.length}`);
+  console.log(`   Screens:   ${screens.length}`);
+  console.log(`   Players:   ${players.length}`);
+}
+
+main()
+  .catch((e) => {
+    console.error("❌ Seed failed:", e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+=== SEED.TS ===
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log("Seeding...");
+
+  const zones = await prisma.$transaction([
+    prisma.zone.create({ data: { name: "Plateau", city: "Dakar", district: "Plateau" } }),
+    prisma.zone.create({ data: { name: "Almadies", city: "Dakar", district: "Almadies" } }),
+    prisma.zone.create({ data: { name: "Médina", city: "Dakar", district: "Médina" } }),
+    prisma.zone.create({ data: { name: "Parcelles Assainies", city: "Dakar", district: "Parcelles Assainies" } }),
+    prisma.zone.create({ data: { name: "Ouakam", city: "Dakar", district: "Ouakam" } }),
+    prisma.zone.create({ data: { name: "Mermoz", city: "Dakar", district: "Mermoz" } }),
+  ]);
+  console.log(`Zones créées: ${zones.length}`);
+
+  await prisma.pricingRule.create({
+    data: { name: "Forfait Starter", basePrice: 50000, durationMultiplier: 1.0, frequencyMultiplier: 1.0, zoneMultiplier: 1.0, active: true },
+  });
+
+  await prisma.pricingRule.create({
+    data: { name: "Forfait Pro", basePrice: 150000, durationMultiplier: 1.5, frequencyMultiplier: 2.0, zoneMultiplier: 1.2, active: true },
+  });
+
+  await prisma.pricingRule.create({
+    data: { name: "Forfait Enterprise", basePrice: 500000, durationMultiplier: 2.0, frequencyMultiplier: 3.0, zoneMultiplier: 1.5, active: true },
+  });
+
+  console.log("Seed terminé !");
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+=== MIDDLEWARE ===
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/api/webhook(.*)",
+  "/api/player(.*)",
+  "/player(.*)",
+]);
+
+const isAdvertiserRoute = createRouteMatcher(["/advertiser(.*)"]);
+const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isPublicRoute(req)) return;
+
+  const { userId } = await auth();
+
+  if (!userId) {
+    return NextResponse.redirect(new URL("/sign-in", req.url));
+  }
+});
+
+export const config = {
+  matcher: [
+    "/((?!_next|[^?]*\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
+};
+=== CONFIGURATION NEXT / TAILWIND / POSTCSS / TYPESCRIPT ===
+/** @type {import("next").NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+};
+module.exports = nextConfig;import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: "#eff6ff",
+          100: "#dbeafe",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          900: "#1e3a8a",
+        },
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "target": "ES2017"
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

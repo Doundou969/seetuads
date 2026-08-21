@@ -1,0 +1,75 @@
+import { prisma } from "@/lib/prisma";
+import { CampaignForm } from "./campaign-form";
+
+export const dynamic = "force-dynamic";
+
+export default async function NewCampaignPage() {
+  const [screens, pricingRules, media] = await Promise.all([
+    prisma.screen.findMany({
+      include: { location: true, zone: true },
+    }),
+    prisma.pricingRule.findMany({
+      include: { zone: true, screen: true },
+    }),
+    prisma.media.findMany({
+      where: {
+        status: "APPROVED",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        name: true,
+        fileType: true,
+        mimeType: true,
+        durationSeconds: true,
+      },
+    }),
+  ]);
+
+  const formattedScreens = screens.map((s) => ({
+    id: s.id,
+    screenCode: s.screenCode,
+    name: s.name,
+    location: s.location ? { name: s.location.name } : null,
+    zone: s.zone ? { name: s.zone.name, id: s.zone.id } : null,
+    monthlyPartnerFee: Number(s.monthlyPartnerFee),
+  }));
+
+  const formattedPricingRules = pricingRules.map((pr) => ({
+    id: pr.id,
+    zoneId: pr.zoneId,
+    screenId: pr.screenId,
+    basePrice: Number(pr.basePrice),
+    durationMultiplier: Number(pr.durationMultiplier),
+    frequencyMultiplier: Number(pr.frequencyMultiplier),
+    zoneMultiplier: Number(pr.zoneMultiplier),
+  }));
+
+  const formattedMedia = media.map((m) => ({
+    id: m.id,
+    name: m.name,
+    fileType: m.fileType,
+    mimeType: m.mimeType,
+    durationSeconds: m.durationSeconds,
+  }));
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        Nouvelle campagne
+      </h1>
+
+      <p className="text-gray-600 mb-6">
+        Créez une campagne et sélectionnez vos écrans et médias
+      </p>
+
+      <CampaignForm
+        screens={formattedScreens}
+        pricingRules={formattedPricingRules}
+        media={formattedMedia}
+      />
+    </div>
+  );
+}

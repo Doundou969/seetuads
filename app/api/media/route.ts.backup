@@ -1,0 +1,52 @@
+import { NextResponse } from "next/server";
+import { requireAdvertiser } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
+
+export async function GET() {
+  try {
+    const { advertiser } = await requireAdvertiser();
+
+    const media = await prisma.media.findMany({
+      where: { advertiserId: advertiser.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(media);
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 403 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const { advertiser } = await requireAdvertiser();
+    const body = await req.json();
+
+    const { name, fileUrl, fileType, mimeType, durationSeconds, widthPx, heightPx } = body;
+
+    if (!name || !fileUrl || !fileType) {
+      return NextResponse.json(
+        { error: "Nom, URL et type de fichier sont requis" },
+        { status: 400 }
+      );
+    }
+
+    const media = await prisma.media.create({
+      data: {
+        advertiserId: advertiser.id,
+        name,
+        fileUrl,
+        fileType,
+        mimeType,
+        durationSeconds: durationSeconds || 15,
+        widthPx,
+        heightPx,
+        status: "APPROVED", // En V1 on approuve auto, plus tard : workflow review
+      },
+    });
+
+    return NextResponse.json(media, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 403 });
+  }
+}

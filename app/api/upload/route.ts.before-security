@@ -1,0 +1,138 @@
+import { put } from "@vercel/blob";
+import { NextResponse } from "next/server";
+import { requireMediaUploader } from "@/lib/permissions";
+
+const ALLOWED_TYPES = [
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
+
+const MAX_SIZE = 50 * 1024 * 1024;
+
+export async function POST(req: Request) {
+  try {
+    // Autorise ADMIN / OPERATOR / ADVERTISER selon votre système de permissions
+    await requireMediaUploader();
+
+    let file: File | null = null;
+
+    const contentType = req.headers.get("content-type") || "";
+
+    /*
+     * FORMAT 1
+     * multipart/form-data
+     *
+     * Utilisé par :
+     * const fd = new FormData()
+     * fd.append("file", file)
+     */
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+
+      const uploaded = formData.get("file");
+
+      if (uploaded instanceof File) {
+        file = uploaded;
+      }
+    }
+
+    /*
+     * FORMAT 2
+     * File brut
+     *
+     * Utilisé par l'ancienne page admin :
+     * body: file
+     */
+    else if (
+      contentType.startsWith("video/") ||
+      contentType.startsWith("image/")
+    ) {
+      const buffer = await req.arrayBuffer();
+
+      const filename =
+        new URL(req.url).searchParams.get("filename") ||
+        `media-${Date.now()}`;
+
+      file = new File([buffer], filename, {
+        type: contentType,
+      });
+    }
+
+    if (!file) {
+      return NextResponse.json(
+        {
+          error:
+            "Aucun fichier reçu. Envoyez le fichier avec le champ 'file'.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * Vérification MIME
+     */
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        {
+          error:
+            "Type de fichier non supporté. Utilisez MP4, WebM, MOV, JPG, PNG ou WebP.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * Vérification taille
+     */
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json(
+        {
+          error: "Fichier trop volumineux. Taille maximale : 50 MB.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * Upload Vercel Blob
+     */
+    const blob = await put(file.name, file, {
+      access: "public",
+      addRandomSuffix: true,
+    });
+
+    console.log("Media uploaded:", {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      url: blob.url,
+    });
+
+    return NextResponse.json({
+      success: true,
+      url: blob.url,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    });
+  } catch (error: unknown) {
+    console.error("Upload error:", error);
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Erreur inconnue lors de l'upload";
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+      },
+      { status: 500 }
+    );
+  }
+}

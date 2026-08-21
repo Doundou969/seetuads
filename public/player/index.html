@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SeetuAds Player</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Arial', sans-serif; }
+  #player { width: 100vw; height: 100vh; position: relative; background: #000; display: flex; align-items: center; justify-content: center; }
+  #media-container { width: 100%; height: 100%; position: relative; }
+  #current-image { width: 100%; height: 100%; object-fit: cover; display: none; position: absolute; top: 0; left: 0; }
+  #current-video { width: 100%; height: 100%; object-fit: cover; display: none; position: absolute; top: 0; left: 0; background: #000; }
+  #status-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 36px; background: rgba(230, 81, 0, 0.92); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 100; }
+  #status-logo { font-family: monospace; font-weight: 700; font-size: 14px; color: white; letter-spacing: 1px; }
+  #status-info { font-size: 11px; color: rgba(255,255,255,0.85); font-family: monospace; }
+  #status-dot { width: 8px; height: 8px; border-radius: 50%; background: #4CAF50; animation: blink 2s infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; box-shadow: 0 0 6px #4CAF50; } 50% { opacity: 0.4; box-shadow: none; } }
+  #empty-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a1a 0%, #2d1810 100%); color: white; text-align: center; }
+  #empty-logo { font-family: monospace; font-size: 48px; font-weight: 700; color: #E65100; margin-bottom: 16px; }
+  #empty-msg { font-size: 16px; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+  #empty-sub { font-size: 12px; color: rgba(255,255,255,0.3); font-family: monospace; }
+  #overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; z-index: 50; }
+  #overlay.active { opacity: 1; }
+  #offline-banner { position: fixed; top: 0; left: 0; right: 0; background: #C62828; color: white; text-align: center; padding: 6px; font-size: 12px; font-family: monospace; z-index: 200; display: none; }
+  #progress-bar { position: fixed; bottom: 36px; left: 0; height: 3px; background: rgba(230, 81, 0, 0.7); width: 0%; transition: width linear; z-index: 99; }
+</style>
+</head>
+<body>
+
+<div id="offline-banner">⚠ Hors ligne — Lecture du cache local</div>
+
+<div id="player">
+  <div id="media-container">
+    <img id="current-image" alt="Publicité" />
+    <video id="current-video" muted playsinline></video>
+    <div id="empty-screen">
+      <div id="empty-logo">SeetuAds</div>
+      <div id="empty-msg">Chargement des campagnes...</div>
+      <div id="empty-sub" id="empty-ecran-id">Initialisation...</div>
+    </div>
+  </div>
+</div>
+
+<div id="overlay"></div>
+<div id="progress-bar"></div>
+
+<div id="status-bar">
+  <div id="status-logo">SEETUADS</div>
+  <div id="status-info" id="status-text">Connexion...</div>
+  <div id="status-dot"></div>
+</div>
+
+<script>
+const CONFIG = {
+  API_BASE:    'https://seetu-ads.vercel.app',
+  ECRAN_ID: new URLSearchParams(window.location.search).get('ecran') || 'c84d923f-34f8-4f0a-b70d-e44aae045880',
+  SYNC_INTERVAL:   5 * 60 * 1000,
+  RETRY_INTERVAL:  30 * 1000,
+  TRANSITION_MS:   400,
+  DEFAULT_DURATION: 30 * 1000,
+  PING_INTERVAL:   60 * 1000,
+}
+
+let state = {
+  playlist:       [],
+  currentIndex:   0,
+  isPlaying:      false,
+  isOnline:       navigator.onLine,
+  cachedPlaylist: null,
+  syncTimer:      null,
+  playTimer:      null,
+  pingTimer:      null,
+}
+
+const $img      = document.getElementById('current-image')
+const $video    = document.getElementById('current-video')
+const $empty    = document.getElementById('empty-screen')
+const $emptyMsg = document.getElementById('empty-msg')
+const $emptySub = document.getElementById('empty-sub')
+const $overlay  = document.getElementById('overlay')
+const $progress = document.getElementById('progress-bar')
+const $status   = document.getElementById('status-info')
+const $offline  = document.getElementById('offline-banner')
+const $dot      = document.getElementById('status-dot')
+
+window.addEventListener('online',  () => { state.isOnline = true;  $offline.style.display = 'none';  syncPlaylist(); })
+window.addEventListener('offline', () => { state.isOnline = false; $offline.style.display = 'block'; $dot.style.background = '#F57F17'; })
+
+async function syncPlaylist() {
+  if (!state.isOnline) {
+    log('Hors ligne — lecture du cache')
+    if (state.cachedPlaylist) startPlayback(state.cachedPlaylist)
+    return
+  }
+  try {
+    log('Synchronisation...')
+    const res = await fetch(`${CONFIG.API_BASE}/api/ecrans/${CONFIG.ECRAN_ID}/playlist`, { cache: 'no-store' })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    const playlist = data.playlist ?? []
+    try {
+      localStorage.setItem('seetuads_playlist', JSON.stringify(playlist))
+      localStorage.setItem('seetuads_sync', new Date().toISOString())
+    } catch(e) {}
+    state.cachedPlaylist = playlist
+    log(`${playlist.length} campagne(s) chargée(s)`)
+    $dot.style.background = '#4CAF50'
+    if (playlist.length > 0) {
+      if (!state.isPlaying) startPlayback(playlist)
+      else {
+        state.playlist = playlist
+        if (state.currentIndex >= playlist.length) state.currentIndex = 0
+      }
+    } else {
+      showEmpty('Aucune campagne active', CONFIG.ECRAN_ID)
+    }
+  } catch (err) {
+    log('Erreur sync — ' + err.message)
+    $dot.style.background = '#F57F17'
+    try {
+      const cached = localStorage.getItem('seetuads_playlist')
+      if (cached) {
+        const playlist = JSON.parse(cached)
+        if (playlist.length > 0 && !state.isPlaying) {
+          log('Lecture depuis le cache')
+          startPlayback(playlist)
+        }
+      }
+    } catch(e) {}
+    setTimeout(syncPlaylist, CONFIG.RETRY_INTERVAL)
+  }
+}
+
+function startPlayback(playlist) {
+  state.playlist = playlist
+  state.currentIndex = 0
+  state.isPlaying = true
+  playNext()
+}
+
+async function playNext() {
+  if (!state.playlist || state.playlist.length === 0) {
+    showEmpty('Aucune campagne active', CONFIG.ECRAN_ID)
+    return
+  }
+
+  state.currentIndex = state.currentIndex % state.playlist.length
+  const item = state.playlist[state.currentIndex]
+  const nextIndex = (state.currentIndex + 1) % state.playlist.length
+
+  // Si 1 seule vidéo déjà en cours → juste relancer le timer (pas de flash)
+  if (state.playlist.length === 1 && item.media.type === 'video' && !$video.paused && $video.currentTime > 0) {
+    logImpression(item.campagne_id)
+    const duration = (item.media.duree_sec ?? 30) * 1000
+    if (state.playTimer) clearTimeout(state.playTimer)
+    state.playTimer = setTimeout(playNext, duration)
+    return
+  }
+
+  state.currentIndex = nextIndex
+  await transition()
+  await playItem(item)
+  logImpression(item.campagne_id)
+}
+
+async function playItem(item) {
+  if (!state.playlist || state.playlist.length === 0) return
+  const media = item.media
+  const duration = (media.duree_sec ?? 30) * 1000
+
+  hideAll()
+  updateStatus(`${item.nom}`)
+
+  if (media.type === 'video') {
+    $video.src = media.url
+    $video.style.display = 'block'
+    $video.loop = state.playlist.length === 1
+    $video.play().catch(() => {})
+
+    await new Promise(resolve => {
+      const timeout = setTimeout(resolve, duration)
+      $video.onended = () => { clearTimeout(timeout); resolve() }
+    })
+  } else {
+    $img.src = media.url
+    $img.style.display = 'block'
+    animateProgress(duration)
+    await sleep(duration)
+  }
+
+  if (state.isPlaying) {
+    if (state.playTimer) clearTimeout(state.playTimer)
+    state.playTimer = setTimeout(playNext, 100)
+  }
+}
+
+async function logImpression(campagneId) {
+  if (!state.isOnline || !campagneId) return
+  try {
+    await fetch(`${CONFIG.API_BASE}/api/ecrans/${CONFIG.ECRAN_ID}/ping`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'impression', campagne_id: campagneId })
+    })
+  } catch(e) {}
+}
+
+async function heartbeat() {
+  if (!state.isOnline) return
+  try {
+    await fetch(`${CONFIG.API_BASE}/api/ecrans/${CONFIG.ECRAN_ID}/ping`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'heartbeat' })
+    })
+  } catch(e) {}
+}
+
+function hideAll() {
+  $img.style.display = 'none'
+  $video.style.display = 'none'
+  $empty.style.display = 'none'
+  $video.pause()
+  $video.src = ''
+  $video.loop = false
+}
+
+function showEmpty(msg, sub) {
+  state.isPlaying = false
+  hideAll()
+  $emptyMsg.textContent = msg
+  $emptySub.textContent = sub ?? ''
+  $empty.style.display = 'flex'
+  updateStatus('En attente')
+}
+
+async function transition() {
+  $overlay.classList.add('active')
+  await sleep(CONFIG.TRANSITION_MS)
+  $overlay.classList.remove('active')
+}
+
+function animateProgress(duration) {
+  $progress.style.transition = 'none'
+  $progress.style.width = '0%'
+  requestAnimationFrame(() => {
+    $progress.style.transition = `width ${duration}ms linear`
+    $progress.style.width = '100%'
+  })
+}
+
+function updateStatus(text) {
+  $status.textContent = text
+}
+
+function log(msg) {
+  console.log(`[SeetuAds] ${new Date().toLocaleTimeString()} — ${msg}`)
+  updateStatus(msg)
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms))
+}
+
+function init() {
+  log(`Démarrage · Écran ${CONFIG.ECRAN_ID}`)
+  showEmpty('Connexion au serveur...', CONFIG.ECRAN_ID)
+  syncPlaylist()
+  state.syncTimer = setInterval(syncPlaylist, CONFIG.SYNC_INTERVAL)
+  state.pingTimer = setInterval(heartbeat, CONFIG.PING_INTERVAL)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !state.isPlaying) syncPlaylist()
+  })
+}
+
+window.addEventListener('load', init)
+</script>
+</body>
+</html>

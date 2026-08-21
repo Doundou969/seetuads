@@ -1,0 +1,439 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { createCampaign } from "@/lib/actions";
+import { Button } from "@/components/ui/button";
+import {
+  Monitor,
+  Calendar,
+  Clock,
+  Calculator,
+  Film,
+} from "lucide-react";
+
+interface Screen {
+  id: string;
+  screenCode: string;
+  name: string | null;
+  location: { name: string } | null;
+  zone: { name: string; id: string } | null;
+  monthlyPartnerFee: number;
+}
+
+interface Media {
+  id: string;
+  name: string;
+  fileType: string;
+  mimeType: string | null;
+  durationSeconds: number;
+}
+
+interface PricingRule {
+  id: string;
+  zoneId: string | null;
+  screenId: string | null;
+  basePrice: number;
+  durationMultiplier: number;
+  frequencyMultiplier: number;
+  zoneMultiplier: number;
+}
+
+export function CampaignForm({
+  screens,
+  pricingRules,
+  media,
+}: {
+  screens: Screen[];
+  pricingRules: PricingRule[];
+  media: Media[];
+}) {
+  const [selectedScreens, setSelectedScreens] = useState<string[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<string[]>([]);
+  const [spotDuration, setSpotDuration] = useState(15);
+  const [frequency, setFrequency] = useState(1);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const toggleScreen = (id: string) => {
+    setSelectedScreens((prev) =>
+      prev.includes(id)
+        ? prev.filter((s) => s !== id)
+        : [...prev, id]
+    );
+  };
+
+  const toggleMedia = (id: string) => {
+    setSelectedMedia((prev) =>
+      prev.includes(id)
+        ? prev.filter((m) => m !== id)
+        : [...prev, id]
+    );
+  };
+
+  const estimatedPrice = useMemo(() => {
+    if (!startDate || !endDate || selectedScreens.length === 0) {
+      return 0;
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const days = Math.max(
+      1,
+      Math.ceil(
+        (end.getTime() - start.getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    );
+
+    let total = 0;
+
+    for (const screenId of selectedScreens) {
+      const screen = screens.find((s) => s.id === screenId);
+
+      if (!screen) continue;
+
+      const rule =
+        pricingRules.find((pr) => pr.screenId === screenId) ||
+        pricingRules.find(
+          (pr) => pr.zoneId === screen.zone?.id
+        ) ||
+        pricingRules[0];
+
+      if (rule) {
+        const dailyPrice =
+          Number(rule.basePrice) *
+          Number(rule.durationMultiplier) *
+          Number(rule.frequencyMultiplier) *
+          Number(rule.zoneMultiplier);
+
+        total += dailyPrice * days;
+      }
+    }
+
+    return Math.round(total);
+  }, [
+    selectedScreens,
+    spotDuration,
+    frequency,
+    startDate,
+    endDate,
+    screens,
+    pricingRules,
+  ]);
+
+  const handleSubmit = (formData: FormData) => {
+    formData.set(
+      "screenIds",
+      JSON.stringify(selectedScreens)
+    );
+
+    formData.set(
+      "mediaIds",
+      JSON.stringify(selectedMedia)
+    );
+
+    formData.set(
+      "estimatedPrice",
+      estimatedPrice.toString()
+    );
+
+    return createCampaign(formData);
+  };
+
+  return (
+    <form
+      action={handleSubmit}
+      className="space-y-8 max-w-4xl"
+    >
+      {/* INFOS DE BASE */}
+      <div className="bg-white p-6 rounded-xl border space-y-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-primary-600" />
+          Informations générales
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Nom de la campagne
+            </label>
+
+            <input
+              id="name"
+              name="name"
+              required
+              placeholder="Campagne Été 2026"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="objective"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Objectif
+            </label>
+
+            <input
+              id="objective"
+              name="objective"
+              placeholder="Notoriété, ventes..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="startDate"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Date de début
+            </label>
+
+            <input
+              id="startDate"
+              name="startDate"
+              type="date"
+              required
+              value={startDate}
+              onChange={(e) =>
+                setStartDate(e.target.value)
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="endDate"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Date de fin
+            </label>
+
+            <input
+              id="endDate"
+              name="endDate"
+              type="date"
+              required
+              value={endDate}
+              onChange={(e) =>
+                setEndDate(e.target.value)
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* CONFIGURATION DU SPOT */}
+      <div className="bg-white p-6 rounded-xl border space-y-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Clock className="w-5 h-5 text-primary-600" />
+          Configuration du spot
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label
+              htmlFor="spotDuration"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Durée du spot (secondes)
+            </label>
+
+            <input
+              id="spotDuration"
+              name="spotDuration"
+              type="number"
+              min={5}
+              max={60}
+              value={spotDuration}
+              onChange={(e) =>
+                setSpotDuration(Number(e.target.value))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="frequencyPerLoop"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Fréquence par boucle
+            </label>
+
+            <input
+              id="frequencyPerLoop"
+              name="frequencyPerLoop"
+              type="number"
+              min={1}
+              max={10}
+              value={frequency}
+              onChange={(e) =>
+                setFrequency(Number(e.target.value))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* MEDIA */}
+      <div className="bg-white p-6 rounded-xl border space-y-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Film className="w-5 h-5 text-primary-600" />
+          Sélection des médias ({selectedMedia.length} sélectionné
+          {selectedMedia.length > 1 ? "s" : ""})
+        </h2>
+
+        {media.length === 0 ? (
+          <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-sm text-yellow-800">
+            Aucun média approuvé n'est disponible.
+            <br />
+            Ajoutez et approuvez d'abord un média.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {media.map((item) => (
+              <label
+                key={item.id}
+                className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition ${
+                  selectedMedia.includes(item.id)
+                    ? "border-primary-500 bg-primary-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedMedia.includes(item.id)}
+                  onChange={() =>
+                    toggleMedia(item.id)
+                  }
+                  className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                />
+
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">
+                    {item.name}
+                  </p>
+
+                  <p className="text-xs text-gray-500">
+                    {item.fileType} •{" "}
+                    {item.durationSeconds}s
+                  </p>
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ECRANS */}
+      <div className="bg-white p-6 rounded-xl border space-y-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Monitor className="w-5 h-5 text-primary-600" />
+          Sélection des écrans ({selectedScreens.length} sélectionné
+          {selectedScreens.length > 1 ? "s" : ""})
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {screens.map((screen) => (
+            <label
+              key={screen.id}
+              className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition ${
+                selectedScreens.includes(screen.id)
+                  ? "border-primary-500 bg-primary-50"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={selectedScreens.includes(
+                  screen.id
+                )}
+                onChange={() =>
+                  toggleScreen(screen.id)
+                }
+                className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+              />
+
+              <div className="flex-1">
+                <p className="font-medium text-sm">
+                  {screen.name || screen.screenCode}
+                </p>
+
+                <p className="text-xs text-gray-500">
+                  {screen.location?.name} •{" "}
+                  {screen.zone?.name || "Sans zone"}
+                </p>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* PRIX */}
+      <div className="bg-primary-50 p-6 rounded-xl border border-primary-200">
+        <h2 className="text-lg font-semibold flex items-center gap-2 text-primary-800">
+          <Calculator className="w-5 h-5" />
+          Prix estimé
+        </h2>
+
+        <div className="mt-4 flex items-baseline gap-2">
+          <span className="text-4xl font-bold text-primary-700">
+            {estimatedPrice.toLocaleString("fr-FR")}
+          </span>
+
+          <span className="text-primary-600">
+            XOF
+          </span>
+        </div>
+
+        <p className="text-sm text-primary-600 mt-2">
+          {selectedScreens.length} écran
+          {selectedScreens.length > 1 ? "s" : ""} •{" "}
+          {startDate && endDate
+            ? Math.max(
+                1,
+                Math.ceil(
+                  (new Date(endDate).getTime() -
+                    new Date(startDate).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                )
+              )
+            : 0}{" "}
+          jour(s)
+        </p>
+      </div>
+
+      <div className="flex gap-4">
+        <Button
+          type="submit"
+          size="lg"
+          disabled={
+            selectedScreens.length === 0 ||
+            selectedMedia.length === 0
+          }
+        >
+          Créer la campagne
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={() => history.back()}
+        >
+          Annuler
+        </Button>
+      </div>
+    </form>
+  );
+}

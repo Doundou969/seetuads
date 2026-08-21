@@ -1,0 +1,1101 @@
+﻿"use server";
+
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import {
+  requireAdvertiser,
+  requireAuth,
+} from "@/lib/permissions";
+
+// ============================================================================
+// ZONES
+// ============================================================================
+
+export async function createZone(formData: FormData) {
+  await requireAuth();
+
+  const name = String(formData.get("name") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const district = String(formData.get("district") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+
+  const latitudeValue = String(formData.get("latitude") ?? "").trim();
+  const longitudeValue = String(formData.get("longitude") ?? "").trim();
+
+  const latitude = latitudeValue ? parseFloat(latitudeValue) : null;
+  const longitude = longitudeValue ? parseFloat(longitudeValue) : null;
+
+  if (!name) {
+    throw new Error("Le nom de la zone est requis.");
+  }
+
+  if (!city) {
+    throw new Error("La ville est requise.");
+  }
+
+  await prisma.zone.create({
+    data: {
+      name,
+      city,
+      district: district || null,
+      description: description || null,
+      latitude,
+      longitude,
+    },
+  });
+
+  revalidatePath("/admin/zones");
+  redirect("/admin/zones");
+}
+
+export async function updateZone(
+  id: string,
+  formData: FormData
+) {
+  await requireAuth();
+
+  const name = String(formData.get("name") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const district = String(formData.get("district") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+
+  const latitudeValue = String(formData.get("latitude") ?? "").trim();
+  const longitudeValue = String(formData.get("longitude") ?? "").trim();
+
+  const latitude = latitudeValue ? parseFloat(latitudeValue) : null;
+  const longitude = longitudeValue ? parseFloat(longitudeValue) : null;
+
+  if (!id) {
+    throw new Error("Zone introuvable.");
+  }
+
+  if (!name) {
+    throw new Error("Le nom de la zone est requis.");
+  }
+
+  if (!city) {
+    throw new Error("La ville est requise.");
+  }
+
+  await prisma.zone.update({
+    where: { id },
+    data: {
+      name,
+      city,
+      district: district || null,
+      description: description || null,
+      latitude,
+      longitude,
+    },
+  });
+
+  revalidatePath("/admin/zones");
+  redirect("/admin/zones");
+}
+
+export async function deleteZone(id: string) {
+  await requireAuth();
+
+  if (!id) {
+    throw new Error("Zone introuvable.");
+  }
+
+  await prisma.zone.delete({
+    where: { id },
+  });
+
+  revalidatePath("/admin/zones");
+}
+
+// ============================================================================
+// PARTNERS
+// ============================================================================
+
+export async function createPartner(formData: FormData) {
+  await requireAuth();
+
+  const businessName = String(
+    formData.get("businessName") ?? ""
+  ).trim();
+
+  const ownerName = String(
+    formData.get("ownerName") ?? ""
+  ).trim();
+
+  const phone = String(
+    formData.get("phone") ?? ""
+  ).trim();
+
+  const email = String(
+    formData.get("email") ?? ""
+  ).trim();
+
+  const businessType = String(
+    formData.get("businessType") ?? ""
+  ).trim();
+
+  const address = String(
+    formData.get("address") ?? ""
+  ).trim();
+
+  const city =
+    String(formData.get("city") ?? "").trim() || "Dakar";
+
+  if (!businessName) {
+    throw new Error("Le nom de l'entreprise est requis.");
+  }
+
+  if (!phone) {
+    throw new Error("Le téléphone est requis.");
+  }
+
+  await prisma.partner.create({
+    data: {
+      businessName,
+      ownerName: ownerName || null,
+      phone,
+      email: email || null,
+      businessType: businessType || null,
+      address: address || null,
+      city,
+      userId: "temp-user-id",
+    },
+  });
+
+  revalidatePath("/admin/partners");
+  redirect("/admin/partners");
+}
+
+export async function deletePartner(id: string) {
+  await requireAuth();
+
+  if (!id) {
+    throw new Error("Partenaire introuvable.");
+  }
+
+  await prisma.partner.delete({
+    where: { id },
+  });
+
+  revalidatePath("/admin/partners");
+}
+
+// ============================================================================
+// LOCATIONS
+// ============================================================================
+
+export async function createLocation(formData: FormData) {
+  await requireAuth();
+
+  const partnerId = String(
+    formData.get("partnerId") ?? ""
+  ).trim();
+
+  const name = String(
+    formData.get("name") ?? ""
+  ).trim();
+
+  const address = String(
+    formData.get("address") ?? ""
+  ).trim();
+
+  const city =
+    String(formData.get("city") ?? "").trim() || "Dakar";
+
+  const district = String(
+    formData.get("district") ?? ""
+  ).trim();
+
+  const latitudeValue = String(
+    formData.get("latitude") ?? ""
+  ).trim();
+
+  const longitudeValue = String(
+    formData.get("longitude") ?? ""
+  ).trim();
+
+  const latitude = latitudeValue
+    ? parseFloat(latitudeValue)
+    : null;
+
+  const longitude = longitudeValue
+    ? parseFloat(longitudeValue)
+    : null;
+
+  if (!partnerId) {
+    throw new Error("Le partenaire est requis.");
+  }
+
+  if (!name) {
+    throw new Error("Le nom de l'emplacement est requis.");
+  }
+
+  if (!address) {
+    throw new Error("L'adresse est requise.");
+  }
+
+  await prisma.location.create({
+    data: {
+      partnerId,
+      name,
+      address,
+      city,
+      district: district || null,
+      latitude,
+      longitude,
+    },
+  });
+
+  revalidatePath("/admin/locations");
+  redirect("/admin/locations");
+}
+
+export async function deleteLocation(id: string) {
+  await requireAuth();
+
+  if (!id) {
+    throw new Error("Emplacement introuvable.");
+  }
+
+  await prisma.location.delete({
+    where: { id },
+  });
+
+  revalidatePath("/admin/locations");
+}
+
+// ============================================================================
+// SCREENS
+// ============================================================================
+
+export async function createScreen(formData: FormData) {
+  await requireAuth();
+
+  const locationId = String(
+    formData.get("locationId") ?? ""
+  ).trim();
+
+  const zoneId = String(
+    formData.get("zoneId") ?? ""
+  ).trim();
+
+  const screenCode = String(
+    formData.get("screenCode") ?? ""
+  ).trim();
+
+  const name = String(
+    formData.get("name") ?? ""
+  ).trim();
+
+  const resolution =
+    String(formData.get("resolution") ?? "").trim() ||
+    "1920x1080";
+
+  const orientation =
+    String(formData.get("orientation") ?? "").trim() ||
+    "landscape";
+
+  const monthlyPartnerFeeValue = String(
+    formData.get("monthlyPartnerFee") ?? ""
+  ).trim();
+
+  const inventoryLoopSecondsValue = String(
+    formData.get("inventoryLoopSeconds") ?? ""
+  ).trim();
+
+  const monthlyPartnerFee =
+    parseFloat(monthlyPartnerFeeValue) || 20000;
+
+  const inventoryLoopSeconds =
+    parseInt(inventoryLoopSecondsValue, 10) || 120;
+
+  if (!locationId) {
+    throw new Error("L'emplacement est requis.");
+  }
+
+  if (!screenCode) {
+    throw new Error("Le code écran est requis.");
+  }
+
+  await prisma.screen.create({
+    data: {
+      locationId,
+      zoneId: zoneId || null,
+      screenCode,
+      name: name || null,
+      resolution,
+      orientation,
+      monthlyPartnerFee,
+      inventoryLoopSeconds,
+    },
+  });
+
+  revalidatePath("/admin/screens");
+  redirect("/admin/screens");
+}
+
+export async function deleteScreen(id: string) {
+  await requireAuth();
+
+  if (!id) {
+    throw new Error("Écran introuvable.");
+  }
+
+  await prisma.screen.delete({
+    where: { id },
+  });
+
+  revalidatePath("/admin/screens");
+}
+
+// ============================================================================
+// PLAYERS
+// ============================================================================
+
+export async function createPlayer(formData: FormData) {
+  await requireAuth();
+
+  const screenId = String(
+    formData.get("screenId") ?? ""
+  ).trim();
+
+  const deviceId = String(
+    formData.get("deviceId") ?? ""
+  ).trim();
+
+  const serialNumber = String(
+    formData.get("serialNumber") ?? ""
+  ).trim();
+
+  const appVersion =
+    String(formData.get("appVersion") ?? "").trim() ||
+    "1.0.0";
+
+  if (!deviceId) {
+    throw new Error("Le Device ID est requis.");
+  }
+
+  await prisma.player.create({
+    data: {
+      screenId: screenId || null,
+      deviceId,
+      serialNumber: serialNumber || null,
+      appVersion,
+    },
+  });
+
+  revalidatePath("/admin/players");
+  redirect("/admin/players");
+}
+
+export async function deletePlayer(id: string) {
+  await requireAuth();
+
+  if (!id) {
+    throw new Error("Player introuvable.");
+  }
+
+  await prisma.player.delete({
+    where: { id },
+  });
+
+  revalidatePath("/admin/players");
+}
+
+// ============================================================================
+// CAMPAIGNS
+// ============================================================================
+
+export async function createCampaign(formData: FormData) {
+  const user = await requireAuth();
+
+  const name = String(
+    formData.get("name") ?? ""
+  ).trim();
+
+  const objective = String(
+    formData.get("objective") ?? ""
+  ).trim();
+
+  const startDateValue = String(
+    formData.get("startDate") ?? ""
+  ).trim();
+
+  const endDateValue = String(
+    formData.get("endDate") ?? ""
+  ).trim();
+
+  const startDate = new Date(
+    `${startDateValue}T00:00:00`
+  );
+
+  const endDate = new Date(
+    `${endDateValue}T00:00:00`
+  );
+
+  const spotDuration =
+    parseInt(
+      String(formData.get("spotDuration") ?? "15"),
+      10
+    ) || 15;
+
+  const frequencyPerLoop =
+    parseInt(
+      String(formData.get("frequencyPerLoop") ?? "1"),
+      10
+    ) || 1;
+
+  const screenIdsValue = String(
+    formData.get("screenIds") ?? ""
+  );
+
+  const mediaIdsValue = String(
+    formData.get("mediaIds") ?? ""
+  );
+
+  let screenIds: string[] = [];
+  let mediaIds: string[] = [];
+
+  try {
+    screenIds = screenIdsValue
+      ? (JSON.parse(screenIdsValue) as string[])
+      : [];
+
+    mediaIds = mediaIdsValue
+      ? (JSON.parse(mediaIdsValue) as string[])
+      : [];
+  } catch {
+    throw new Error(
+      "La sélection des écrans ou médias est invalide."
+    );
+  }
+
+  const estimatedPrice =
+    parseFloat(
+      String(formData.get("estimatedPrice") ?? "0")
+    ) || 0;
+
+  if (!name) {
+    throw new Error(
+      "Le nom de la campagne est requis."
+    );
+  }
+
+  if (screenIds.length === 0) {
+    throw new Error(
+      "La campagne doit contenir au moins un écran."
+    );
+  }
+
+  if (mediaIds.length === 0) {
+    throw new Error(
+      "La campagne doit contenir au moins un média."
+    );
+  }
+
+  if (Number.isNaN(startDate.getTime())) {
+    throw new Error(
+      "La date de début est invalide."
+    );
+  }
+
+  if (Number.isNaN(endDate.getTime())) {
+    throw new Error(
+      "La date de fin est invalide."
+    );
+  }
+
+  if (endDate < startDate) {
+    throw new Error(
+      "La date de fin doit être postérieure ou égale à la date de début."
+    );
+  }
+
+  if (spotDuration < 5 || spotDuration > 60) {
+    throw new Error(
+      "La durée du spot doit être comprise entre 5 et 60 secondes."
+    );
+  }
+
+  if (
+    frequencyPerLoop < 1 ||
+    frequencyPerLoop > 10
+  ) {
+    throw new Error(
+      "La fréquence doit être comprise entre 1 et 10."
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // DÉTERMINATION DE L'ANNONCEUR
+  // --------------------------------------------------------------------------
+
+  const selectedAdvertiserId = String(
+    formData.get("advertiserId") ?? ""
+  ).trim();
+
+  let advertiserId: string;
+
+  if (
+    user.role === "ADMIN" ||
+    user.role === "OPERATOR"
+  ) {
+    if (!selectedAdvertiserId) {
+      throw new Error(
+        "Veuillez sélectionner un annonceur."
+      );
+    }
+
+    const advertiser =
+      await prisma.advertiser.findFirst({
+        where: {
+          id: selectedAdvertiserId,
+          status: "ACTIVE",
+        },
+        select: {
+          id: true,
+        },
+      });
+
+    if (!advertiser) {
+      throw new Error(
+        "L'annonceur sélectionné est introuvable ou inactif."
+      );
+    }
+
+    advertiserId = advertiser.id;
+  } else {
+    if (!user.advertiser) {
+      throw new Error(
+        "Accès réservé aux annonceurs."
+      );
+    }
+
+    advertiserId = user.advertiser.id;
+  }
+
+  // --------------------------------------------------------------------------
+  // VÉRIFICATION DES MÉDIAS
+  // --------------------------------------------------------------------------
+
+  const approvedMedia =
+    await prisma.media.findMany({
+      where: {
+        id: {
+          in: mediaIds,
+        },
+        advertiserId,
+        status: "APPROVED",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+  if (
+    approvedMedia.length !== mediaIds.length
+  ) {
+    throw new Error(
+      "Un ou plusieurs médias sélectionnés sont introuvables, appartiennent à un autre annonceur ou ne sont pas approuvés."
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // VÉRIFICATION DES ÉCRANS
+  // --------------------------------------------------------------------------
+
+  const validScreens =
+    await prisma.screen.findMany({
+      where: {
+        id: {
+          in: screenIds,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+  if (
+    validScreens.length !== screenIds.length
+  ) {
+    throw new Error(
+      "Un ou plusieurs écrans sélectionnés sont introuvables."
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // CRÉATION DE LA CAMPAGNE
+  // --------------------------------------------------------------------------
+
+  const campaign =
+    await prisma.campaign.create({
+      data: {
+        advertiserId,
+        name,
+        objective: objective || null,
+        startDate,
+        endDate,
+        spotDuration,
+        frequencyPerLoop,
+        estimatedPrice,
+        status: "DRAFT",
+      },
+    });
+
+  // --------------------------------------------------------------------------
+  // ÉCRANS
+  // --------------------------------------------------------------------------
+
+  await prisma.campaignScreen.createMany({
+    data: screenIds.map((screenId) => ({
+      campaignId: campaign.id,
+      screenId,
+      reservedSeconds: spotDuration,
+      status: "ACTIVE",
+    })),
+  });
+
+  // --------------------------------------------------------------------------
+  // MÉDIAS
+  // --------------------------------------------------------------------------
+
+  await prisma.campaignMedia.createMany({
+    data: mediaIds.map((mediaId, index) => ({
+      campaignId: campaign.id,
+      mediaId,
+      displayOrder: index + 1,
+      durationSeconds: spotDuration,
+    })),
+  });
+
+  revalidatePath("/admin/campaigns");
+  revalidatePath("/advertiser/campaigns");
+
+  redirect("/admin/campaigns");
+}
+
+// ============================================================================
+// CAMPAIGN AUTHORIZATION
+// ============================================================================
+
+async function getAuthorizedCampaign(
+  id: string
+) {
+  const user = await requireAuth();
+
+  if (!id) {
+    throw new Error("Campagne introuvable.");
+  }
+
+  // ADMIN / OPERATOR :
+  // accès aux campagnes de tous les annonceurs.
+  if (
+    user.role === "ADMIN" ||
+    user.role === "OPERATOR"
+  ) {
+    const campaign =
+      await prisma.campaign.findUnique({
+        where: { id },
+        include: {
+          advertiser: {
+            select: {
+              id: true,
+              companyName: true,
+              status: true,
+            },
+          },
+          campaignScreens: {
+            include: {
+              screen: true,
+            },
+          },
+          campaignMedia: {
+            include: {
+              media: true,
+            },
+          },
+        },
+      });
+
+    if (!campaign) {
+      throw new Error("Campagne introuvable.");
+    }
+
+    return {
+      user,
+      campaign,
+    };
+  }
+
+  // ANNONCEUR :
+  // accès uniquement à ses propres campagnes.
+  if (!user.advertiser) {
+    throw new Error(
+      "Accès réservé aux annonceurs."
+    );
+  }
+
+  const campaign =
+    await prisma.campaign.findFirst({
+      where: {
+        id,
+        advertiserId: user.advertiser.id,
+      },
+      include: {
+        advertiser: {
+          select: {
+            id: true,
+            companyName: true,
+            status: true,
+          },
+        },
+        campaignScreens: {
+          include: {
+            screen: true,
+          },
+        },
+        campaignMedia: {
+          include: {
+            media: true,
+          },
+        },
+      },
+    });
+
+  if (!campaign) {
+    throw new Error("Campagne introuvable.");
+  }
+
+  return {
+    user,
+    campaign,
+  };
+}
+
+// ============================================================================
+// DELETE CAMPAIGN
+// ============================================================================
+
+export async function deleteCampaign(
+  id: string
+) {
+  await getAuthorizedCampaign(id);
+
+  await prisma.campaign.delete({
+    where: { id },
+  });
+
+  revalidatePath("/admin/campaigns");
+  revalidatePath("/advertiser/campaigns");
+}
+
+// ============================================================================
+// CAMPAIGN ACTIVATION
+// ============================================================================
+
+export async function activateCampaign(
+  id: string
+) {
+  const { campaign } =
+    await getAuthorizedCampaign(id);
+
+  if (
+    campaign.campaignMedia.length === 0
+  ) {
+    throw new Error(
+      "La campagne doit contenir au moins un média."
+    );
+  }
+
+  const unapprovedMedia =
+    campaign.campaignMedia.find(
+      (campaignMedia) =>
+        campaignMedia.media.status !==
+        "APPROVED"
+    );
+
+  if (unapprovedMedia) {
+    throw new Error(
+      `Le média "${unapprovedMedia.media.name}" n'est pas approuvé.`
+    );
+  }
+
+  if (
+    campaign.campaignScreens.length === 0
+  ) {
+    throw new Error(
+      "La campagne doit contenir au moins un écran."
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // CRÉATION DES PLAYLISTS
+  // --------------------------------------------------------------------------
+
+  for (const campaignScreen of
+    campaign.campaignScreens) {
+    const lastPlaylist =
+      await prisma.playlist.findFirst({
+        where: {
+          screenId:
+            campaignScreen.screenId,
+        },
+        orderBy: {
+          version: "desc",
+        },
+      });
+
+    const newVersion =
+      (lastPlaylist?.version || 0) + 1;
+
+    const playlist =
+      await prisma.playlist.create({
+        data: {
+          screenId:
+            campaignScreen.screenId,
+          version: newVersion,
+          status: "ACTIVE",
+          publishedAt: new Date(),
+        },
+      });
+
+    for (const campaignMedia of
+      campaign.campaignMedia) {
+      await prisma.playlistItem.create({
+        data: {
+          playlistId: playlist.id,
+          campaignId: campaign.id,
+          mediaId: campaignMedia.mediaId,
+          position:
+            campaignMedia.displayOrder,
+          durationSeconds:
+            campaignMedia.durationSeconds,
+          startDate: campaign.startDate,
+          endDate: campaign.endDate,
+        },
+      });
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // ACTIVATION
+  // --------------------------------------------------------------------------
+
+  await prisma.campaign.update({
+    where: {
+      id: campaign.id,
+    },
+    data: {
+      status: "ACTIVE",
+    },
+  });
+
+  revalidatePath("/admin/campaigns");
+  revalidatePath("/advertiser/campaigns");
+}
+
+// ============================================================================
+// MEDIA
+// ============================================================================
+
+export async function createMedia(
+  formData: FormData
+) {
+  const { advertiser } =
+    await requireAdvertiser();
+
+  const nameValue =
+    formData.get("name");
+
+  const fileUrlValue =
+    formData.get("fileUrl");
+
+  const fileTypeValue =
+    formData.get("fileType");
+
+  const mimeTypeValue =
+    formData.get("mimeType");
+
+  const durationValue =
+    formData.get("durationSeconds");
+
+  const widthValue =
+    formData.get("widthPx");
+
+  const heightValue =
+    formData.get("heightPx");
+
+  const fileSizeValue =
+    formData.get("fileSizeBytes");
+
+  const name =
+    typeof nameValue === "string"
+      ? nameValue.trim()
+      : "";
+
+  const fileUrl =
+    typeof fileUrlValue === "string"
+      ? fileUrlValue.trim()
+      : "";
+
+  const fileType =
+    typeof fileTypeValue === "string"
+      ? fileTypeValue.trim()
+      : "";
+
+  const mimeType =
+    typeof mimeTypeValue === "string"
+      ? mimeTypeValue.trim()
+      : "";
+
+  const durationSeconds =
+    durationValue !== null
+      ? Number(durationValue)
+      : 15;
+
+  const widthPx =
+    widthValue !== null
+      ? Number(widthValue)
+      : null;
+
+  const heightPx =
+    heightValue !== null
+      ? Number(heightValue)
+      : null;
+
+  const fileSizeBytes =
+    fileSizeValue !== null
+      ? Number(fileSizeValue)
+      : null;
+
+  const allowedMimeTypes = [
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ];
+
+  if (!name) {
+    throw new Error(
+      "Le nom du média est requis."
+    );
+  }
+
+  if (!fileUrl) {
+    throw new Error(
+      "L'URL du média est requise."
+    );
+  }
+
+  if (!fileType) {
+    throw new Error(
+      "Le type du média est requis."
+    );
+  }
+
+  if (
+    !mimeType ||
+    !allowedMimeTypes.includes(mimeType)
+  ) {
+    throw new Error(
+      "Le type MIME du média est invalide."
+    );
+  }
+
+  if (
+    !Number.isFinite(durationSeconds) ||
+    durationSeconds <= 0
+  ) {
+    throw new Error(
+      "La durée du média est invalide."
+    );
+  }
+
+  if (
+    widthPx !== null &&
+    (!Number.isFinite(widthPx) ||
+      widthPx <= 0)
+  ) {
+    throw new Error(
+      "La largeur du média est invalide."
+    );
+  }
+
+  if (
+    heightPx !== null &&
+    (!Number.isFinite(heightPx) ||
+      heightPx <= 0)
+  ) {
+    throw new Error(
+      "La hauteur du média est invalide."
+    );
+  }
+
+  if (
+    fileSizeBytes !== null &&
+    (!Number.isFinite(fileSizeBytes) ||
+      fileSizeBytes <= 0 ||
+      fileSizeBytes >
+        50 * 1024 * 1024)
+  ) {
+    throw new Error(
+      "La taille du média est invalide ou dépasse 50 MB."
+    );
+  }
+
+  await prisma.media.create({
+    data: {
+      advertiserId: advertiser.id,
+      name,
+      fileUrl,
+      fileType,
+      mimeType,
+      durationSeconds,
+      widthPx,
+      heightPx,
+      fileSizeBytes,
+      status: "UPLOADED",
+    },
+  });
+
+  revalidatePath("/admin/media");
+  revalidatePath("/advertiser/media");
+
+  redirect("/admin/media");
+}
+
+export async function deleteMedia(
+  id: string
+) {
+  const { advertiser } =
+    await requireAdvertiser();
+
+  if (!id) {
+    throw new Error("Média introuvable.");
+  }
+
+  const media =
+    await prisma.media.findFirst({
+      where: {
+        id,
+        advertiserId: advertiser.id,
+      },
+    });
+
+  if (!media) {
+    throw new Error("Média introuvable.");
+  }
+
+  await prisma.media.delete({
+    where: {
+      id,
+    },
+  });
+
+  revalidatePath("/admin/media");
+  revalidatePath("/advertiser/media");
+}

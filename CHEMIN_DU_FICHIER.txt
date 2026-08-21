@@ -1,0 +1,399 @@
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+
+interface Campagne {
+  id: number;
+  nom: string;
+  budget: number;
+  statut: "active" | "en_attente" | "attente_paiement" | "terminee" | "archivee";
+  paiement: "paye" | "non_payee" | "partiel";
+  media_count: number;
+  ecran_count: number;
+  date_debut: string;
+  date_fin: string;
+  annonceur_nom?: string;
+}
+
+const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  active: { label: "Active", color: "text-green-700", bg: "bg-green-100" },
+  en_attente: { label: "En attente", color: "text-yellow-700", bg: "bg-yellow-100" },
+  attente_paiement: { label: "Attente paiement", color: "text-orange-700", bg: "bg-orange-100" },
+  terminee: { label: "Terminée", color: "text-gray-700", bg: "bg-gray-100" },
+  archivee: { label: "Archivée", color: "text-gray-500", bg: "bg-gray-50" },
+};
+
+const PAIEMENT_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  paye: { label: "Payée", color: "text-green-700", bg: "bg-green-100" },
+  non_payee: { label: "Non payée", color: "text-red-700", bg: "bg-red-100" },
+  partiel: { label: "Partiel", color: "text-orange-700", bg: "bg-orange-100" },
+};
+
+function formatFCFA(n: number) {
+  return n.toLocaleString("fr-FR") + " FCFA";
+}
+
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString("fr-FR");
+}
+
+export default function CampagnesPage() {
+  const router = useRouter();
+  const [campagnes, setCampagnes] = useState<Campagne[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filtreStatut, setFiltreStatut] = useState<string>("tous");
+  const [editModal, setEditModal] = useState<Campagne | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<Campagne | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const fetchCampagnes = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/campagnes");
+      const data = await res.json();
+      setCampagnes(data.campagnes || []);
+    } catch {
+      setCampagnes([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchCampagnes();
+  }, []);
+
+  const filtered = useMemo(() => {
+    return campagnes.filter((c) => {
+      const matchSearch =
+        c.nom.toLowerCase().includes(search.toLowerCase()) ||
+        (c.annonceur_nom || "").toLowerCase().includes(search.toLowerCase());
+      const matchStatut = filtreStatut === "tous" || c.statut === filtreStatut;
+      return matchSearch && matchStatut;
+    });
+  }, [campagnes, search, filtreStatut]);
+
+  const stats = useMemo(() => {
+    const total = campagnes.length;
+    const actives = campagnes.filter((c) => c.statut === "active").length;
+    const attente = campagnes.filter((c) => c.statut === "en_attente" || c.statut === "attente_paiement").length;
+    const budget = campagnes.reduce((sum, c) => sum + (c.budget || 0), 0);
+    return { total, actives, attente, budget };
+  }, [campagnes]);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await fetch(`/api/campagnes/${id}`, { method: "DELETE" });
+      setCampagnes((prev) => prev.filter((c) => c.id !== id));
+      setDeleteConfirm(null);
+      showToast("Campagne supprimée");
+    } catch {
+      showToast("Erreur lors de la suppression");
+    }
+  };
+
+  const handleUpdate = async (c: Campagne) => {
+    try {
+      await fetch(`/api/campagnes/${c.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(c),
+      });
+      setCampagnes((prev) => prev.map((x) => (x.id === c.id ? c : x)));
+      setEditModal(null);
+      showToast("Campagne mise à jour");
+    } catch {
+      showToast("Erreur lors de la mise à jour");
+    }
+  };
+
+  const dupliquer = async (c: Campagne) => {
+    try {
+      const res = await fetch("/api/campagnes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...c, nom: c.nom + " (copie)", id: undefined }),
+      });
+      const data = await res.json();
+      if (data.campagne) {
+        setCampagnes((prev) => [...prev, data.campagne]);
+        showToast("Campagne dupliquée");
+      }
+    } catch {
+      showToast("Erreur lors de la duplication");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Campagnes</h1>
+            <p className="text-sm text-gray-500 mt-1">Gérez vos campagnes publicitaires</p>
+          </div>
+          <button
+            onClick={() => router.push("/admin/campagnes/nouvelle")}
+            className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+          >
+            + Nouvelle campagne
+          </button>
+        </div>
+
+        {/* STATS CARDS */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+            <div className="text-xs text-gray-500 mt-1">Total</div>
+          </div>
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="text-2xl font-bold text-green-600">{stats.actives}</div>
+            <div className="text-xs text-gray-500 mt-1">Actives</div>
+          </div>
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="text-2xl font-bold text-orange-600">{stats.attente}</div>
+            <div className="text-xs text-gray-500 mt-1">En attente</div>
+          </div>
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="text-2xl font-bold text-gray-900">{formatFCFA(stats.budget)}</div>
+            <div className="text-xs text-gray-500 mt-1">Budget total</div>
+          </div>
+        </div>
+
+        {/* FILTRES */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6 flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Rechercher une campagne..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <select
+            value={filtreStatut}
+            onChange={(e) => setFiltreStatut(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="tous">Tous les statuts</option>
+            <option value="active">Active</option>
+            <option value="en_attente">En attente</option>
+            <option value="attente_paiement">Attente paiement</option>
+            <option value="terminee">Terminée</option>
+          </select>
+        </div>
+
+        {/* TABLEAU */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Campagne</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Statut</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Paiement</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase text-center">Médias</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase text-center">Écrans</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Période</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-400">Chargement...</td>
+                  </tr>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-400">Aucune campagne trouvée</td>
+                  </tr>
+                ) : (
+                  filtered.map((c) => {
+                    const st = STATUS_LABELS[c.statut] || STATUS_LABELS.archivee;
+                    const pa = PAIEMENT_LABELS[c.paiement] || PAIEMENT_LABELS.non_payee;
+                    return (
+                      <tr key={c.id} className="hover:bg-gray-50 transition">
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-gray-900">{c.nom}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">Budget: {formatFCFA(c.budget)}</div>
+                          {c.annonceur_nom && <div className="text-xs text-blue-600 mt-0.5">{c.annonceur_nom}</div>}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${st.bg} ${st.color}`}>
+                            {st.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${pa.bg} ${pa.color}`}>
+                            {pa.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-sm font-medium text-gray-700">
+                            {c.media_count}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-sm font-medium text-gray-700">
+                            {c.ecran_count}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {formatDate(c.date_debut)} → {formatDate(c.date_fin)}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => router.push(`/admin/campagnes/${c.id}`)}
+                              className="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                            >
+                              Voir
+                            </button>
+                            <button
+                              onClick={() => setEditModal(c)}
+                              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                            >
+                              Modifier
+                            </button>
+                            <button
+                              onClick={() => dupliquer(c)}
+                              className="px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition"
+                            >
+                              Dupliquer
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(c)}
+                              className="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition"
+                            >
+                              Supprimer
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
+            {filtered.length} campagne{filtered.length > 1 ? "s" : ""} sur {campagnes.length} au total
+          </div>
+        </div>
+      </div>
+
+      {/* MODAL EDIT */}
+      {editModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Modifier la campagne</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                <input
+                  type="text"
+                  value={editModal.nom}
+                  onChange={(e) => setEditModal({ ...editModal, nom: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Budget (FCFA)</label>
+                <input
+                  type="number"
+                  value={editModal.budget}
+                  onChange={(e) => setEditModal({ ...editModal, budget: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+                  <select
+                    value={editModal.statut}
+                    onChange={(e) => setEditModal({ ...editModal, statut: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="active">Active</option>
+                    <option value="en_attente">En attente</option>
+                    <option value="attente_paiement">Attente paiement</option>
+                    <option value="terminee">Terminée</option>
+                    <option value="archivee">Archivée</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Paiement</label>
+                  <select
+                    value={editModal.paiement}
+                    onChange={(e) => setEditModal({ ...editModal, paiement: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="non_payee">Non payée</option>
+                    <option value="partiel">Partiel</option>
+                    <option value="paye">Payée</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date début</label>
+                  <input
+                    type="date"
+                    value={editModal.date_debut?.split("T")[0]}
+                    onChange={(e) => setEditModal({ ...editModal, date_debut: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date fin</label>
+                  <input
+                    type="date"
+                    value={editModal.date_fin?.split("T")[0]}
+                    onChange={(e) => setEditModal({ ...editModal, date_fin: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setEditModal(null)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">Annuler</button>
+              <button onClick={() => handleUpdate(editModal)} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DELETE */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center">
+            <div className="text-4xl mb-3">⚠️</div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Supprimer la campagne ?</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              "{deleteConfirm.nom}" sera définitivement supprimée.
+            </p>
+            <div className="flex justify-center gap-3">
+              <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">Annuler</button>
+              <button onClick={() => handleDelete(deleteConfirm.id)} className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition">Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOAST */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 bg-gray-900 text-white px-5 py-3 rounded-lg shadow-lg text-sm font-medium animate-bounce z-50">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}

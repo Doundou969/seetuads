@@ -1,0 +1,42 @@
+import { prisma } from "@/lib/prisma";
+import { CampaignForm } from "./campaign-form";
+
+export const dynamic = 'force-dynamic';
+
+export default async function NewCampaignPage() {
+  const [screens, pricingRules] = await Promise.all([
+    prisma.screen.findMany({
+      include: { location: true, zone: true },
+    }),
+    prisma.pricingRule.findMany({
+      include: { zone: true, screen: true },
+    }),
+  ]);
+
+  const formattedScreens = screens.map((s) => ({
+    id: s.id,
+    screenCode: s.screenCode,
+    name: s.name,
+    location: s.location ? { name: s.location.name } : null,
+    zone: s.zone ? { name: s.zone.name, id: s.zone.id } : null,
+    monthlyPartnerFee: Number(s.monthlyPartnerFee),
+  }));
+
+  const formattedPricingRules = pricingRules.map((pr) => ({
+    id: pr.id,
+    zoneId: pr.zoneId,
+    screenId: pr.screenId,
+    basePrice: Number(pr.basePrice),
+    durationMultiplier: Number(pr.durationMultiplier),
+    frequencyMultiplier: Number(pr.frequencyMultiplier),
+    zoneMultiplier: Number(pr.zoneMultiplier),
+  }));
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">Nouvelle campagne</h1>
+      <p className="text-gray-600 mb-6">Creez une campagne et selectionnez vos ecrans</p>
+      <CampaignForm screens={formattedScreens} pricingRules={formattedPricingRules} />
+    </div>
+  );
+}
