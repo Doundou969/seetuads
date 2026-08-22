@@ -1,3 +1,6 @@
+# app/player/player-view.tsx
+
+```tsx
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -59,10 +62,11 @@ export default function PlayerView() {
 
       const data = await res.json();
 
-      const playlistItems: PlaylistItem[] =
-        Array.isArray(data.playlist?.items)
-          ? data.playlist.items
-          : [];
+      const playlistItems: PlaylistItem[] = Array.isArray(
+        data.playlist?.items
+      )
+        ? data.playlist.items
+        : [];
 
       if (playlistItems.length > 0) {
         setItems((previousItems) => {
@@ -140,10 +144,8 @@ export default function PlayerView() {
       }
     };
 
-    // Premier heartbeat immÃ©diatement
     sendHeartbeat();
 
-    // Puis toutes les 30 secondes
     const interval = setInterval(() => {
       sendHeartbeat();
     }, 30000);
@@ -156,37 +158,32 @@ export default function PlayerView() {
   /*
    * ============================================================
    * FULLSCREEN
+   *
+   * IMPORTANT :
+   * Le navigateur interdit requestFullscreen() automatique.
+   * Le fullscreen doit être déclenché directement par un clic.
    * ============================================================
    */
 
-  useEffect(() => {
-    const goFullscreen = async () => {
-      const element = containerRef.current;
+  const goFullscreen = useCallback(async () => {
+    const element = containerRef.current;
 
-      if (
-        element &&
-        document.fullscreenEnabled &&
-        !document.fullscreenElement
-      ) {
-        try {
-          await element.requestFullscreen();
-        } catch {
-          // Le navigateur peut bloquer le fullscreen automatique.
-        }
-      }
-    };
+    if (!element) return;
 
-    goFullscreen();
+    if (!document.fullscreenEnabled) {
+      console.warn("Fullscreen non supporté par ce navigateur");
+      return;
+    }
 
-    const handleClick = () => {
-      goFullscreen();
-    };
+    if (document.fullscreenElement) {
+      return;
+    }
 
-    document.addEventListener("click", handleClick);
-
-    return () => {
-      document.removeEventListener("click", handleClick);
-    };
+    try {
+      await element.requestFullscreen();
+    } catch (err) {
+      console.warn("Impossible d'activer le fullscreen:", err);
+    }
   }, []);
 
   /*
@@ -290,7 +287,7 @@ export default function PlayerView() {
       return;
     }
 
-    // Les vidÃ©os sont gÃ©rÃ©es par onEnded.
+    // Les vidéos sont gérées par onEnded.
     if (currentItem.media.fileType === "video") {
       return;
     }
@@ -308,7 +305,7 @@ export default function PlayerView() {
       const duration =
         (Date.now() - startedAt.getTime()) / 1000;
 
-      logPlayback(startedAt, duration);
+      logPlayback(startedAt, duration, "PLAYED");
 
       goNext();
     }, durationSeconds * 1000);
@@ -342,11 +339,9 @@ export default function PlayerView() {
 
     video.currentTime = 0;
 
-    video
-      .play()
-      .catch((error) => {
-        console.warn("Autoplay bloquÃ©:", error);
-      });
+    video.play().catch((error) => {
+      console.warn("Autoplay bloqué:", error);
+    });
   }, [currentItem]);
 
   /*
@@ -364,7 +359,7 @@ export default function PlayerView() {
           </div>
 
           <div className="text-lg text-red-400">
-            ParamÃ¨tres manquants
+            Paramètres manquants
           </div>
 
           <div className="mt-4 text-sm text-gray-400">
@@ -433,22 +428,25 @@ export default function PlayerView() {
     <div
       ref={containerRef}
       className="relative flex h-screen w-screen cursor-none items-center justify-center overflow-hidden bg-black"
-      onClick={() => {
-        if (
-          containerRef.current &&
-          document.fullscreenEnabled &&
-          !document.fullscreenElement
-        ) {
-          containerRef.current
-            .requestFullscreen()
-            .catch(() => {});
-        }
-      }}
+      onClick={goFullscreen}
     >
+      {!document.fullscreenElement && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            goFullscreen();
+          }}
+          className="absolute right-4 top-4 z-50 rounded bg-black/60 px-4 py-2 text-sm text-white"
+        >
+          Plein écran
+        </button>
+      )}
+
       {currentItem?.media.fileType === "video" ? (
         <video
           ref={videoRef}
-          key={currentItem.media.id}
+          key={currentItem.id}
           src={currentItem.media.fileUrl}
           autoPlay
           muted
@@ -465,7 +463,7 @@ export default function PlayerView() {
               const duration =
                 (Date.now() - startedAt.getTime()) / 1000;
 
-              logPlayback(startedAt, duration);
+              logPlayback(startedAt, duration, "PLAYED");
             }
 
             startTimeRef.current = null;
@@ -474,7 +472,7 @@ export default function PlayerView() {
           }}
           onError={(event) => {
             console.error(
-              "Erreur lecture video:",
+              "Erreur lecture vidéo:",
               event
             );
 
@@ -506,7 +504,7 @@ export default function PlayerView() {
         />
       ) : (
         <img
-          key={currentItem?.media.id}
+          key={currentItem?.id}
           src={currentItem?.media.fileUrl}
           alt={currentItem?.media.name || "SeetuAds"}
           className="h-full w-full object-contain"
@@ -515,6 +513,17 @@ export default function PlayerView() {
               "Erreur chargement image:",
               event
             );
+
+            const startedAt =
+              startTimeRef.current ?? new Date();
+
+            logPlayback(
+              startedAt,
+              0,
+              "FAILED"
+            );
+
+            startTimeRef.current = null;
 
             setTimeout(() => {
               goNext();
@@ -525,3 +534,4 @@ export default function PlayerView() {
     </div>
   );
 }
+```
