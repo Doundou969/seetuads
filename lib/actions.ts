@@ -658,6 +658,117 @@ export async function createCampaign(formData: FormData) {
   });
 
   
+  // --------------------------------------------------------------------------
+  // MÉDIAS
+  // --------------------------------------------------------------------------
+
+  await prisma.campaignMedia.createMany({
+    data: mediaIds.map((mediaId, index) => ({
+      campaignId: campaign.id,
+      mediaId,
+      displayOrder: index + 1,
+      durationSeconds: spotDuration,
+    })),
+  });
+
+  revalidatePath("/admin/campaigns");
+  revalidatePath("/admin/campaigns/new");
+
+  redirect("/admin/campaigns");
+}
+
+async function getAuthorizedCampaign(
+  id: string
+) {
+  const user = await requireAuth();
+
+  if (!id) {
+    throw new Error("Campagne introuvable.");
+  }
+
+  // ADMIN / OPERATOR :
+  // accès aux campagnes de tous les annonceurs.
+  if (
+    user.role === "ADMIN" ||
+    user.role === "OPERATOR"
+  ) {
+    const campaign =
+      await prisma.campaign.findUnique({
+        where: { id },
+        include: {
+          advertiser: {
+            select: {
+              id: true,
+              companyName: true,
+              status: true,
+            },
+          },
+          campaignScreens: {
+            include: {
+              screen: true,
+            },
+          },
+          campaignMedia: {
+            include: {
+              media: true,
+            },
+          },
+        },
+      });
+
+    if (!campaign) {
+      throw new Error("Campagne introuvable.");
+    }
+
+    return {
+      user,
+      campaign,
+    };
+  }
+
+  // ANNONCEUR :
+  // accès uniquement à ses propres campagnes.
+  if (!user.advertiser) {
+    throw new Error(
+      "Accès réservé aux annonceurs."
+    );
+  }
+
+  const campaign =
+    await prisma.campaign.findFirst({
+      where: {
+        id,
+        advertiserId: user.advertiser.id,
+      },
+      include: {
+        advertiser: {
+          select: {
+            id: true,
+            companyName: true,
+            status: true,
+          },
+        },
+        campaignScreens: {
+          include: {
+            screen: true,
+          },
+        },
+        campaignMedia: {
+          include: {
+            media: true,
+          },
+        },
+      },
+    });
+
+  if (!campaign) {
+    throw new Error("Campagne introuvable.");
+  }
+
+  return {
+    user,
+    campaign,
+  };
 }
 
 // ============================================================================
@@ -742,14 +853,54 @@ export async function createMedia(formData: FormData) {
     "image/jpeg",
     "image/png",
     "image/webp",
-  ];
+  ] as const;
+
+  const mimeByExtension: Record<string, string> = {
+    mp4: "video/mp4",
+    m4v: "video/mp4",
+    webm: "video/webm",
+    mov: "video/quicktime",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+  };
+
+  const normalizedMimeType = mimeType
+    .toLowerCase()
+    .split(";")[0]
+    .trim();
+
+  let resolvedMimeType = normalizedMimeType;
 
   if (
-    !mimeType ||
-    !allowedMimeTypes.includes(mimeType)
+    !allowedMimeTypes.includes(
+      resolvedMimeType as (typeof allowedMimeTypes)[number]
+    )
+  ) {
+    const cleanUrl = fileUrl
+      .split("?")[0]
+      .split("#")[0];
+
+    const extension = cleanUrl
+      .split(".")
+      .pop()
+      ?.toLowerCase();
+
+    if (extension && mimeByExtension[extension]) {
+      resolvedMimeType = mimeByExtension[extension];
+    }
+  }
+
+  if (
+    !allowedMimeTypes.includes(
+      resolvedMimeType as (typeof allowedMimeTypes)[number]
+    )
   ) {
     throw new Error(
-      "Le type MIME du média est invalide."
+      `Le type MIME du média est invalide : ${
+        mimeType || "non renseigné"
+      }.`
     );
   }
 
@@ -844,7 +995,7 @@ export async function createMedia(formData: FormData) {
       name,
       fileUrl,
       fileType,
-      mimeType,
+      mimeType: resolvedMimeType,
       durationSeconds,
       widthPx,
       heightPx,
@@ -864,11 +1015,162 @@ export async function createMedia(formData: FormData) {
       : "/admin/media"
   );
 }
-// ============================================================================
-// MEDIA APPROVAL
-// ============================================================================
 
-export async function approveMedia(id: string) {
+
+export async function deleteCampaign(
+  id: string
+) {
+  await getAuthorizedCampaign(id);
+
+  await prisma.campaign.delete({
+    where: { id },
+  });
+
+  revalidatePath("/admin/campaigns");
+  revalidatePath("/advertiser/campaigns");
+}
+
+
+export async function activateCampaign(
+  id: string
+) {
+  const { campaign } =
+    await getAuthorizedCampaign(id);
+
+  if (
+    campaign.campaignMedia.length === 0
+  ) {
+    throw new Error(
+      "La campagne doit contenir au moins un média."
+    );
+  }
+
+  const unapprovedMedia =
+    campaign.campaignMedia.find(
+      (campaignMedia) =>
+        campaignMedia.media.status !==
+        "APPROVED"
+    );
+
+  if (unapprovedMedia) {
+    throw new Error(
+      `Le média "${unapprovedMedia.media.name}" n'est pas approuvé.`
+    );
+  }
+
+  if (
+    campaign.campaignScreens.length === 0
+  ) {
+    throw new Error(
+      "La campagne doit contenir au moins un écran."
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // CRÉATION DES PLAYLISTS
+  // --------------------------------------------------------------------------
+
+  for (const campaignScreen of
+    campaign.campaignScreens) {
+    const lastPlaylist =
+      await prisma.playlist.findFirst({
+        where: {
+          screenId:
+            campaignScreen.screenId,
+        },
+        orderBy: {
+          version: "desc",
+        },
+      });
+
+    const newVersion =
+      (lastPlaylist?.version || 0) + 1;
+
+    const playlist =
+      await prisma.playlist.create({
+        data: {
+          screenId:
+            campaignScreen.screenId,
+          version: newVersion,
+          status: "ACTIVE",
+          publishedAt: new Date(),
+        },
+      });
+
+    for (const campaignMedia of
+      campaign.campaignMedia) {
+      await prisma.playlistItem.create({
+        data: {
+          playlistId: playlist.id,
+          campaignId: campaign.id,
+          mediaId: campaignMedia.mediaId,
+          position:
+            campaignMedia.displayOrder,
+          durationSeconds:
+            campaignMedia.durationSeconds,
+          startDate: campaign.startDate,
+          endDate: campaign.endDate,
+        },
+      });
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // ACTIVATION
+  // --------------------------------------------------------------------------
+
+  await prisma.campaign.update({
+    where: {
+      id: campaign.id,
+    },
+    data: {
+      status: "ACTIVE",
+    },
+  });
+
+  revalidatePath("/admin/campaigns");
+  revalidatePath("/advertiser/campaigns");
+}
+
+
+export async function deleteMedia(
+  id: string
+) {
+  const { advertiser } =
+    await requireAdvertiser();
+
+  if (!id) {
+    throw new Error("Média introuvable.");
+  }
+
+  const media =
+    await prisma.media.findFirst({
+      where: {
+        id,
+        advertiserId: advertiser.id,
+      },
+    });
+
+  if (!media) {
+    throw new Error("Média introuvable.");
+  }
+
+  await prisma.media.delete({
+    where: {
+      id,
+    },
+  });
+
+  revalidatePath("/admin/media");
+  revalidatePath("/advertiser/media");
+}
+
+
+
+
+export async function approveMedia(
+  id: string
+) {
   const user = await requireAuth();
 
   if (
@@ -885,10 +1187,11 @@ export async function approveMedia(id: string) {
   }
 
   const media = await prisma.media.findUnique({
-    where: { id },
+    where: {
+      id,
+    },
     select: {
       id: true,
-      status: true,
     },
   });
 
@@ -896,14 +1199,10 @@ export async function approveMedia(id: string) {
     throw new Error("Média introuvable.");
   }
 
-  if (media.status === "APPROVED") {
-    throw new Error(
-      "Ce média est déjà approuvé."
-    );
-  }
-
   await prisma.media.update({
-    where: { id },
+    where: {
+      id,
+    },
     data: {
       status: "APPROVED",
     },
@@ -914,11 +1213,9 @@ export async function approveMedia(id: string) {
 }
 
 
-// ============================================================================
-// MEDIA REJECTION
-// ============================================================================
-
-export async function rejectMedia(id: string) {
+export async function rejectMedia(
+  id: string
+) {
   const user = await requireAuth();
 
   if (
@@ -926,7 +1223,7 @@ export async function rejectMedia(id: string) {
     user.role !== "OPERATOR"
   ) {
     throw new Error(
-      "Vous n'avez pas l'autorisation de refuser un média."
+      "Vous n'avez pas l'autorisation de rejeter un média."
     );
   }
 
@@ -935,10 +1232,11 @@ export async function rejectMedia(id: string) {
   }
 
   const media = await prisma.media.findUnique({
-    where: { id },
+    where: {
+      id,
+    },
     select: {
       id: true,
-      status: true,
     },
   });
 
@@ -947,7 +1245,9 @@ export async function rejectMedia(id: string) {
   }
 
   await prisma.media.update({
-    where: { id },
+    where: {
+      id,
+    },
     data: {
       status: "REJECTED",
     },
@@ -957,101 +1257,4 @@ export async function rejectMedia(id: string) {
   revalidatePath("/advertiser/media");
 }
 
-
-
-// ============================================================================
-// CAMPAIGN ACTIONS
-// ============================================================================
-
-export async function deleteCampaign(id: string) {
-  const user = await requireAuth();
-
-  if (
-    user.role !== "ADMIN" &&
-    user.role !== "OPERATOR"
-  ) {
-    throw new Error(
-      "Vous n'avez pas l'autorisation de supprimer une campagne."
-    );
-  }
-
-  if (!id) {
-    throw new Error("Campagne introuvable.");
-  }
-
-  await prisma.campaign.delete({
-    where: { id },
-  });
-
-  revalidatePath("/admin/campaigns");
-  revalidatePath("/advertiser/campaigns");
-}
-
-
-export async function activateCampaign(id: string) {
-  const user = await requireAuth();
-
-  if (
-    user.role !== "ADMIN" &&
-    user.role !== "OPERATOR"
-  ) {
-    throw new Error(
-      "Vous n'avez pas l'autorisation d'activer une campagne."
-    );
-  }
-
-  if (!id) {
-    throw new Error("Campagne introuvable.");
-  }
-
-  const campaign = await prisma.campaign.findUnique({
-    where: { id },
-    select: {
-      id: true,
-    },
-  });
-
-  if (!campaign) {
-    throw new Error("Campagne introuvable.");
-  }
-
-  await prisma.campaign.update({
-    where: { id },
-    data: {
-      status: "ACTIVE",
-    },
-  });
-
-  revalidatePath("/admin/campaigns");
-  revalidatePath("/advertiser/campaigns");
-}
-
-
-// ============================================================================
-// MEDIA ACTIONS
-// ============================================================================
-
-export async function deleteMedia(id: string) {
-  const user = await requireAuth();
-
-  if (
-    user.role !== "ADMIN" &&
-    user.role !== "OPERATOR"
-  ) {
-    throw new Error(
-      "Vous n'avez pas l'autorisation de supprimer un média."
-    );
-  }
-
-  if (!id) {
-    throw new Error("Média introuvable.");
-  }
-
-  await prisma.media.delete({
-    where: { id },
-  });
-
-  revalidatePath("/admin/media");
-  revalidatePath("/advertiser/media");
-}
 
