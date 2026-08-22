@@ -166,6 +166,34 @@ export default function PlayerView() {
 
   /*
    * ============================================================
+   * PRECHARGER LE MEDIA SUIVANT
+   * ============================================================
+   */
+
+  useEffect(() => {
+    if (items.length < 2) return;
+
+    const nextIndex = (currentIndex + 1) % items.length;
+    const nextItem = items[nextIndex];
+
+    if (!nextItem?.media?.fileUrl) return;
+
+    if (nextItem.media.fileType === "video") {
+      const video = document.createElement("video");
+
+      video.src = nextItem.media.fileUrl;
+      video.preload = "auto";
+      video.muted = true;
+      video.load();
+    } else {
+      const image = new Image();
+
+      image.src = nextItem.media.fileUrl;
+    }
+  }, [items, currentIndex]);
+
+  /*
+   * ============================================================
    * LOG PLAYBACK
    * ============================================================
    */
@@ -505,4 +533,5 @@ export default function PlayerView() {
   );
 }
 ```
+
 
