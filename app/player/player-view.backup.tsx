@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -205,52 +205,33 @@ export default function PlayerView() {
 
   const logPlayback = useCallback(
     async (startedAt: Date, duration: number) => {
-      if (!deviceId || !playerKey || !currentItem) {
-        console.warn("Playback log ignoré : données manquantes", {
-          deviceId,
-          hasPlayerKey: Boolean(playerKey),
-          hasCurrentItem: Boolean(currentItem),
-        });
-
-        return;
-      }
-
-      const payload = {
-        deviceId,
-        mediaId: currentItem.media.id,
-        startedAt: startedAt.toISOString(),
-        endedAt: new Date().toISOString(),
-        durationSeconds: Math.max(0, Math.round(duration)),
-        status: "PLAYED",
-      };
+      if (!deviceId || !playerKey || !currentItem) return;
 
       try {
-        console.log("Envoi playback log :", payload);
-
         const response = await fetch("/api/player/log", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-Player-Key": playerKey,
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            deviceId,
+            mediaId: currentItem.media.id,
+            startedAt: startedAt.toISOString(),
+            durationSeconds: Math.max(0, Math.round(duration)),
+            status: "PLAYED",
+          }),
         });
 
-        const responseText = await response.text();
-
         if (!response.ok) {
-          console.error("Erreur playback log :", {
-            status: response.status,
-            response: responseText,
-            payload,
-          });
-
-          return;
+          console.error(
+            "Erreur log playback:",
+            response.status,
+            await response.text()
+          );
         }
-
-        console.log("Playback log enregistré :", responseText);
       } catch (err) {
-        console.error("Erreur réseau playback log :", err);
+        console.error("Erreur rÃ©seau playback log:", err);
       }
     },
     [deviceId, playerKey, currentItem]

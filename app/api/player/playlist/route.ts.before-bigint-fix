@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   }
 
   if (!apiKey) {
-    return NextResponse.json({ error: "ClÃ© player requise" }, { status: 401 });
+    return NextResponse.json({ error: "Clé player requise" }, { status: 401 });
   }
 
   const player = await prisma.player.findFirst({
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
   });
 
   if (!player?.screen) {
-    return NextResponse.json({ error: "Player non autorisÃ©" }, { status: 401 });
+    return NextResponse.json({ error: "Player non autorisé" }, { status: 401 });
   }
 
   const playlist = player.screen.playlists[0];
@@ -51,15 +51,5 @@ export async function GET(req: Request) {
     );
   }
 
-  const serializedPlaylist = JSON.parse(
-  JSON.stringify(playlist, (_key, value) =>
-    typeof value === "bigint"
-      ? value.toString()
-      : value
-  )
-);
-
-return NextResponse.json({
-  playlist: serializedPlaylist,
-});
+  return NextResponse.json({ playlist });
 }

@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 
-import Link from "next/link";
 import { DataTable } from "@/components/admin/data-table";
 import { deleteCampaign, activateCampaign } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
-import { Trash2, Play, BarChart3 } from "lucide-react";
+import { Trash2, Play } from "lucide-react";
 
 type CampaignRow = Record<string, unknown> & {
   id: string;
@@ -17,9 +16,6 @@ type CampaignRow = Record<string, unknown> & {
   estimatedPrice: string;
   status: string;
   playCount: number;
-  playedToday: number;
-  failedCount: number;
-  successRate: number;
 };
 
 export function CampaignsDataTable({
@@ -38,9 +34,6 @@ export function CampaignsDataTable({
         { key: "endDate", label: "Fin" },
         { key: "estimatedPrice", label: "Prix estime (XOF)" },
         { key: "playCount", label: "Lectures" },
-        { key: "playedToday", label: "Aujourd'hui" },
-        { key: "failedCount", label: "Echecs" },
-        { key: "successRate", label: "Reussite (%)" },
         { key: "status", label: "Statut" },
       ]}
       rows={campaigns}
@@ -54,17 +47,6 @@ export function CampaignsDataTable({
 
         return (
           <div className="flex items-center gap-2 justify-end">
-            <Link href={`/admin/campaigns/${c.id}`}>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-blue-600 hover:text-blue-700"
-                title="Voir les statistiques"
-              >
-                <BarChart3 className="w-4 h-4" />
-              </Button>
-            </Link>
-
             {c.status === "DRAFT" && (
               <form
                 action={() => activateCampaign(c.id)}
@@ -87,7 +69,7 @@ export function CampaignsDataTable({
                   title={
                     canActivate
                       ? "Activer la campagne"
-                      : "Ajoutez au moins un ecran et un media avant l'activation"
+                      : "Ajoutez au moins un Ã©cran et un mÃ©dia avant l'activation"
                   }
                 >
                   <Play className="w-4 h-4" />
@@ -100,7 +82,6 @@ export function CampaignsDataTable({
                 variant="ghost"
                 size="sm"
                 className="text-red-600 hover:text-red-700"
-                title="Supprimer la campagne"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -111,3 +92,4 @@ export function CampaignsDataTable({
     />
   );
 }
+
