@@ -1,4 +1,4 @@
-# app/player/player-view.tsx
+﻿# app/player/player-view.tsx
 
 ```tsx
 "use client";
@@ -155,36 +155,6 @@ export default function PlayerView() {
     };
   }, [deviceId, playerKey]);
 
-  /*
-   * ============================================================
-   * FULLSCREEN
-   *
-   * IMPORTANT :
-   * Le navigateur interdit requestFullscreen() automatique.
-   * Le fullscreen doit être déclenché directement par un clic.
-   * ============================================================
-   */
-
-  const goFullscreen = useCallback(async () => {
-    const element = containerRef.current;
-
-    if (!element) return;
-
-    if (!document.fullscreenEnabled) {
-      console.warn("Fullscreen non supporté par ce navigateur");
-      return;
-    }
-
-    if (document.fullscreenElement) {
-      return;
-    }
-
-    try {
-      await element.requestFullscreen();
-    } catch (err) {
-      console.warn("Impossible d'activer le fullscreen:", err);
-    }
-  }, []);
 
   /*
    * ============================================================
@@ -207,7 +177,7 @@ export default function PlayerView() {
       status: "PLAYED" | "FAILED" | "INTERRUPTED" | "SKIPPED" = "PLAYED"
     ) => {
       if (!deviceId || !playerKey || !currentItem) {
-        console.warn("Playback log ignoré : données manquantes", {
+        console.warn("Playback log ignorÃ© : donnÃ©es manquantes", {
           deviceId,
           hasPlayerKey: Boolean(playerKey),
           hasCurrentItem: Boolean(currentItem),
@@ -249,9 +219,9 @@ export default function PlayerView() {
           return;
         }
 
-        console.log("Playback log enregistré :", responseText);
+        console.log("Playback log enregistrÃ© :", responseText);
       } catch (err) {
-        console.error("Erreur réseau playback log :", err);
+        console.error("Erreur rÃ©seau playback log :", err);
       }
     },
     [deviceId, playerKey, currentItem]
@@ -287,7 +257,7 @@ export default function PlayerView() {
       return;
     }
 
-    // Les vidéos sont gérées par onEnded.
+    // Les vidÃ©os sont gÃ©rÃ©es par onEnded.
     if (currentItem.media.fileType === "video") {
       return;
     }
@@ -340,7 +310,7 @@ export default function PlayerView() {
     video.currentTime = 0;
 
     video.play().catch((error) => {
-      console.warn("Autoplay bloqué:", error);
+      console.warn("Autoplay bloquÃ©:", error);
     });
   }, [currentItem]);
 
@@ -359,7 +329,7 @@ export default function PlayerView() {
           </div>
 
           <div className="text-lg text-red-400">
-            Paramètres manquants
+            ParamÃ¨tres manquants
           </div>
 
           <div className="mt-4 text-sm text-gray-400">
@@ -439,7 +409,7 @@ export default function PlayerView() {
           }}
           className="absolute right-4 top-4 z-50 rounded bg-black/60 px-4 py-2 text-sm text-white"
         >
-          Plein écran
+          Plein Ã©cran
         </button>
       )}
 
@@ -472,7 +442,7 @@ export default function PlayerView() {
           }}
           onError={(event) => {
             console.error(
-              "Erreur lecture vidéo:",
+              "Erreur lecture vidÃ©o:",
               event
             );
 
@@ -535,3 +505,4 @@ export default function PlayerView() {
   );
 }
 ```
+
