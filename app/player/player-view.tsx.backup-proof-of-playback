@@ -204,11 +204,7 @@ export default function PlayerView() {
    */
 
   const logPlayback = useCallback(
-    async (
-      startedAt: Date,
-      duration: number,
-      status: "PLAYED" | "FAILED" | "INTERRUPTED" | "SKIPPED" = "PLAYED"
-    ) => {
+    async (startedAt: Date, duration: number) => {
       if (!deviceId || !playerKey || !currentItem) {
         console.warn("Playback log ignoré : données manquantes", {
           deviceId,
@@ -225,7 +221,7 @@ export default function PlayerView() {
         startedAt: startedAt.toISOString(),
         endedAt: new Date().toISOString(),
         durationSeconds: Math.max(0, Math.round(duration)),
-        status,
+        status: "PLAYED",
       };
 
       try {
@@ -474,30 +470,9 @@ export default function PlayerView() {
           }}
           onError={(event) => {
             console.error(
-              "Erreur lecture video:",
+              "Erreur lecture vidÃ©o:",
               event
             );
-
-            const startedAt =
-              startTimeRef.current ?? new Date();
-
-            const duration =
-              startTimeRef.current
-                ? Math.max(
-                    0,
-                    (Date.now() -
-                      startTimeRef.current.getTime()) /
-                      1000
-                  )
-                : 0;
-
-            logPlayback(
-              startedAt,
-              duration,
-              "FAILED"
-            );
-
-            startTimeRef.current = null;
 
             setTimeout(() => {
               goNext();
