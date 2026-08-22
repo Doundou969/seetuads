@@ -1,6 +1,4 @@
-﻿# app/player/player-view.tsx
-
-```tsx
+﻿
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -163,6 +161,27 @@ export default function PlayerView() {
    */
 
   const currentItem = items[currentIndex];
+
+  /*
+   * ============================================================
+   * FULLSCREEN - UNIQUEMENT APRES ACTION UTILISATEUR
+   * ============================================================
+   */
+
+  const goFullscreen = useCallback(() => {
+    const element = containerRef.current;
+
+    if (!element) return;
+
+    if (document.fullscreenElement) return;
+
+    if (!document.fullscreenEnabled) return;
+
+    element.requestFullscreen().catch((error) => {
+      console.warn("Impossible d'activer le plein ecran :", error);
+    });
+  }, []);
+
 
   /*
    * ============================================================
@@ -532,7 +551,8 @@ export default function PlayerView() {
     </div>
   );
 }
-```
+
+
 
 
 
