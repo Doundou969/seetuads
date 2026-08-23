@@ -1,4 +1,5 @@
-﻿"use client";
+﻿
+"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -28,7 +29,6 @@ export default function PlayerView() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const startTimeRef = useRef<Date | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -81,7 +81,6 @@ export default function PlayerView() {
         setError("");
       } else {
         setItems([]);
-        setCurrentIndex(0);
         setError("Aucune playlist active");
       }
     } catch (err) {
@@ -154,6 +153,7 @@ export default function PlayerView() {
     };
   }, [deviceId, playerKey]);
 
+
   /*
    * ============================================================
    * CURRENT ITEM
@@ -164,34 +164,7 @@ export default function PlayerView() {
 
   /*
    * ============================================================
-   * SYNCHRONISATION FULLSCREEN
-   * ============================================================
-   */
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-    };
-
-    handleFullscreenChange();
-
-    document.addEventListener(
-      "fullscreenchange",
-      handleFullscreenChange
-    );
-
-    return () => {
-      document.removeEventListener(
-        "fullscreenchange",
-        handleFullscreenChange
-      );
-    };
-  }, []);
-
-  /*
-   * ============================================================
-   * FULLSCREEN
-   * UNIQUEMENT APRES ACTION UTILISATEUR
+   * FULLSCREEN - UNIQUEMENT APRES ACTION UTILISATEUR
    * ============================================================
    */
 
@@ -202,18 +175,13 @@ export default function PlayerView() {
 
     if (document.fullscreenElement) return;
 
-    if (!document.fullscreenEnabled) {
-      console.warn("Le plein écran n'est pas disponible.");
-      return;
-    }
+    if (!document.fullscreenEnabled) return;
 
-    element.requestFullscreen().catch((fullscreenError) => {
-      console.warn(
-        "Impossible d'activer le plein écran :",
-        fullscreenError
-      );
+    element.requestFullscreen().catch((error) => {
+      console.warn("Impossible d'activer le plein ecran :", error);
     });
   }, []);
+
 
   /*
    * ============================================================
@@ -230,25 +198,17 @@ export default function PlayerView() {
     if (!nextItem?.media?.fileUrl) return;
 
     if (nextItem.media.fileType === "video") {
-      const nextVideo = document.createElement("video");
+      const video = document.createElement("video");
 
-      nextVideo.src = nextItem.media.fileUrl;
-      nextVideo.preload = "auto";
-      nextVideo.muted = true;
-      nextVideo.defaultMuted = true;
-      nextVideo.playsInline = true;
+      video.src = nextItem.media.fileUrl;
+      video.preload = "auto";
+      video.muted = true;
+      video.load();
+    } else {
+      const image = new Image();
 
-      nextVideo.load();
-
-      return () => {
-        nextVideo.pause();
-        nextVideo.removeAttribute("src");
-        nextVideo.load();
-      };
+      image.src = nextItem.media.fileUrl;
     }
-
-    const nextImage = new Image();
-    nextImage.src = nextItem.media.fileUrl;
   }, [items, currentIndex]);
 
   /*
@@ -264,7 +224,7 @@ export default function PlayerView() {
       status: "PLAYED" | "FAILED" | "INTERRUPTED" | "SKIPPED" = "PLAYED"
     ) => {
       if (!deviceId || !playerKey || !currentItem) {
-        console.warn("Playback log ignoré : données manquantes", {
+        console.warn("Playback log ignorÃ© : donnÃ©es manquantes", {
           deviceId,
           hasPlayerKey: Boolean(playerKey),
           hasCurrentItem: Boolean(currentItem),
@@ -306,9 +266,9 @@ export default function PlayerView() {
           return;
         }
 
-        console.log("Playback log enregistré :", responseText);
+        console.log("Playback log enregistrÃ© :", responseText);
       } catch (err) {
-        console.error("Erreur réseau playback log :", err);
+        console.error("Erreur rÃ©seau playback log :", err);
       }
     },
     [deviceId, playerKey, currentItem]
@@ -340,9 +300,11 @@ export default function PlayerView() {
       timerRef.current = null;
     }
 
-    if (!currentItem) return;
+    if (!currentItem) {
+      return;
+    }
 
-    // Les vidéos sont gérées par onEnded.
+    // Les vidÃ©os sont gÃ©rÃ©es par onEnded.
     if (currentItem.media.fileType === "video") {
       return;
     }
@@ -362,8 +324,6 @@ export default function PlayerView() {
 
       logPlayback(startedAt, duration, "PLAYED");
 
-      startTimeRef.current = null;
-
       goNext();
     }, durationSeconds * 1000);
 
@@ -377,12 +337,7 @@ export default function PlayerView() {
 
   /*
    * ============================================================
-   * LANCER LA VIDEO
-   *
-   * IMPORTANT :
-   * - Pas d'autoPlay dans la balise JSX
-   * - Un seul appel contrôlé à play()
-   * - AbortError ignoré lorsqu'un changement de média interrompt play()
+   * REINITIALISER UNE VIDEO QUAND L'INDEX CHANGE
    * ============================================================
    */
 
@@ -393,68 +348,18 @@ export default function PlayerView() {
       return;
     }
 
+    startTimeRef.current = null;
+
     const video = videoRef.current;
 
     if (!video) return;
 
-    let cancelled = false;
+    video.currentTime = 0;
 
-    startTimeRef.current = null;
-
-    const playVideo = async () => {
-      if (cancelled) return;
-
-      try {
-        video.muted = true;
-        video.defaultMuted = true;
-        video.volume = 0;
-        video.playsInline = true;
-
-        await video.play();
-      } catch (playError) {
-        if (cancelled) return;
-
-        if (
-          playError instanceof DOMException &&
-          playError.name === "AbortError"
-        ) {
-          // Un changement de média ou une pause navigateur
-          // peut interrompre play(). Ce n'est pas une erreur critique.
-          return;
-        }
-
-        console.warn(
-          "Impossible de démarrer la vidéo :",
-          playError
-        );
-      }
-    };
-
-    const handleCanPlay = () => {
-      playVideo();
-    };
-
-    if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
-      playVideo();
-    } else {
-      video.addEventListener(
-        "canplay",
-        handleCanPlay,
-        { once: true }
-      );
-
-      video.load();
-    }
-
-    return () => {
-      cancelled = true;
-
-      video.removeEventListener(
-        "canplay",
-        handleCanPlay
-      );
-    };
-  }, [currentItem?.id, currentItem?.media.fileType]);
+    video.play().catch((error) => {
+      console.warn("Autoplay bloquÃ©:", error);
+    });
+  }, [currentItem]);
 
   /*
    * ============================================================
@@ -471,7 +376,7 @@ export default function PlayerView() {
           </div>
 
           <div className="text-lg text-red-400">
-            Paramètres manquants
+            ParamÃ¨tres manquants
           </div>
 
           <div className="mt-4 text-sm text-gray-400">
@@ -542,7 +447,7 @@ export default function PlayerView() {
       className="relative flex h-screen w-screen cursor-none items-center justify-center overflow-hidden bg-black"
       onClick={goFullscreen}
     >
-      {!isFullscreen && (
+      {!document.fullscreenElement && (
         <button
           type="button"
           onClick={(event) => {
@@ -551,7 +456,7 @@ export default function PlayerView() {
           }}
           className="absolute right-4 top-4 z-50 rounded bg-black/60 px-4 py-2 text-sm text-white"
         >
-          Plein écran
+          Plein Ã©cran
         </button>
       )}
 
@@ -560,21 +465,13 @@ export default function PlayerView() {
           ref={videoRef}
           key={currentItem.id}
           src={currentItem.media.fileUrl}
+          autoPlay
           muted
           playsInline
           preload="auto"
           className="h-full w-full object-contain"
-          onLoadedMetadata={(event) => {
-            const video = event.currentTarget;
-
-            video.muted = true;
-            video.defaultMuted = true;
-            video.volume = 0;
-          }}
           onPlay={() => {
-            if (!startTimeRef.current) {
-              startTimeRef.current = new Date();
-            }
+            startTimeRef.current = new Date();
           }}
           onEnded={() => {
             const startedAt = startTimeRef.current;
@@ -583,11 +480,7 @@ export default function PlayerView() {
               const duration =
                 (Date.now() - startedAt.getTime()) / 1000;
 
-              logPlayback(
-                startedAt,
-                duration,
-                "PLAYED"
-              );
+              logPlayback(startedAt, duration, "PLAYED");
             }
 
             startTimeRef.current = null;
@@ -596,8 +489,8 @@ export default function PlayerView() {
           }}
           onError={(event) => {
             console.error(
-              "Erreur lecture vidéo:",
-              event.currentTarget.error
+              "Erreur lecture vidÃ©o:",
+              event
             );
 
             const startedAt =
@@ -626,11 +519,11 @@ export default function PlayerView() {
             }, 3000);
           }}
         />
-      ) : currentItem ? (
+      ) : (
         <img
-          key={currentItem.id}
-          src={currentItem.media.fileUrl}
-          alt={currentItem.media.name || "SeetuAds"}
+          key={currentItem?.id}
+          src={currentItem?.media.fileUrl}
+          alt={currentItem?.media.name || "SeetuAds"}
           className="h-full w-full object-contain"
           onError={(event) => {
             console.error(
@@ -654,11 +547,12 @@ export default function PlayerView() {
             }, 3000);
           }}
         />
-      ) : (
-        <div className="text-white">
-          Aucun média à afficher
-        </div>
       )}
     </div>
   );
 }
+
+
+
+
+
