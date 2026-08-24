@@ -44,22 +44,11 @@ export async function GET(req: Request) {
               },
               include: {
                 items: {
-                  where: {
-                    startDate: {
-                      lte: now,
-                    },
-                    endDate: {
-                      gte: now,
-                    },
-                    media: {
-                      status: "APPROVED",
-                    },
+                  include: {
+                    media: true,
                   },
                   orderBy: {
                     position: "asc",
-                  },
-                  include: {
-                    media: true,
                   },
                 },
               },
@@ -85,15 +74,54 @@ export async function GET(req: Request) {
       );
     }
 
-    // Fusionne uniquement les publicités actuellement actives.
+    // Fusionne toutes les publicités des playlists actives,
+    // puis filtre précisément celles qui sont actuellement diffusables.
     const items = playlists
-      .flatMap((playlist) =>
-        playlist.items.map((item) => ({
-          ...item,
-          playlistId: playlist.id,
-        }))
-      )
-      .sort((a, b) => a.position - b.position);
+  .flatMap((playlist) =>
+    playlist.items
+      .filter((item) => {
+        // Le média doit être approuvé.
+        if (item.media.status !== "APPROVED") {
+          return false;
+        }
+
+        // Si une date de début existe,
+        // la publicité ne doit pas commencer dans le futur.
+        if (item.startDate) {
+          const startDate = new Date(item.startDate);
+
+          if (startDate.getTime() > now.getTime()) {
+            return false;
+          }
+        }
+
+        // Si aucune date de fin n'existe,
+        // la publicité reste active.
+        if (!item.endDate) {
+          return true;
+        }
+
+        const endDate = new Date(item.endDate);
+
+        // Une date enregistrée à minuit signifie
+        // que la publicité reste active toute cette journée.
+        if (
+          endDate.getHours() === 0 &&
+          endDate.getMinutes() === 0 &&
+          endDate.getSeconds() === 0 &&
+          endDate.getMilliseconds() === 0
+        ) {
+          endDate.setHours(23, 59, 59, 999);
+        }
+
+        return endDate.getTime() >= now.getTime();
+      })
+      .map((item) => ({
+        ...item,
+        playlistId: playlist.id,
+      }))
+  )
+  .sort((a, b) => a.position - b.position);
 
     if (items.length === 0) {
       return NextResponse.json(
@@ -127,8 +155,11 @@ export async function GET(req: Request) {
     console.error("Erreur récupération playlist player :", error);
 
     return NextResponse.json(
-      { error: "Erreur serveur lors de la récupération des publicités" },
+      {
+        error: "Erreur serveur lors de la récupération des publicités",
+      },
       { status: 500 }
     );
   }
 }
+
