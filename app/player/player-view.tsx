@@ -329,51 +329,66 @@ export default function PlayerView() {
   }, [items.length]);
 
   /*
-   * ============================================================
-   * TIMER IMAGE
-   * ============================================================
-   */
+ * ============================================================
+ * TIMER TOUS MÉDIAS
+ * ============================================================
+ *
+ * Chaque média possède un timer de sécurité.
+ *
+ * - Image : passage automatique après durationSeconds.
+ * - Vidéo : le timer sert de secours si onEnded ne se déclenche pas.
+ * - Le timer est nettoyé à chaque changement de média.
+ * ============================================================
+ */
 
-  useEffect(() => {
+useEffect(() => {
+  if (timerRef.current) {
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }
+
+  if (!currentItem) return;
+
+  const startedAt = new Date();
+
+  startTimeRef.current = startedAt;
+
+  const durationSeconds =
+    currentItem.durationSeconds > 0
+      ? currentItem.durationSeconds
+      : 15;
+
+  console.log(
+    "Timer média démarré :",
+    currentItem.media.name,
+    durationSeconds,
+    "secondes"
+  );
+
+  timerRef.current = setTimeout(() => {
+    const duration =
+      (Date.now() - startedAt.getTime()) / 1000;
+
+    console.log(
+      "Timer média terminé, passage au média suivant :",
+      currentItem.media.name
+    );
+
+    logPlayback(startedAt, duration, "PLAYED");
+
+    startTimeRef.current = null;
+    timerRef.current = null;
+
+    goNext();
+  }, durationSeconds * 1000);
+
+  return () => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-
-    if (!currentItem) return;
-
-    // Les vidéos sont gérées par onEnded.
-    if (currentItem.media.fileType === "video") {
-      return;
-    }
-
-    const startedAt = new Date();
-
-    startTimeRef.current = startedAt;
-
-    const durationSeconds =
-      currentItem.durationSeconds > 0
-        ? currentItem.durationSeconds
-        : 15;
-
-    timerRef.current = setTimeout(() => {
-      const duration =
-        (Date.now() - startedAt.getTime()) / 1000;
-
-      logPlayback(startedAt, duration, "PLAYED");
-
-      startTimeRef.current = null;
-
-      goNext();
-    }, durationSeconds * 1000);
-
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [currentItem, goNext, logPlayback]);
+  };
+}, [currentItem, goNext, logPlayback]);
 
   /*
    * ============================================================
