@@ -30,6 +30,17 @@ export default function PlayerView() {
   const [error, setError] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const itemsRef = useRef<PlaylistItem[]>([]);
+  const currentIndexRef = useRef(0);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
+
   const startTimeRef = useRef<Date | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -67,25 +78,23 @@ export default function PlayerView() {
         : [];
 
       if (playlistItems.length > 0) {
-        setItems((previousItems) => {
-          const newIds = playlistItems.map((item) => item.id).join(",");
-          const oldIds = previousItems.map((item) => item.id).join(",");
+        const previousItems = itemsRef.current;
+        const previousIndex = currentIndexRef.current;
 
-          if (newIds !== oldIds) {
-            const currentItemId = previousItems[currentIndex]?.id;
+        const newIds = playlistItems.map((item) => item.id).join(",");
+        const oldIds = previousItems.map((item) => item.id).join(",");
 
-            const newCurrentIndex = playlistItems.findIndex(
-              (item) => item.id === currentItemId
-            );
+        if (newIds !== oldIds) {
+          const currentItemId = previousItems[previousIndex]?.id;
 
-            setCurrentIndex(
-              newCurrentIndex >= 0 ? newCurrentIndex : 0
-            );
-          }
+          const newCurrentIndex = playlistItems.findIndex(
+            (item) => item.id === currentItemId
+          );
 
-          return playlistItems;
-        });
+          setCurrentIndex(newCurrentIndex >= 0 ? newCurrentIndex : 0);
+        }
 
+        setItems(playlistItems);
         setError("");
       } else {
         setItems([]);
@@ -95,17 +104,13 @@ export default function PlayerView() {
     } catch (err) {
       console.error("Erreur playlist:", err);
 
-      setError((previousError) => {
-        if (items.length === 0) {
-          return "Erreur de connexion au serveur";
-        }
-
-        return previousError;
-      });
+      if (itemsRef.current.length === 0) {
+        setError("Erreur de connexion au serveur");
+      }
     } finally {
       setLoading(false);
     }
-  }, [deviceId, playerKey, items.length]);
+  }, [deviceId, playerKey]);
 
   /*
    * ============================================================
@@ -698,6 +703,7 @@ useEffect(() => {
     </div>
   );
 }
+
 
 
 
