@@ -592,6 +592,11 @@ useEffect(() => {
             }
           }}
           onEnded={() => {
+            if (timerRef.current) {
+              clearTimeout(timerRef.current);
+              timerRef.current = null;
+            }
+
             const startedAt = startTimeRef.current;
 
             if (startedAt) {
@@ -610,8 +615,12 @@ useEffect(() => {
             goNext();
           }}
           onError={(event) => {
-            console.error(
-              "Erreur lecture vidéo:",
+            if (timerRef.current) {
+              clearTimeout(timerRef.current);
+              timerRef.current = null;
+            }
+
+            console.error(              "Erreur lecture vidéo:",
               event.currentTarget.error
             );
 
@@ -648,8 +657,12 @@ useEffect(() => {
           alt={currentItem.media.name || "SeetuAds"}
           className="h-full w-full object-contain"
           onError={(event) => {
-            console.error(
-              "Erreur chargement image:",
+            if (timerRef.current) {
+              clearTimeout(timerRef.current);
+              timerRef.current = null;
+            }
+
+            console.error(              "Erreur chargement image:",
               event
             );
 
@@ -677,3 +690,4 @@ useEffect(() => {
     </div>
   );
 }
+
