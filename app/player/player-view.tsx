@@ -72,7 +72,15 @@ export default function PlayerView() {
           const oldIds = previousItems.map((item) => item.id).join(",");
 
           if (newIds !== oldIds) {
-            setCurrentIndex(0);
+            const currentItemId = previousItems[currentIndex]?.id;
+
+            const newCurrentIndex = playlistItems.findIndex(
+              (item) => item.id === currentItemId
+            );
+
+            setCurrentIndex(
+              newCurrentIndex >= 0 ? newCurrentIndex : 0
+            );
           }
 
           return playlistItems;
@@ -690,4 +698,5 @@ useEffect(() => {
     </div>
   );
 }
+
 
