@@ -25,6 +25,8 @@ export async function GET(req: Request) {
       );
     }
 
+    const now = new Date();
+
     const player = await prisma.player.findFirst({
       where: {
         deviceId,
@@ -42,6 +44,17 @@ export async function GET(req: Request) {
               },
               include: {
                 items: {
+                  where: {
+                    startDate: {
+                      lte: now,
+                    },
+                    endDate: {
+                      gte: now,
+                    },
+                    media: {
+                      status: "APPROVED",
+                    },
+                  },
                   orderBy: {
                     position: "asc",
                   },
@@ -72,17 +85,22 @@ export async function GET(req: Request) {
       );
     }
 
-    // Fusionne toutes les publicités de toutes les playlists actives.
-    const items = playlists.flatMap((playlist) =>
-      playlist.items.map((item) => ({
-        ...item,
-        playlistId: playlist.id,
-      }))
-    );
+    // Fusionne uniquement les publicités actuellement actives.
+    const items = playlists
+      .flatMap((playlist) =>
+        playlist.items.map((item) => ({
+          ...item,
+          playlistId: playlist.id,
+        }))
+      )
+      .sort((a, b) => a.position - b.position);
 
     if (items.length === 0) {
       return NextResponse.json(
-        { error: "Aucune publicité dans les playlists actives" },
+        {
+          error: "Aucune publicité active actuellement",
+          serverTime: now.toISOString(),
+        },
         { status: 404 }
       );
     }
@@ -94,11 +112,11 @@ export async function GET(req: Request) {
           name: `${player.screen.name} - Multi Ads Loop`,
           items,
           playlistsCount: playlists.length,
+          activeItemsCount: items.length,
+          serverTime: now.toISOString(),
         },
         (_key, value) =>
-          typeof value === "bigint"
-            ? value.toString()
-            : value
+          typeof value === "bigint" ? value.toString() : value
       )
     );
 
