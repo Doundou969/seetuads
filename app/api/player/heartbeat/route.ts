@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!apiKey) {
-    return NextResponse.json({ error: "Clé player requise" }, { status: 401 });
+    return NextResponse.json({ error: "ClÃ© player requise" }, { status: 401 });
   }
 
   const player = await prisma.player.findFirst({
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!player) {
-    return NextResponse.json({ error: "Player non autorisé" }, { status: 401 });
+    return NextResponse.json({ error: "Player non autorisÃ©" }, { status: 401 });
   }
 
   const forwardedIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();

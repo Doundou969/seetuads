@@ -1,8 +1,8 @@
-# simulate-player-heartbeat.ps1
-
 ```powershell
 $deviceId = "DEV-PLT-001-B"
 $apiKey = "19f83dc2-540f-4c89-9cd5-1cb15ab468b0"
+
+$serverUrl = "https://seetu-ads.vercel.app"
 
 while ($true) {
     try {
@@ -18,7 +18,7 @@ while ($true) {
         } | ConvertTo-Json -Depth 10
 
         $response = Invoke-RestMethod `
-            -Uri "http://localhost:3000/api/player/heartbeat" `
+            -Uri "$serverUrl/api/player/heartbeat" `
             -Method POST `
             -ContentType "application/json" `
             -Headers @{

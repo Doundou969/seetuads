@@ -118,7 +118,7 @@ export default function PlayerView() {
 
     const interval = setInterval(() => {
       fetchPlaylist();
-    }, 30000);
+    }, 5000);
 
     return () => {
       clearInterval(interval);
@@ -698,5 +698,6 @@ useEffect(() => {
     </div>
   );
 }
+
 
 

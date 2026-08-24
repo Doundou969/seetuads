@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     if (!apiKey) {
       return NextResponse.json(
         {
-          error: "Clé player requise",
+          error: "ClÃ© player requise",
         },
         {
           status: 401,
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     if (!player) {
       return NextResponse.json(
         {
-          error: "Player non autorisé",
+          error: "Player non autorisÃ©",
         },
         {
           status: 401,
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     if (!player.screen) {
       return NextResponse.json(
         {
-          error: "Player non associé à un écran",
+          error: "Player non associÃ© Ã  un Ã©cran",
         },
         {
           status: 401,
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Média absent de la playlist active",
+            "MÃ©dia absent de la playlist active",
         },
         {
           status: 400,
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
     if (Number.isNaN(startedAt.getTime())) {
       return NextResponse.json(
         {
-          error: "Date de début invalide",
+          error: "Date de dÃ©but invalide",
         },
         {
           status: 400,
