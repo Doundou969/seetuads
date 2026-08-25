@@ -30,17 +30,6 @@ export default function PlayerView() {
   const [error, setError] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const itemsRef = useRef<PlaylistItem[]>([]);
-  const currentIndexRef = useRef(0);
-
-  useEffect(() => {
-    itemsRef.current = items;
-  }, [items]);
-
-  useEffect(() => {
-    currentIndexRef.current = currentIndex;
-  }, [currentIndex]);
-
   const startTimeRef = useRef<Date | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -78,23 +67,25 @@ export default function PlayerView() {
         : [];
 
       if (playlistItems.length > 0) {
-        const previousItems = itemsRef.current;
-        const previousIndex = currentIndexRef.current;
+        setItems((previousItems) => {
+          const newIds = playlistItems.map((item) => item.id).join(",");
+          const oldIds = previousItems.map((item) => item.id).join(",");
 
-        const newIds = playlistItems.map((item) => item.id).join(",");
-        const oldIds = previousItems.map((item) => item.id).join(",");
+          if (newIds !== oldIds) {
+            const currentItemId = previousItems[currentIndex]?.id;
 
-        if (newIds !== oldIds) {
-          const currentItemId = previousItems[previousIndex]?.id;
+            const newCurrentIndex = playlistItems.findIndex(
+              (item) => item.id === currentItemId
+            );
 
-          const newCurrentIndex = playlistItems.findIndex(
-            (item) => item.id === currentItemId
-          );
+            setCurrentIndex(
+              newCurrentIndex >= 0 ? newCurrentIndex : 0
+            );
+          }
 
-          setCurrentIndex(newCurrentIndex >= 0 ? newCurrentIndex : 0);
-        }
+          return playlistItems;
+        });
 
-        setItems(playlistItems);
         setError("");
       } else {
         setItems([]);
@@ -104,13 +95,17 @@ export default function PlayerView() {
     } catch (err) {
       console.error("Erreur playlist:", err);
 
-      if (itemsRef.current.length === 0) {
-        setError("Erreur de connexion au serveur");
-      }
+      setError((previousError) => {
+        if (items.length === 0) {
+          return "Erreur de connexion au serveur";
+        }
+
+        return previousError;
+      });
     } finally {
       setLoading(false);
     }
-  }, [deviceId, playerKey]);
+  }, [deviceId, playerKey, items.length]);
 
   /*
    * ============================================================
@@ -343,15 +338,14 @@ export default function PlayerView() {
 
   /*
  * ============================================================
- * TIMER DES IMAGES UNIQUEMENT
+ * TIMER TOUS MÉDIAS
  * ============================================================
  *
- * Les images passent automatiquement au média suivant après
- * durationSeconds.
+ * Chaque média possède un timer de sécurité.
  *
- * Les vidéos utilisent leur événement onEnded.
- * Un timer de sécurité séparé peut être ajouté pour les vidéos
- * si nécessaire.
+ * - Image : passage automatique après durationSeconds.
+ * - Vidéo : le timer sert de secours si onEnded ne se déclenche pas.
+ * - Le timer est nettoyé à chaque changement de média.
  * ============================================================
  */
 
@@ -363,11 +357,6 @@ useEffect(() => {
 
   if (!currentItem) return;
 
-  // Les vidéos sont gérées par onEnded.
-  if (currentItem.media.fileType === "video") {
-    return;
-  }
-
   const startedAt = new Date();
 
   startTimeRef.current = startedAt;
@@ -378,9 +367,8 @@ useEffect(() => {
       : 15;
 
   console.log(
-    "Image affichée :",
+    "Timer média démarré :",
     currentItem.media.name,
-    "pendant",
     durationSeconds,
     "secondes"
   );
@@ -390,7 +378,7 @@ useEffect(() => {
       (Date.now() - startedAt.getTime()) / 1000;
 
     console.log(
-      "Fin d'affichage image :",
+      "Timer média terminé, passage au média suivant :",
       currentItem.media.name
     );
 
@@ -408,14 +396,7 @@ useEffect(() => {
       timerRef.current = null;
     }
   };
-}, [
-  currentItem,
-  currentItem?.id,
-  currentItem?.media.fileType,
-  currentItem?.durationSeconds,
-  goNext,
-  logPlayback,
-]);
+}, [currentItem, goNext, logPlayback]);
 
   /*
    * ============================================================
@@ -717,7 +698,6 @@ useEffect(() => {
     </div>
   );
 }
-
 
 
 
