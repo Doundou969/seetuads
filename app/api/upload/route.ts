@@ -22,6 +22,24 @@ const MIME_EXTENSIONS: Record<string, string> = {
   "image/webp": "webp",
 };
 
+function getMimeTypeFromFilename(filename: string): string {
+  const extension = getExtension(filename);
+
+  const mimeByExtension: Record<string, string> = {
+    mp4: "video/mp4",
+    m4v: "video/mp4",
+    webm: "video/webm",
+    mov: "video/quicktime",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+  };
+
+  return extension && mimeByExtension[extension]
+    ? mimeByExtension[extension]
+    : "";
+}
 function getExtension(filename: string): string {
   const cleanName = filename.split("?")[0].split("#")[0];
   const parts = cleanName.toLowerCase().split(".");
@@ -49,9 +67,7 @@ function getSafeExtension(
     "image/webp": ["webp"],
   };
 
-  if (
-    compatibleExtensions[mimeType]?.includes(uploadedExtension)
-  ) {
+  if (compatibleExtensions[mimeType]?.includes(uploadedExtension)) {
     return uploadedExtension;
   }
 
@@ -62,59 +78,60 @@ export async function POST(req: Request) {
   try {
     await requireMediaUploader();
 
-    let file: File | null = null;
+    const contentType = req.headers.get("content-type") || "";
 
-    const contentType =
-      req.headers.get("content-type") || "";
-
-    if (contentType.includes("multipart/form-data")) {
-      const formData = await req.formData();
-      const uploaded = formData.get("file");
-
-      if (uploaded instanceof File) {
-        file = uploaded;
-      }
-    } else if (
-      contentType.startsWith("video/") ||
-      contentType.startsWith("image/")
-    ) {
-      const buffer = await req.arrayBuffer();
-
-      if (buffer.byteLength === 0) {
-        return NextResponse.json(
-          { error: "Fichier vide." },
-          { status: 400 }
-        );
-      }
-
-      const filename =
-        new URL(req.url).searchParams.get("filename") ||
-        `media-${Date.now()}`;
-
-      file = new File([buffer], filename, {
-        type: contentType,
-      });
-    }
-
-    if (!file) {
+    if (!contentType.includes("multipart/form-data")) {
       return NextResponse.json(
         {
-          error:
-            "Aucun fichier reçu. Envoyez le fichier avec le champ 'file'.",
+          success: false,
+          error: "Le fichier doit ÃƒÆ’Ã‚Âªtre envoyÃƒÆ’Ã‚Â© en multipart/form-data.",
         },
         { status: 400 }
       );
     }
 
+    const formData = await req.formData();
+    const uploaded = formData.get("file");
+
+    if (!(uploaded instanceof File)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Aucun fichier reÃƒÆ’Ã‚Â§u avec le champ 'file'.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const file = uploaded;
+
+    const normalizedMimeType = file.type
+      .toLowerCase()
+      .split(";")[0]
+      .trim();
+
+    const extensionMimeType =
+      getMimeTypeFromFilename(file.name);
+
+    const resolvedMimeType = ALLOWED_TYPES.includes(
+      normalizedMimeType as (typeof ALLOWED_TYPES)[number]
+    )
+      ? normalizedMimeType
+      : extensionMimeType;
+
     if (
       !ALLOWED_TYPES.includes(
-        file.type as (typeof ALLOWED_TYPES)[number]
+        resolvedMimeType as (typeof ALLOWED_TYPES)[number]
       )
     ) {
       return NextResponse.json(
         {
+          success: false,
           error:
-            `Type de fichier non supporté : ${file.type || "inconnu"}. Utilisez MP4, WebM, MOV, JPG, PNG ou WebP.`,
+            `Type non supportÃƒÆ’Ã‚Â© : ${
+              file.type || "inconnu"
+            }. ` +
+            "Utilisez MP4, WebM, MOV, JPG, PNG ou WebP.",
         },
         { status: 400 }
       );
@@ -123,6 +140,7 @@ export async function POST(req: Request) {
     if (file.size <= 0) {
       return NextResponse.json(
         {
+          success: false,
           error: "Le fichier est vide.",
         },
         { status: 400 }
@@ -132,58 +150,67 @@ export async function POST(req: Request) {
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
         {
-          error:
-            "Fichier trop volumineux. Taille maximale : 50 MB.",
+          success: false,
+          error: "Fichier trop volumineux. Taille maximale : 50 MB.",
         },
         { status: 400 }
       );
     }
 
-    const extension = getSafeExtension(
-      file.type,
-      file.name
-    );
+    const extension = getSafeExtension(resolvedMimeType, file.name);
 
     if (!extension) {
       return NextResponse.json(
         {
-          error:
-            "Impossible de déterminer une extension valide pour ce fichier.",
+          success: false,
+          error: "Impossible de dÃƒÆ’Ã‚Â©terminer une extension valide.",
         },
         { status: 400 }
       );
     }
 
-    const safeFilename =
-      `${crypto.randomUUID()}.${extension}`;
+    const safeFilename = `${crypto.randomUUID()}.${extension}`;
+
+    console.log("Vercel Blob upload via connected OIDC store:", {
+      filename: safeFilename,
+      mimeType: resolvedMimeType,
+      size: file.size,
+      hasStoreId: Boolean(process.env.BLOB_STORE_ID),
+    });
 
     const blob = await put(safeFilename, file, {
       access: "public",
       addRandomSuffix: true,
+      contentType: resolvedMimeType,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
+
+    console.log("Vercel Blob upload successful:", {
+      url: blob.url,
+      pathname: blob.pathname,
     });
 
     return NextResponse.json({
       success: true,
       url: blob.url,
-      name: safeFilename,
+      name: blob.pathname,
       originalName: file.name,
       size: file.size,
-      type: file.type,
+      type: resolvedMimeType,
     });
   } catch (error: unknown) {
     console.error("Upload error:", error);
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Erreur inconnue";
-
     return NextResponse.json(
       {
         success: false,
-        error: message,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Erreur inconnue",
       },
       { status: 500 }
     );
   }
 }
+
