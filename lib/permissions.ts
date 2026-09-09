@@ -6,6 +6,15 @@ import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 import crypto from "crypto";
 
+export class HttpError extends Error {
+  statusCode: number;
+
+  constructor(message: string, statusCode = 403) {
+    super(message);
+    this.name = "HttpError";
+    this.statusCode = statusCode;
+  }
+}
 const TEMP_ADVERTISER_COOKIE =
   "seetuads_advertiser_access";
 
@@ -119,7 +128,7 @@ export async function requireAuth() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("Non authentifiÃ©");
+    throw new HttpError("Non authentifié", 401);
   }
 
   return user;
@@ -173,7 +182,7 @@ export async function requireAdvertiser() {
     };
   }
 
-  throw new Error("Non authentifiÃ©");
+  throw new HttpError("Non authentifié", 401);
 }
 
 export async function requireMediaUploader() {
@@ -197,18 +206,14 @@ export async function requireMediaUploader() {
     return null;
   }
 
-  throw new Error(
-    "AccÃ¨s refusÃ© pour l'upload"
-  );
+  throw new HttpError("Accès refusé pour l'upload");
 }
 
 export async function requirePartner() {
   const user = await requireAuth();
 
   if (user.role !== "PARTNER" || !user.partner) {
-    throw new Error(
-      "Accès réservé aux partenaires"
-    );
+    throw new HttpError("Accès réservé aux partenaires");
   }
 
   return {
@@ -224,9 +229,7 @@ export async function requireAdmin() {
     user.role !== "ADMIN" &&
     user.role !== "OPERATOR"
   ) {
-    throw new Error(
-      "AccÃ¨s rÃ©servÃ© aux administrateurs"
-    );
+    throw new HttpError("Accès réservé aux administrateurs");
   }
 
   return user;

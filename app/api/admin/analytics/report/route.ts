@@ -1,6 +1,7 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { jsPDF } from "jspdf";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin, HttpError } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -55,6 +56,8 @@ function cleanMediaName(
 
 export async function GET() {
   try {
+    await requireAdmin();
+
     const now = new Date();
 
     const todayStart = new Date(
@@ -696,6 +699,13 @@ export async function GET() {
       }
     );
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: error.statusCode }
+      );
+    }
+
     console.error(
       "Erreur génération rapport PDF :",
       error

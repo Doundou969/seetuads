@@ -41,3 +41,13 @@ app-backup-*
 .env*
 
 .vercel-production.env
+
+*.backup*
+*.bak
+*.disabled
+scripts/make-admin.ts
+test-*.txt
+audit-*.js
+seetuads-test-*.txt
+test-rapport.pdf
+player-view-current.txt
