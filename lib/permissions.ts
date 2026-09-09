@@ -1,4 +1,4 @@
-import {
+﻿import {
   auth,
   currentUser,
 } from "@clerk/nextjs/server";
@@ -128,7 +128,7 @@ export async function requireAuth() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new HttpError("Non authentifié", 401);
+    throw new HttpError("Non authentifiÃ©", 401);
   }
 
   return user;
@@ -137,26 +137,18 @@ export async function requireAuth() {
 export async function requireAdvertiser() {
   const user = await getCurrentUser();
 
-  if (user?.advertiser) {
-    return {
-      user,
-      advertiser: user.advertiser,
-      temporary: false,
-    };
-  }
-
-  const temporaryAdvertiser =
-    await getAdvertiserFromTemporaryToken();
-
-  if (temporaryAdvertiser) {
-    return {
-      user: null,
-      advertiser: temporaryAdvertiser,
-      temporary: true,
-    };
-  }
-
+  // Un utilisateur reellement connecte via Clerk a toujours priorite
+  // sur un cookie d'acces temporaire, meme s'il n'a pas encore
+  // de ligne Advertiser (on la cree ici au besoin).
   if (user) {
+    if (user.advertiser) {
+      return {
+        user,
+        advertiser: user.advertiser,
+        temporary: false,
+      };
+    }
+
     const advertiser = await prisma.advertiser.create({
       data: {
         userId: user.id,
@@ -182,7 +174,20 @@ export async function requireAdvertiser() {
     };
   }
 
-  throw new HttpError("Non authentifié", 401);
+  // Pas d'utilisateur Clerk authentifie : on retombe sur le cookie
+  // d'acces temporaire (lien envoye a un annonceur sans compte).
+  const temporaryAdvertiser =
+    await getAdvertiserFromTemporaryToken();
+
+  if (temporaryAdvertiser) {
+    return {
+      user: null,
+      advertiser: temporaryAdvertiser,
+      temporary: true,
+    };
+  }
+
+  throw new HttpError("Non authentifie", 401);
 }
 
 export async function requireMediaUploader() {
@@ -206,14 +211,14 @@ export async function requireMediaUploader() {
     return null;
   }
 
-  throw new HttpError("Accès refusé pour l'upload");
+  throw new HttpError("AccÃ¨s refusÃ© pour l'upload");
 }
 
 export async function requirePartner() {
   const user = await requireAuth();
 
   if (user.role !== "PARTNER" || !user.partner) {
-    throw new HttpError("Accès réservé aux partenaires");
+    throw new HttpError("AccÃ¨s rÃ©servÃ© aux partenaires");
   }
 
   return {
@@ -229,7 +234,7 @@ export async function requireAdmin() {
     user.role !== "ADMIN" &&
     user.role !== "OPERATOR"
   ) {
-    throw new HttpError("Accès réservé aux administrateurs");
+    throw new HttpError("AccÃ¨s rÃ©servÃ© aux administrateurs");
   }
 
   return user;
@@ -239,4 +244,5 @@ export {
   TEMP_ADVERTISER_COOKIE,
   hashToken,
 };
+
 
