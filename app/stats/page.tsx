@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 import {
   Monitor,
   Play,
-  Store,
-  MapPin,
   Eye,
   Clock,
   Activity,

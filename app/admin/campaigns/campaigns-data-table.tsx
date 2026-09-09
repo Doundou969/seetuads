@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { DataTable } from "@/components/admin/data-table";
-import { deleteCampaign, activateCampaign } from "@/lib/actions";
+import { deleteCampaign, activateCampaign, deactivateCampaign, reactivateCampaign } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
-import { Trash2, Play, BarChart3 } from "lucide-react";
+import { Trash2, Play, Pause, RotateCcw, BarChart3 } from "lucide-react";
 
 type CampaignRow = Record<string, unknown> & {
   id: string;
@@ -91,6 +91,33 @@ export function CampaignsDataTable({
                   }
                 >
                   <Play className="w-4 h-4" />
+                </Button>
+              </form>
+            )}
+
+            {c.status === "PAUSED" && (
+              <form action={reactivateCampaign.bind(null, c.id)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-green-600 hover:text-green-700"
+                  type="submit"
+                  title="Réactiver la campagne"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+              </form>
+            )}
+            {c.status === "ACTIVE" && (
+              <form action={deactivateCampaign.bind(null, c.id)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-orange-600 hover:text-orange-700"
+                  type="submit"
+                  title="Desactiver la campagne"
+                >
+                  <Pause className="w-4 h-4" />
                 </Button>
               </form>
             )}

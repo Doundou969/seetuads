@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 const playbackStatuses = [
@@ -12,30 +12,14 @@ export async function POST(req: NextRequest) {
   try {
     let body: Record<string, unknown>;
 
-    /*
-     * ============================================================
-     * JSON
-     * ============================================================
-     */
-
     try {
       body = await req.json();
     } catch {
       return NextResponse.json(
-        {
-          error: "JSON invalide",
-        },
-        {
-          status: 400,
-        }
+        { error: "JSON invalide" },
+        { status: 400 }
       );
     }
-
-    /*
-     * ============================================================
-     * PARAMETRES
-     * ============================================================
-     */
 
     const deviceId =
       typeof body.deviceId === "string"
@@ -51,31 +35,17 @@ export async function POST(req: NextRequest) {
 
     if (!deviceId || !mediaId) {
       return NextResponse.json(
-        {
-          error: "deviceId et mediaId requis",
-        },
-        {
-          status: 400,
-        }
+        { error: "deviceId et mediaId requis" },
+        { status: 400 }
       );
     }
 
     if (!apiKey) {
       return NextResponse.json(
-        {
-          error: "ClÃ© player requise",
-        },
-        {
-          status: 401,
-        }
+        { error: "Clé player requise" },
+        { status: 401 }
       );
     }
-
-    /*
-     * ============================================================
-     * AUTHENTIFICATION PLAYER
-     * ============================================================
-     */
 
     const player = await prisma.player.findFirst({
       where: {
@@ -89,29 +59,23 @@ export async function POST(req: NextRequest) {
 
     if (!player) {
       return NextResponse.json(
-        {
-          error: "Player non autorisÃ©",
-        },
-        {
-          status: 401,
-        }
+        { error: "Player non autorisé" },
+        { status: 401 }
       );
     }
 
     if (!player.screen) {
       return NextResponse.json(
-        {
-          error: "Player non associÃ© Ã  un Ã©cran",
-        },
-        {
-          status: 401,
-        }
+        { error: "Player non associé à un écran" },
+        { status: 401 }
       );
     }
 
+    const screenId = player.screen.id;
+
     /*
      * ============================================================
-     * VERIFICATION MEDIA DANS PLAYLIST ACTIVE
+     * MEDIA DANS LA PLAYLIST ACTIVE
      * ============================================================
      */
 
@@ -120,30 +84,76 @@ export async function POST(req: NextRequest) {
         where: {
           mediaId,
           playlist: {
-            screenId: player.screen.id,
+            screenId,
             status: "ACTIVE",
           },
         },
+        orderBy: {
+          playlist: {
+            version: "desc",
+          },
+        },
         select: {
+          id: true,
           campaignId: true,
+          playlistId: true,
+          durationSeconds: true,
         },
       });
 
-    if (!playlistItem) {
+    /*
+     * ============================================================
+     * FALLBACK CAMPAGNE
+     * ============================================================
+     */
+
+    let campaignId: string | null =
+      playlistItem?.campaignId ?? null;
+
+    if (!campaignId) {
+      const now = new Date();
+
+      const campaignMedia =
+        await prisma.campaignMedia.findFirst({
+          where: {
+            mediaId,
+            campaign: {
+              status: "ACTIVE",
+              startDate: {
+                lte: now,
+              },
+              endDate: {
+                gte: now,
+              },
+              campaignScreens: {
+                some: {
+                  screenId,
+                  status: "ACTIVE",
+                },
+              },
+            },
+          },
+          select: {
+            campaignId: true,
+          },
+        });
+
+      campaignId = campaignMedia?.campaignId ?? null;
+    }
+
+    if (!playlistItem && !campaignId) {
       return NextResponse.json(
         {
           error:
-            "MÃ©dia absent de la playlist active",
+            "Média absent de la playlist active pour cet écran",
         },
-        {
-          status: 400,
-        }
+        { status: 400 }
       );
     }
 
     /*
      * ============================================================
-     * DATE DEBUT
+     * DATES
      * ============================================================
      */
 
@@ -154,20 +164,10 @@ export async function POST(req: NextRequest) {
 
     if (Number.isNaN(startedAt.getTime())) {
       return NextResponse.json(
-        {
-          error: "Date de dÃ©but invalide",
-        },
-        {
-          status: 400,
-        }
+        { error: "Date de début invalide" },
+        { status: 400 }
       );
     }
-
-    /*
-     * ============================================================
-     * DATE FIN
-     * ============================================================
-     */
 
     const endedAt =
       typeof body.endedAt === "string"
@@ -179,12 +179,8 @@ export async function POST(req: NextRequest) {
       Number.isNaN(endedAt.getTime())
     ) {
       return NextResponse.json(
-        {
-          error: "Date de fin invalide",
-        },
-        {
-          status: 400,
-        }
+        { error: "Date de fin invalide" },
+        { status: 400 }
       );
     }
 
@@ -207,47 +203,106 @@ export async function POST(req: NextRequest) {
 
     /*
      * ============================================================
-     * DUREE
+     * DURÉE
      * ============================================================
+     *
+     * RÈGLE IMPORTANTE :
+     *
+     * PLAYED = durée programmée de la playlist.
+     *
+     * On ne fait JAMAIS confiance à une durée PLAYED
+     * envoyée par le navigateur.
+     *
+     * Pour INTERRUPTED / FAILED / SKIPPED :
+     * on accepte la durée envoyée, mais on la borne.
      */
 
-    const durationSeconds =
+    const configuredDuration =
+      playlistItem?.durationSeconds ?? null;
+
+    const requestedDuration =
       typeof body.durationSeconds === "number" &&
       Number.isFinite(body.durationSeconds) &&
       body.durationSeconds >= 0
         ? Math.round(body.durationSeconds)
         : null;
 
+    let durationSeconds: number | null = null;
+
+    if (status === "PLAYED") {
+      if (
+        configuredDuration !== null &&
+        Number.isFinite(configuredDuration) &&
+        configuredDuration > 0
+      ) {
+        durationSeconds = Math.round(
+          configuredDuration
+        );
+      } else if (requestedDuration !== null) {
+        durationSeconds = Math.min(
+          requestedDuration,
+          86400
+        );
+      }
+    } else if (requestedDuration !== null) {
+      durationSeconds = Math.min(
+        requestedDuration,
+        configuredDuration ??
+          requestedDuration,
+        86400
+      );
+    }
+
+    /*
+     * Protection supplémentaire contre les durées absurdes.
+     */
+
+    if (
+      durationSeconds !== null &&
+      durationSeconds < 0
+    ) {
+      durationSeconds = 0;
+    }
+
     /*
      * ============================================================
-     * CREATION PLAYBACK LOG
+     * CRÉATION DU LOG
      * ============================================================
      */
 
-    const log =
-      await prisma.playbackLog.create({
-        data: {
-          playerId: player.id,
-          screenId: player.screen.id,
-          mediaId,
-          campaignId:
-            playlistItem.campaignId,
-          startedAt,
-          endedAt,
-          durationSeconds,
-          status,
-        },
-      });
+    const log = await prisma.playbackLog.create({
+      data: {
+        playerId: player.id,
+        screenId,
+        mediaId,
+        campaignId,
+        startedAt,
+        endedAt,
+        durationSeconds,
+        status,
+      },
+    });
 
-    /*
-     * ============================================================
-     * REPONSE
-     * ============================================================
-     */
+    console.log(
+      "PLAYBACK LOG ENREGISTRÉ :",
+      {
+        logId: log.id,
+        deviceId,
+        screenId,
+        mediaId,
+        campaignId,
+        status,
+        configuredDuration,
+        requestedDuration,
+        durationSeconds,
+      }
+    );
 
     return NextResponse.json({
       success: true,
       logId: log.id,
+      campaignId,
+      durationSeconds,
     });
   } catch (error) {
     console.error(
@@ -256,12 +311,9 @@ export async function POST(req: NextRequest) {
     );
 
     return NextResponse.json(
-      {
-        error: "Erreur serveur",
-      },
-      {
-        status: 500,
-      }
+      { error: "Erreur serveur" },
+      { status: 500 }
     );
   }
 }
+

@@ -15,6 +15,15 @@ interface PlaylistItem {
   };
 }
 
+type PlaybackStatus = "PLAYED" | "FAILED" | "INTERRUPTED" | "SKIPPED";
+
+const DEFAULT_DURATION_SECONDS = 15;
+const VIDEO_WATCHDOG_MIN_SECONDS = 30;
+const VIDEO_WATCHDOG_EXTRA_SECONDS = 30;
+const MEDIA_ERROR_DELAY_MS = 3000;
+const PLAYLIST_REFRESH_MS = 60000;
+const HEARTBEAT_INTERVAL_MS = 60000;
+
 export default function PlayerView() {
   const searchParams = useSearchParams();
 
@@ -33,6 +42,33 @@ export default function PlayerView() {
   const itemsRef = useRef<PlaylistItem[]>([]);
   const currentIndexRef = useRef(0);
 
+  const startTimeRef = useRef<Date | null>(null);
+
+  const imageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const watchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const configuredDurationTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorDelayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * Verrouille une transition afin d'éviter :
+   * - onEnded + timer
+   * - onError + watchdog
+   * - plusieurs événements simultanés
+   */
+  const transitionLockRef = useRef(false);
+
+  /**
+   * Identifiant de la session de lecture actuelle.
+   * Tout événement provenant d'une ancienne session est ignoré.
+   */
+  const playbackSessionRef = useRef(0);
+
+  /**
+   * Empêche plusieurs logs PLAYED/FAILED pour une même session.
+   */
+  const loggedSessionRef = useRef<number | null>(null);
+
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
@@ -41,20 +77,85 @@ export default function PlayerView() {
     currentIndexRef.current = currentIndex;
   }, [currentIndex]);
 
-  const startTimeRef = useRef<Date | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * ============================================================
+   * OUTILS
+   * ============================================================
+   */
 
-  /*
+  const getDurationSeconds = useCallback((item: PlaylistItem) => {
+    if (
+      Number.isFinite(item.durationSeconds) &&
+      item.durationSeconds > 0
+    ) {
+      return item.durationSeconds;
+    }
+
+    return DEFAULT_DURATION_SECONDS;
+  }, []);
+
+  const playlistSignature = useCallback(
+    (playlistItems: PlaylistItem[]) => {
+      return playlistItems
+        .filter(
+          (item) =>
+            item &&
+            item.id &&
+            item.media &&
+            item.media.id &&
+            item.media.fileUrl &&
+            item.media.fileType
+        )
+        .map((item) =>
+          [
+            item.id,
+            item.position ?? 0,
+            item.durationSeconds ?? DEFAULT_DURATION_SECONDS,
+            item.media.id,
+            item.media.fileUrl,
+            item.media.fileType,
+          ].join("|")
+        )
+        .join("||");
+    },
+    []
+  );
+
+  const clearPlaybackTimers = useCallback(() => {
+    if (imageTimerRef.current) {
+      clearTimeout(imageTimerRef.current);
+      imageTimerRef.current = null;
+    }
+
+    if (watchdogTimerRef.current) {
+      clearTimeout(watchdogTimerRef.current);
+      watchdogTimerRef.current = null;
+    }
+
+    if (configuredDurationTimerRef.current) {
+      clearTimeout(configuredDurationTimerRef.current);
+      configuredDurationTimerRef.current = null;
+    }
+
+    if (errorDelayTimerRef.current) {
+      clearTimeout(errorDelayTimerRef.current);
+      errorDelayTimerRef.current = null;
+    }
+  }, []);
+
+  /**
    * ============================================================
    * FETCH PLAYLIST
    * ============================================================
    */
 
   const fetchPlaylist = useCallback(async () => {
-    if (!deviceId || !playerKey) return;
+    if (!deviceId || !playerKey) {
+      return;
+    }
 
     try {
-      const res = await fetch(
+      const response = await fetch(
         `/api/player/playlist?deviceId=${encodeURIComponent(deviceId)}`,
         {
           method: "GET",
@@ -65,56 +166,146 @@ export default function PlayerView() {
         }
       );
 
-      if (!res.ok) {
-        throw new Error(`Playlist API error: ${res.status}`);
+      if (response.status === 404) {
+        clearPlaybackTimers();
+
+        playbackSessionRef.current += 1;
+        transitionLockRef.current = false;
+        loggedSessionRef.current = null;
+        startTimeRef.current = null;
+
+        setItems([]);
+        setCurrentIndex(0);
+        setError("Aucune publicité active actuellement");
+
+        return;
       }
 
-      const data = await res.json();
+      if (!response.ok) {
+        throw new Error(
+          `Playlist API error: ${response.status}`
+        );
+      }
 
-      const playlistItems: PlaylistItem[] = Array.isArray(
-        data.playlist?.items
-      )
+      const data = await response.json();
+
+      const rawPlaylistItems = Array.isArray(data.playlist?.items)
         ? data.playlist.items
         : [];
 
+      const playlistItems: PlaylistItem[] =
+        rawPlaylistItems.filter(
+          (item: unknown): item is PlaylistItem => {
+            if (!item || typeof item !== "object") {
+              return false;
+            }
+
+            const playlistItem =
+              item as Partial<PlaylistItem>;
+
+            return Boolean(
+              playlistItem.id &&
+                playlistItem.media &&
+                playlistItem.media.id &&
+                playlistItem.media.fileUrl &&
+                playlistItem.media.fileType
+            );
+          }
+        );
+
+      console.log("Playlist reçue :", {
+        total: rawPlaylistItems.length,
+        valides: playlistItems.length,
+        invalides:
+          rawPlaylistItems.length - playlistItems.length,
+      });
+
+      /**
+       * Playlist non vide.
+       */
       if (playlistItems.length > 0) {
         const previousItems = itemsRef.current;
         const previousIndex = currentIndexRef.current;
 
-        const newIds = playlistItems.map((item) => item.id).join(",");
-        const oldIds = previousItems.map((item) => item.id).join(",");
+        const oldSignature =
+          playlistSignature(previousItems);
 
-        if (newIds !== oldIds) {
-          const currentItemId = previousItems[previousIndex]?.id;
+        const newSignature =
+          playlistSignature(playlistItems);
 
-          const newCurrentIndex = playlistItems.findIndex(
-            (item) => item.id === currentItemId
-          );
+        /**
+         * On ne touche pas à l'index si la playlist
+         * est identique.
+         */
+        if (newSignature !== oldSignature) {
+          const currentItemId =
+            previousItems[previousIndex]?.id;
 
-          setCurrentIndex(newCurrentIndex >= 0 ? newCurrentIndex : 0);
+          const newCurrentIndex =
+            playlistItems.findIndex(
+              (item) => item.id === currentItemId
+            );
+
+          const safeIndex =
+            newCurrentIndex >= 0
+              ? newCurrentIndex
+              : 0;
+
+          console.log("Playlist mise à jour :", {
+            previousItems: previousItems.length,
+            newItems: playlistItems.length,
+            currentItemId,
+            newCurrentIndex: safeIndex,
+          });
+
+          setItems(playlistItems);
+          setCurrentIndex(safeIndex);
         }
 
-        setItems(playlistItems);
         setError("");
-      } else {
-        setItems([]);
-        setCurrentIndex(0);
-        setError("Aucune playlist active");
-      }
-    } catch (err) {
-      console.error("Erreur playlist:", err);
 
+        return;
+      }
+
+      /**
+       * Playlist vide.
+       */
+      if (itemsRef.current.length > 0) {
+        clearPlaybackTimers();
+
+        playbackSessionRef.current += 1;
+        transitionLockRef.current = false;
+        loggedSessionRef.current = null;
+        startTimeRef.current = null;
+      }
+
+      setItems([]);
+      setCurrentIndex(0);
+      setError("Aucune playlist active");
+    } catch (err) {
+      console.error("Erreur playlist :", err);
+
+      /**
+       * On ne remplace pas une playlist fonctionnelle
+       * par un écran d'erreur à cause d'une erreur réseau
+       * temporaire.
+       */
       if (itemsRef.current.length === 0) {
         setError("Erreur de connexion au serveur");
       }
     } finally {
       setLoading(false);
     }
-  }, [deviceId, playerKey]);
+  }, [
+    deviceId,
+    playerKey,
+    playlistSignature,
+    clearPlaybackTimers,
+  ]);
 
-  /*
+  /**
    * ============================================================
-   * PLAYLIST INITIALE + SYNCHRONISATION
+   * INITIALISATION + SYNCHRONISATION PLAYLIST
    * ============================================================
    */
 
@@ -123,36 +314,48 @@ export default function PlayerView() {
 
     const interval = setInterval(() => {
       fetchPlaylist();
-    }, 5000);
+    }, PLAYLIST_REFRESH_MS);
 
     return () => {
       clearInterval(interval);
     };
   }, [fetchPlaylist]);
 
-  /*
+  /**
    * ============================================================
    * HEARTBEAT
    * ============================================================
    */
 
   useEffect(() => {
-    if (!deviceId || !playerKey) return;
+    if (!deviceId || !playerKey) {
+      return;
+    }
 
     const sendHeartbeat = async () => {
       try {
-        await fetch("/api/player/heartbeat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Player-Key": playerKey,
-          },
-          body: JSON.stringify({
-            deviceId,
-          }),
-        });
+        const response = await fetch(
+          "/api/player/heartbeat",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Player-Key": playerKey,
+            },
+            body: JSON.stringify({
+              deviceId,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          console.warn(
+            "Heartbeat refusé :",
+            response.status
+          );
+        }
       } catch (err) {
-        console.error("Heartbeat error:", err);
+        console.error("Heartbeat error :", err);
       }
     };
 
@@ -160,14 +363,14 @@ export default function PlayerView() {
 
     const interval = setInterval(() => {
       sendHeartbeat();
-    }, 30000);
+    }, HEARTBEAT_INTERVAL_MS);
 
     return () => {
       clearInterval(interval);
     };
   }, [deviceId, playerKey]);
 
-  /*
+  /**
    * ============================================================
    * CURRENT ITEM
    * ============================================================
@@ -175,15 +378,17 @@ export default function PlayerView() {
 
   const currentItem = items[currentIndex];
 
-  /*
+  /**
    * ============================================================
-   * SYNCHRONISATION FULLSCREEN
+   * FULLSCREEN
    * ============================================================
    */
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
+      setIsFullscreen(
+        Boolean(document.fullscreenElement)
+      );
     };
 
     handleFullscreenChange();
@@ -201,22 +406,21 @@ export default function PlayerView() {
     };
   }, []);
 
-  /*
-   * ============================================================
-   * FULLSCREEN
-   * UNIQUEMENT APRES ACTION UTILISATEUR
-   * ============================================================
-   */
-
   const goFullscreen = useCallback(() => {
     const element = containerRef.current;
 
-    if (!element) return;
+    if (!element) {
+      return;
+    }
 
-    if (document.fullscreenElement) return;
+    if (document.fullscreenElement) {
+      return;
+    }
 
     if (!document.fullscreenEnabled) {
-      console.warn("Le plein écran n'est pas disponible.");
+      console.warn(
+        "Le plein écran n'est pas disponible."
+      );
       return;
     }
 
@@ -228,43 +432,49 @@ export default function PlayerView() {
     });
   }, []);
 
-  /*
+  /**
    * ============================================================
-   * PRECHARGER LE MEDIA SUIVANT
+   * PRÉCHARGEMENT DU MEDIA SUIVANT
    * ============================================================
    */
 
   useEffect(() => {
-    if (items.length < 2) return;
+    if (items.length < 2) {
+      return;
+    }
 
-    const nextIndex = (currentIndex + 1) % items.length;
+    const nextIndex =
+      (currentIndex + 1) % items.length;
+
     const nextItem = items[nextIndex];
 
-    if (!nextItem?.media?.fileUrl) return;
+    if (!nextItem?.media?.fileUrl) {
+      return;
+    }
 
     if (nextItem.media.fileType === "video") {
-      const nextVideo = document.createElement("video");
+      const video = document.createElement("video");
 
-      nextVideo.src = nextItem.media.fileUrl;
-      nextVideo.preload = "auto";
-      nextVideo.muted = true;
-      nextVideo.defaultMuted = true;
-      nextVideo.playsInline = true;
+      video.src = nextItem.media.fileUrl;
+      video.preload = "auto";
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
 
-      nextVideo.load();
+      video.load();
 
       return () => {
-        nextVideo.pause();
-        nextVideo.removeAttribute("src");
-        nextVideo.load();
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
       };
     }
 
-    const nextImage = new Image();
-    nextImage.src = nextItem.media.fileUrl;
+    const image = new Image();
+    image.src = nextItem.media.fileUrl;
   }, [items, currentIndex]);
 
-  /*
+  /**
    * ============================================================
    * LOG PLAYBACK
    * ============================================================
@@ -272,179 +482,389 @@ export default function PlayerView() {
 
   const logPlayback = useCallback(
     async (
+      item: PlaylistItem,
       startedAt: Date,
       duration: number,
-      status: "PLAYED" | "FAILED" | "INTERRUPTED" | "SKIPPED" = "PLAYED"
+      status: PlaybackStatus,
+      sessionId: number
     ) => {
-      if (!deviceId || !playerKey || !currentItem) {
-        console.warn("Playback log ignoré : données manquantes", {
-          deviceId,
-          hasPlayerKey: Boolean(playerKey),
-          hasCurrentItem: Boolean(currentItem),
-        });
+      /**
+       * Une session ne peut être loggée qu'une seule fois.
+       */
+      if (loggedSessionRef.current === sessionId) {
+        console.warn(
+          "Playback log ignoré : session déjà enregistrée",
+          {
+            sessionId,
+            mediaId: item.media.id,
+            status,
+          }
+        );
 
         return;
       }
 
+      if (!deviceId || !playerKey) {
+        console.warn(
+          "Playback log ignoré : player non identifié"
+        );
+
+        return;
+      }
+
+      /**
+       * Verrouillage immédiat avant le fetch.
+       */
+      loggedSessionRef.current = sessionId;
+
       const payload = {
         deviceId,
-        mediaId: currentItem.media.id,
+        mediaId: item.media.id,
         startedAt: startedAt.toISOString(),
         endedAt: new Date().toISOString(),
-        durationSeconds: Math.max(0, Math.round(duration)),
+        durationSeconds: Math.max(
+          0,
+          Math.round(duration)
+        ),
         status,
       };
 
       try {
-        console.log("Envoi playback log :", payload);
+        console.log(
+          "Envoi playback log :",
+          payload
+        );
 
-        const response = await fetch("/api/player/log", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Player-Key": playerKey,
-          },
-          body: JSON.stringify(payload),
-        });
+        const response = await fetch(
+          "/api/player/log",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Player-Key": playerKey,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
 
-        const responseText = await response.text();
+        const responseText =
+          await response.text();
 
         if (!response.ok) {
-          console.error("Erreur playback log :", {
-            status: response.status,
-            response: responseText,
-            payload,
-          });
+          console.error(
+            "Erreur playback log :",
+            {
+              status: response.status,
+              response: responseText,
+              payload,
+            }
+          );
 
           return;
         }
 
-        console.log("Playback log enregistré :", responseText);
+        console.log(
+          "Playback log enregistré :",
+          responseText
+        );
       } catch (err) {
-        console.error("Erreur réseau playback log :", err);
+        console.error(
+          "Erreur réseau playback log :",
+          err
+        );
       }
     },
-    [deviceId, playerKey, currentItem]
+    [deviceId, playerKey]
   );
 
-  /*
+  /**
    * ============================================================
-   * PASSER AU MEDIA SUIVANT
+   * PASSAGE AU MEDIA SUIVANT
    * ============================================================
    */
 
-  const goNext = useCallback(() => {
-    if (items.length === 0) return;
+  const finishCurrentItem = useCallback(
+    async (
+      item: PlaylistItem,
+      sessionId: number,
+      status: PlaybackStatus,
+      startedAt?: Date | null
+    ) => {
+      /**
+       * Ignore un ancien événement.
+       */
+      if (
+        sessionId !==
+        playbackSessionRef.current
+      ) {
+        console.warn(
+          "Événement ignoré : ancienne session",
+          {
+            sessionId,
+            currentSession:
+              playbackSessionRef.current,
+            media: item.media.name,
+          }
+        );
 
-    setCurrentIndex((previousIndex) => {
-      return (previousIndex + 1) % items.length;
-    });
-  }, [items.length]);
+        return;
+      }
 
-  /*
- * ============================================================
- * TIMER DES IMAGES UNIQUEMENT
- * ============================================================
- *
- * Les images passent automatiquement au média suivant après
- * durationSeconds.
- *
- * Les vidéos utilisent leur événement onEnded.
- * Un timer de sécurité séparé peut être ajouté pour les vidéos
- * si nécessaire.
- * ============================================================
- */
+      /**
+       * Une seule transition à la fois.
+       */
+      if (transitionLockRef.current) {
+        console.warn(
+          "Transition ignorée : déjà en cours",
+          {
+            sessionId,
+            media: item.media.name,
+            status,
+          }
+        );
 
-useEffect(() => {
-  if (timerRef.current) {
-    clearTimeout(timerRef.current);
-    timerRef.current = null;
-  }
+        return;
+      }
 
-  if (!currentItem) return;
+      transitionLockRef.current = true;
 
-  // Les vidéos sont gérées par onEnded.
-  if (currentItem.media.fileType === "video") {
-    return;
-  }
+      clearPlaybackTimers();
 
-  const startedAt = new Date();
+      const actualStartedAt =
+        startedAt ??
+        startTimeRef.current ??
+        new Date();
 
-  startTimeRef.current = startedAt;
+      const elapsedDuration = Math.max(
+        0,
+        (Date.now() -
+          actualStartedAt.getTime()) /
+          1000
+      );
 
-  const durationSeconds =
-    currentItem.durationSeconds > 0
-      ? currentItem.durationSeconds
-      : 15;
+      const configuredDuration =
+        getDurationSeconds(item);
 
-  console.log(
-    "Image affichée :",
-    currentItem.media.name,
-    "pendant",
-    durationSeconds,
-    "secondes"
+      /**
+       * Pour une diffusion validée, on enregistre
+       * la durée configurée de la publicité.
+       *
+       * Pour les erreurs/interruption, on conserve
+       * la durée réellement observée.
+       */
+      const duration =
+        status === "PLAYED"
+          ? configuredDuration
+          : elapsedDuration;
+
+      console.log("Fin média :", {
+        sessionId,
+        media: item.media.name,
+        status,
+        duration,
+      });
+
+      await logPlayback(
+        item,
+        actualStartedAt,
+        duration,
+        status,
+        sessionId
+      );
+
+      /**
+       * Pendant l'appel réseau, la session peut
+       * avoir été remplacée.
+       */
+      if (
+        sessionId !==
+        playbackSessionRef.current
+      ) {
+        return;
+      }
+
+      startTimeRef.current = null;
+
+      /**
+       * Nouvelle session pour le prochain média.
+       */
+      playbackSessionRef.current += 1;
+      transitionLockRef.current = false;
+      loggedSessionRef.current = null;
+
+      const totalItems =
+        itemsRef.current.length;
+
+      if (totalItems === 0) {
+        return;
+      }
+
+      setCurrentIndex((previousIndex) => {
+        return (
+          (previousIndex + 1) %
+          totalItems
+        );
+      });
+    },
+    [
+      clearPlaybackTimers,
+      getDurationSeconds,
+      logPlayback,
+    ]
   );
 
-  timerRef.current = setTimeout(() => {
-    const duration =
-      (Date.now() - startedAt.getTime()) / 1000;
-
-    console.log(
-      "Fin d'affichage image :",
-      currentItem.media.name
-    );
-
-    logPlayback(startedAt, duration, "PLAYED");
-
-    startTimeRef.current = null;
-    timerRef.current = null;
-
-    goNext();
-  }, durationSeconds * 1000);
-
-  return () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-}, [
-  currentItem,
-  currentItem?.id,
-  currentItem?.media.fileType,
-  currentItem?.durationSeconds,
-  goNext,
-  logPlayback,
-]);
-
-  /*
+  /**
    * ============================================================
-   * LANCER LA VIDEO
-   *
-   * IMPORTANT :
-   * - Pas d'autoPlay dans la balise JSX
-   * - Un seul appel contrôlé à play()
-   * - AbortError ignoré lorsqu'un changement de média interrompt play()
+   * NOUVELLE SESSION MEDIA
    * ============================================================
    */
 
   useEffect(() => {
-    if (!currentItem) return;
+    clearPlaybackTimers();
 
-    if (currentItem.media.fileType !== "video") {
+    transitionLockRef.current = false;
+    loggedSessionRef.current = null;
+    startTimeRef.current = null;
+
+    if (!currentItem) {
       return;
     }
 
+    playbackSessionRef.current += 1;
+
+    console.log(
+      "Nouvelle session média :",
+      {
+        sessionId:
+          playbackSessionRef.current,
+        itemId: currentItem.id,
+        mediaId:
+          currentItem.media.id,
+        media: currentItem.media.name,
+        type:
+          currentItem.media.fileType,
+      }
+    );
+
+    return () => {
+      clearPlaybackTimers();
+    };
+  }, [
+    currentItem,
+    clearPlaybackTimers,
+  ]);
+
+  /**
+   * ============================================================
+   * LECTURE DES IMAGES
+   * ============================================================
+   */
+
+  useEffect(() => {
+    if (!currentItem) {
+      return;
+    }
+
+    if (
+      currentItem.media.fileType ===
+      "video"
+    ) {
+      return;
+    }
+
+    const item = currentItem;
+    const sessionId =
+      playbackSessionRef.current;
+
+    const startedAt = new Date();
+
+    startTimeRef.current = startedAt;
+
+    const durationSeconds =
+      getDurationSeconds(item);
+
+    console.log(
+      "Image affichée :",
+      item.media.name,
+      "pendant",
+      durationSeconds,
+      "secondes",
+      "session",
+      sessionId
+    );
+
+    imageTimerRef.current =
+      setTimeout(() => {
+        if (
+          sessionId !==
+          playbackSessionRef.current
+        ) {
+          return;
+        }
+
+        finishCurrentItem(
+          item,
+          sessionId,
+          "PLAYED",
+          startedAt
+        );
+      }, durationSeconds * 1000);
+
+    return () => {
+      if (imageTimerRef.current) {
+        clearTimeout(
+          imageTimerRef.current
+        );
+
+        imageTimerRef.current = null;
+      }
+    };
+  }, [
+    currentItem,
+    finishCurrentItem,
+    getDurationSeconds,
+  ]);
+
+  /**
+   * ============================================================
+   * LANCEMENT AUTOMATIQUE DES VIDEOS
+   * ============================================================
+   */
+
+  useEffect(() => {
+    if (!currentItem) {
+      return;
+    }
+
+    if (
+      currentItem.media.fileType !==
+      "video"
+    ) {
+      return;
+    }
+
+    const sessionId =
+      playbackSessionRef.current;
+
     const video = videoRef.current;
 
-    if (!video) return;
+    if (!video) {
+      return;
+    }
 
     let cancelled = false;
 
-    startTimeRef.current = null;
-
     const playVideo = async () => {
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
+
+      if (
+        sessionId !==
+        playbackSessionRef.current
+      ) {
+        return;
+      }
 
       try {
         video.muted = true;
@@ -454,14 +874,14 @@ useEffect(() => {
 
         await video.play();
       } catch (playError) {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         if (
           playError instanceof DOMException &&
           playError.name === "AbortError"
         ) {
-          // Un changement de média ou une pause navigateur
-          // peut interrompre play(). Ce n'est pas une erreur critique.
           return;
         }
 
@@ -476,7 +896,10 @@ useEffect(() => {
       playVideo();
     };
 
-    if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+    if (
+      video.readyState >=
+      HTMLMediaElement.HAVE_FUTURE_DATA
+    ) {
       playVideo();
     } else {
       video.addEventListener(
@@ -496,11 +919,23 @@ useEffect(() => {
         handleCanPlay
       );
     };
-  }, [currentItem?.id, currentItem?.media.fileType]);
+  }, [currentItem]);
 
-  /*
+  /**
    * ============================================================
-   * URL / PARAMETRES MANQUANTS
+   * NETTOYAGE GENERAL
+   * ============================================================
+   */
+
+  useEffect(() => {
+    return () => {
+      clearPlaybackTimers();
+    };
+  }, [clearPlaybackTimers]);
+
+  /**
+   * ============================================================
+   * PARAMETRES MANQUANTS
    * ============================================================
    */
 
@@ -524,7 +959,7 @@ useEffect(() => {
     );
   }
 
-  /*
+  /**
    * ============================================================
    * LOADING
    * ============================================================
@@ -546,13 +981,16 @@ useEffect(() => {
     );
   }
 
-  /*
+  /**
    * ============================================================
-   * ERREUR / PLAYLIST VIDE
+   * PLAYLIST VIDE / ERREUR
    * ============================================================
    */
 
-  if (error && items.length === 0) {
+  if (
+    error &&
+    items.length === 0
+  ) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-black text-white">
         <div className="text-center">
@@ -561,7 +999,7 @@ useEffect(() => {
           </div>
 
           <div className="text-sm text-gray-500">
-            Reconnexion automatique toutes les 30 secondes...
+            Synchronisation automatique toutes les 5 secondes...
           </div>
 
           <div className="mt-6 text-xs text-gray-700">
@@ -572,7 +1010,7 @@ useEffect(() => {
     );
   }
 
-  /*
+  /**
    * ============================================================
    * PLAYER
    * ============================================================
@@ -597,7 +1035,8 @@ useEffect(() => {
         </button>
       )}
 
-      {currentItem?.media.fileType === "video" ? (
+      {currentItem?.media.fileType ===
+      "video" ? (
         <video
           ref={videoRef}
           key={currentItem.id}
@@ -607,106 +1046,400 @@ useEffect(() => {
           preload="auto"
           className="h-full w-full object-contain"
           onLoadedMetadata={(event) => {
-            const video = event.currentTarget;
+            const video =
+              event.currentTarget;
+
+            const physicalDuration =
+              Number.isFinite(
+                video.duration
+              ) && video.duration > 0
+                ? video.duration
+                : 0;
+
+            const configuredDuration =
+              getDurationSeconds(
+                currentItem
+              );
+
+            console.log(
+              "Métadonnées vidéo :",
+              {
+                media:
+                  currentItem.media.name,
+                duration:
+                  physicalDuration,
+                configuredDuration,
+              }
+            );
 
             video.muted = true;
             video.defaultMuted = true;
             video.volume = 0;
           }}
-          onPlay={() => {
-            if (!startTimeRef.current) {
-              startTimeRef.current = new Date();
-            }
-          }}
-          onEnded={() => {
-            if (timerRef.current) {
-              clearTimeout(timerRef.current);
-              timerRef.current = null;
+          onPlay={(event) => {
+            const item = currentItem;
+            const sessionId =
+              playbackSessionRef.current;
+
+            if (!item) {
+              return;
             }
 
-            const startedAt = startTimeRef.current;
+            if (
+              item.media.fileType !==
+              "video"
+            ) {
+              return;
+            }
 
-            if (startedAt) {
-              const duration =
-                (Date.now() - startedAt.getTime()) / 1000;
+            /**
+             * onPlay peut être déclenché plusieurs fois
+             * pendant les boucles.
+             *
+             * Le démarrage de la session ne doit avoir
+             * lieu qu'une seule fois.
+             */
+            if (startTimeRef.current) {
+              return;
+            }
 
-              logPlayback(
-                startedAt,
-                duration,
-                "PLAYED"
+            const startedAt = new Date();
+
+            startTimeRef.current =
+              startedAt;
+
+            const physicalDuration =
+              Number.isFinite(
+                event.currentTarget.duration
+              ) &&
+              event.currentTarget
+                .duration > 0
+                ? event.currentTarget
+                    .duration
+                : 0;
+
+            const configuredDuration =
+              getDurationSeconds(item);
+
+            /**
+             * Watchdog de sécurité.
+             *
+             * Il ne sert pas à terminer une vidéo normale.
+             * Il protège uniquement contre une vidéo bloquée.
+             */
+            const watchdogSeconds = Math.max(
+              VIDEO_WATCHDOG_MIN_SECONDS,
+              Math.ceil(
+                Math.max(
+                  physicalDuration,
+                  configuredDuration
+                )
+              ) + VIDEO_WATCHDOG_EXTRA_SECONDS
+            );
+
+            console.log(
+              "Vidéo démarrée :",
+              item.media.name,
+              "watchdog :",
+              watchdogSeconds,
+              "secondes"
+            );
+
+            if (
+              watchdogTimerRef.current
+            ) {
+              clearTimeout(
+                watchdogTimerRef.current
               );
             }
 
-            startTimeRef.current = null;
+            watchdogTimerRef.current =
+              setTimeout(() => {
+                if (
+                  sessionId !==
+                  playbackSessionRef.current
+                ) {
+                  return;
+                }
 
-            goNext();
-          }}
-          onError={(event) => {
-            if (timerRef.current) {
-              clearTimeout(timerRef.current);
-              timerRef.current = null;
+                console.warn(
+                  "Watchdog vidéo déclenché :",
+                  item.media.name
+                );
+
+                finishCurrentItem(
+                  item,
+                  sessionId,
+                  "FAILED",
+                  startedAt
+                );
+              }, watchdogSeconds * 1000);
+
+            /**
+             * Durée réellement facturée/diffusée.
+             *
+             * Exemple :
+             * vidéo physique = 10 s
+             * durée configurée = 15 s
+             *
+             * La vidéo boucle jusqu'à 15 s.
+             */
+            console.log(
+              "Durée de diffusion vidéo configurée :",
+              item.media.name,
+              configuredDuration,
+              "secondes"
+            );
+
+            if (
+              configuredDurationTimerRef.current
+            ) {
+              clearTimeout(
+                configuredDurationTimerRef.current
+              );
             }
 
-            console.error(              "Erreur lecture vidéo:",
+            configuredDurationTimerRef.current =
+              setTimeout(() => {
+                if (
+                  sessionId !==
+                  playbackSessionRef.current
+                ) {
+                  return;
+                }
+
+                console.log(
+                  "Durée configurée atteinte :",
+                  item.media.name
+                );
+
+                finishCurrentItem(
+                  item,
+                  sessionId,
+                  "PLAYED",
+                  startedAt
+                );
+              }, configuredDuration * 1000);
+          }}
+          onEnded={(event) => {
+            const item = currentItem;
+            const sessionId =
+              playbackSessionRef.current;
+
+            const video =
+              event.currentTarget;
+
+            if (!item) {
+              return;
+            }
+
+            if (
+              item.media.fileType !==
+              "video"
+            ) {
+              return;
+            }
+
+            if (
+              sessionId !==
+              playbackSessionRef.current
+            ) {
+              return;
+            }
+
+            if (
+              transitionLockRef.current
+            ) {
+              return;
+            }
+
+            const startedAt =
+              startTimeRef.current ??
+              new Date();
+
+            const physicalDuration =
+              Number.isFinite(
+                video.duration
+              ) && video.duration > 0
+                ? video.duration
+                : DEFAULT_DURATION_SECONDS;
+
+            const targetDuration =
+              getDurationSeconds(item);
+
+            const elapsedSeconds =
+              (Date.now() -
+                startedAt.getTime()) /
+              1000;
+
+            console.log(
+              "Vidéo terminée physiquement :",
+              {
+                media:
+                  item.media.name,
+                elapsedSeconds,
+                physicalDuration,
+                targetDuration,
+                sessionId,
+              }
+            );
+
+            /**
+             * Si la vidéo physique est plus courte
+             * que la durée configurée, on la reboucle.
+             */
+            if (
+              elapsedSeconds + 0.25 <
+              targetDuration
+            ) {
+              console.log(
+                "Vidéo plus courte que la durée configurée : boucle",
+                item.media.name
+              );
+
+              if (
+                sessionId !==
+                  playbackSessionRef.current ||
+                transitionLockRef.current
+              ) {
+                return;
+              }
+
+              video.currentTime = 0;
+
+              video
+                .play()
+                .catch((playError) => {
+                  console.warn(
+                    "Impossible de relancer la vidéo :",
+                    playError
+                  );
+                });
+
+              return;
+            }
+
+            /**
+             * Si la durée cible est atteinte,
+             * le timer de durée configurée aura normalement
+             * déjà déclenché finishCurrentItem().
+             *
+             * Cette sécurité couvre les cas où onEnded arrive
+             * juste après la durée cible.
+             */
+            finishCurrentItem(
+              item,
+              sessionId,
+              "PLAYED",
+              startedAt
+            );
+          }}
+          onError={(event) => {
+            const item = currentItem;
+            const sessionId =
+              playbackSessionRef.current;
+
+            if (!item) {
+              return;
+            }
+
+            console.error(
+              "Erreur lecture vidéo :",
               event.currentTarget.error
             );
 
-            const startedAt =
-              startTimeRef.current ?? new Date();
+            if (
+              transitionLockRef.current
+            ) {
+              return;
+            }
 
-            const duration =
-              startTimeRef.current
-                ? Math.max(
-                    0,
-                    (Date.now() -
-                      startTimeRef.current.getTime()) /
-                      1000
-                  )
-                : 0;
+            if (
+              errorDelayTimerRef.current
+            ) {
+              clearTimeout(
+                errorDelayTimerRef.current
+              );
+            }
 
-            logPlayback(
-              startedAt,
-              duration,
-              "FAILED"
-            );
+            errorDelayTimerRef.current =
+              setTimeout(() => {
+                if (
+                  sessionId !==
+                  playbackSessionRef.current
+                ) {
+                  return;
+                }
 
-            startTimeRef.current = null;
-
-            setTimeout(() => {
-              goNext();
-            }, 3000);
+                finishCurrentItem(
+                  item,
+                  sessionId,
+                  "FAILED",
+                  startTimeRef.current
+                );
+              }, MEDIA_ERROR_DELAY_MS);
           }}
         />
       ) : currentItem ? (
         <img
           key={currentItem.id}
           src={currentItem.media.fileUrl}
-          alt={currentItem.media.name || "SeetuAds"}
+          alt={
+            currentItem.media.name ||
+            "SeetuAds"
+          }
           className="h-full w-full object-contain"
           onError={(event) => {
-            if (timerRef.current) {
-              clearTimeout(timerRef.current);
-              timerRef.current = null;
+            const item = currentItem;
+            const sessionId =
+              playbackSessionRef.current;
+
+            console.error(
+              "Erreur chargement image :",
+              event.currentTarget
+            );
+
+            if (
+              transitionLockRef.current
+            ) {
+              return;
             }
 
-            console.error(              "Erreur chargement image:",
-              event
-            );
+            if (
+              imageTimerRef.current
+            ) {
+              clearTimeout(
+                imageTimerRef.current
+              );
 
-            const startedAt =
-              startTimeRef.current ?? new Date();
+              imageTimerRef.current =
+                null;
+            }
 
-            logPlayback(
-              startedAt,
-              0,
-              "FAILED"
-            );
+            if (
+              errorDelayTimerRef.current
+            ) {
+              clearTimeout(
+                errorDelayTimerRef.current
+              );
+            }
 
-            startTimeRef.current = null;
+            errorDelayTimerRef.current =
+              setTimeout(() => {
+                if (
+                  sessionId !==
+                  playbackSessionRef.current
+                ) {
+                  return;
+                }
 
-            setTimeout(() => {
-              goNext();
-            }, 3000);
+                finishCurrentItem(
+                  item,
+                  sessionId,
+                  "FAILED",
+                  startTimeRef.current
+                );
+              }, MEDIA_ERROR_DELAY_MS);
           }}
         />
       ) : (
@@ -717,7 +1450,6 @@ useEffect(() => {
     </div>
   );
 }
-
 
 
 

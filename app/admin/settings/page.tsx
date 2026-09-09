@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Bell, Shield, Database } from "lucide-react";
+import { Bell, Shield, Database } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 

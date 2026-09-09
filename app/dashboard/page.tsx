@@ -1,4 +1,4 @@
-﻿import { auth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
@@ -28,7 +28,7 @@ export default async function DashboardPage() {
           </h1>
 
           <p className="mt-2 text-gray-600">
-            Votre compte vient d'être créé. Actualisez la page dans quelques secondes.
+            Votre compte vient d'ÃƒÂªtre crÃƒÂ©ÃƒÂ©. Actualisez la page dans quelques secondes.
           </p>
         </div>
       </main>
@@ -39,7 +39,11 @@ export default async function DashboardPage() {
     redirect("/admin");
   }
 
-  if (user.advertiser || user.role === "ADVERTISER") {
+  if (user.role === "PARTNER" && user.partner) {
+    redirect("/partner");
+  }
+
+  if (user.role === "ADVERTISER" && user.advertiser) {
     redirect("/advertiser/dashboard");
   }
 
@@ -57,7 +61,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border">
             <h3 className="text-sm font-medium text-gray-500">
-              Rôle
+              RÃƒÂ´le
             </h3>
 
             <p className="text-2xl font-bold text-primary-600 mt-1">
@@ -69,3 +73,4 @@ export default async function DashboardPage() {
     </main>
   );
 }
+

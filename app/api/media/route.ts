@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { requireAdvertiser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -21,6 +21,16 @@ function serializeData<T>(data: T): T {
   );
 }
 
+function normalizeMimeType(value: unknown): string {
+  if (typeof value !== "string") return "";
+
+  return value
+    .trim()
+    .toLowerCase()
+    .split(";")[0]
+    .trim();
+}
+
 export async function GET() {
   try {
     const { advertiser } = await requireAdvertiser();
@@ -32,6 +42,12 @@ export async function GET() {
       orderBy: {
         createdAt: "desc",
       },
+    });
+
+    console.log("MEDIA GET:", {
+      advertiserId: advertiser.id,
+      count: media.length,
+      mediaIds: media.map((m) => m.id),
     });
 
     return NextResponse.json(serializeData(media));
@@ -59,8 +75,9 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
+    console.log("========== MEDIA CREATE ==========");
     console.log("MEDIA CREATE BODY:", body);
-    console.log("ADVERTISER ID:", advertiser.id);
+    console.log("CONNECTED ADVERTISER ID:", advertiser.id);
 
     const name =
       typeof body.name === "string" ? body.name.trim() : "";
@@ -69,10 +86,11 @@ export async function POST(req: Request) {
       typeof body.fileUrl === "string" ? body.fileUrl.trim() : "";
 
     const fileType =
-      typeof body.fileType === "string" ? body.fileType.trim() : "";
+      typeof body.fileType === "string"
+        ? body.fileType.trim().toLowerCase()
+        : "";
 
-    const mimeType =
-      typeof body.mimeType === "string" ? body.mimeType.trim() : "";
+    const mimeType = normalizeMimeType(body.mimeType);
 
     const durationSeconds = Number(body.durationSeconds);
 
@@ -86,6 +104,17 @@ export async function POST(req: Request) {
       body.fileSizeBytes == null
         ? null
         : Number(body.fileSizeBytes);
+
+    console.log("MEDIA NORMALIZED:", {
+      name,
+      fileUrl,
+      fileType,
+      mimeType,
+      durationSeconds,
+      widthPx,
+      heightPx,
+      fileSizeBytes,
+    });
 
     if (!name) {
       return NextResponse.json(
@@ -110,9 +139,15 @@ export async function POST(req: Request) {
     }
 
     if (fileType !== "video" && fileType !== "image") {
+      console.error("MEDIA INVALID FILE TYPE:", {
+        received: body.fileType,
+        normalized: fileType,
+      });
+
       return NextResponse.json(
         {
           error: "Le type du média doit être video ou image.",
+          received: body.fileType,
         },
         {
           status: 400,
@@ -121,9 +156,14 @@ export async function POST(req: Request) {
     }
 
     if (!mimeType) {
+      console.error("MEDIA MIME EMPTY:", {
+        received: body.mimeType,
+      });
+
       return NextResponse.json(
         {
           error: "Le type MIME du fichier est requis.",
+          received: body.mimeType ?? null,
         },
         {
           status: 400,
@@ -132,9 +172,18 @@ export async function POST(req: Request) {
     }
 
     if (!ALLOWED_TYPES.includes(mimeType)) {
+      console.error("MEDIA INVALID MIME:", {
+        received: body.mimeType,
+        normalized: mimeType,
+        allowed: ALLOWED_TYPES,
+      });
+
       return NextResponse.json(
         {
           error: `Type de fichier non supporté : ${mimeType}`,
+          received: body.mimeType,
+          normalized: mimeType,
+          allowed: ALLOWED_TYPES,
         },
         {
           status: 400,
@@ -194,8 +243,7 @@ export async function POST(req: Request) {
     ) {
       return NextResponse.json(
         {
-          error:
-            "Taille du fichier invalide ou supérieure à 50 MB.",
+          error: "Taille du fichier invalide ou supérieure à 50 MB.",
         },
         {
           status: 400,
@@ -218,7 +266,16 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log("MEDIA CREATED:", media.id);
+    console.log("MEDIA CREATED:", {
+      id: media.id,
+      advertiserId: media.advertiserId,
+      name: media.name,
+      fileType: media.fileType,
+      mimeType: media.mimeType,
+      fileUrl: media.fileUrl,
+    });
+
+    console.log("=================================");
 
     return NextResponse.json(
       serializeData(media),

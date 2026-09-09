@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 
 export default async function AdminDashboardPage() {
   const [
@@ -26,76 +26,162 @@ export default async function AdminDashboardPage() {
       label: "Utilisateurs",
       value: usersCount,
       description: "Comptes enregistrés",
+      color: "blue",
     },
     {
       label: "Annonceurs",
       value: advertisersCount,
-      description: "Annonceurs actifs",
+      description: "Comptes annonceurs",
+      color: "violet",
     },
     {
       label: "Campagnes",
       value: campaignsCount,
       description: "Campagnes créées",
+      color: "emerald",
     },
     {
       label: "Médias",
       value: mediaCount,
       description: "Images et vidéos",
+      color: "orange",
     },
     {
       label: "Écrans",
       value: screensCount,
       description: "Écrans enregistrés",
+      color: "cyan",
     },
     {
       label: "Partenaires",
       value: partnersCount,
       description: "Partenaires enregistrés",
+      color: "pink",
     },
     {
       label: "Emplacements",
       value: locationsCount,
       description: "Emplacements configurés",
+      color: "indigo",
     },
     {
       label: "Players",
       value: playersCount,
       description: "Players connectés",
+      color: "green",
     },
   ];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Tableau de bord
-        </h1>
+    <div className="space-y-7">
+      <section className="dashboard-welcome">
+        <div className="relative z-10 max-w-2xl">
+          <div className="mb-3 inline-flex items-center rounded-full border border-blue-300/20 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100 backdrop-blur">
+            SEETUADS · ADMINISTRATION
+          </div>
 
-        <p className="mt-2 text-gray-600">
-          Vue d'ensemble de votre plateforme SeetuAds.
-        </p>
-      </div>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Tableau de bord
+          </h1>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
-          >
-            <p className="text-sm font-medium text-gray-500">
-              {stat.label}
-            </p>
+          <p className="mt-3 max-w-xl text-sm leading-6 sm:text-base">
+            Pilotez vos annonceurs, campagnes, médias et infrastructures
+            depuis un espace centralisé.
+          </p>
+        </div>
+      </section>
 
-            <p className="mt-3 text-3xl font-bold text-gray-900">
-              {stat.value}
-            </p>
+      <section>
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">
+              Vue d'ensemble
+            </h2>
 
-            <p className="mt-2 text-sm text-gray-500">
-              {stat.description}
+            <p className="mt-1 text-sm text-slate-500">
+              Les indicateurs principaux de votre plateforme.
             </p>
           </div>
-        ))}
-      </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {stats.map((stat) => (
+            <div key={stat.label} className="kpi-card">
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <p className="kpi-label">{stat.label}</p>
+
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      stat.color === "blue"
+                        ? "bg-blue-500"
+                        : stat.color === "violet"
+                          ? "bg-violet-500"
+                          : stat.color === "emerald"
+                            ? "bg-emerald-500"
+                            : stat.color === "orange"
+                              ? "bg-orange-500"
+                              : stat.color === "cyan"
+                                ? "bg-cyan-500"
+                                : stat.color === "pink"
+                                  ? "bg-pink-500"
+                                  : stat.color === "indigo"
+                                    ? "bg-indigo-500"
+                                    : "bg-green-500"
+                    }`}
+                  />
+                </div>
+
+                <p className="kpi-value">{stat.value}</p>
+
+                <p className="kpi-description">
+                  {stat.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="card p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <span className="text-lg font-bold">S</span>
+            </div>
+
+            <div>
+              <h2 className="font-bold text-slate-900">
+                Plateforme SeetuAds
+              </h2>
+
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                Gérez votre réseau publicitaire digital, vos écrans,
+                vos campagnes et vos partenaires depuis cet espace.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <span className="text-lg font-bold">✓</span>
+            </div>
+
+            <div>
+              <h2 className="font-bold text-slate-900">
+                Infrastructure opérationnelle
+              </h2>
+
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                Consultez les statistiques, surveillez vos players et
+                gardez le contrôle sur votre inventaire publicitaire.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/heartbeat",
-      "schedule": "0 0 * * *"
+      "path": "/api/cron/cleanup-expired-campaigns",
+      "schedule": "0 2 * * *"
     }
   ]
 }

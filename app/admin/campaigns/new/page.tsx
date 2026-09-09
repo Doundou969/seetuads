@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { CampaignForm } from "./campaign-form";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +11,7 @@ export default async function NewCampaignPage() {
       }),
 
       prisma.pricingRule.findMany({
+        where: { active: true },
         include: { zone: true, screen: true },
       }),
 

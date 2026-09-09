@@ -39,3 +39,5 @@ Thumbs.db
 app-backup-*
 .vercel
 .env*
+
+.vercel-production.env

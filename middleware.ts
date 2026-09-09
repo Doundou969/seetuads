@@ -1,20 +1,5 @@
-﻿import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-
-  // APIs publiques
-  "/api/health(.*)",
-  "/api/webhooks(.*)",
-  "/api/player(.*)",
-  "/api/monitoring(.*)",
-
-  // Player public
-  "/player(.*)",
-]);
 
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
@@ -34,11 +19,22 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Routes publiques
-  if (isPublicRoute(req)) {
+  if (
+    pathname === "/" ||
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/sign-up") ||
+    pathname.startsWith("/api/health") ||
+    pathname.startsWith("/api/webhooks") ||
+    pathname.startsWith("/api/player") ||
+    pathname.startsWith("/api/monitoring") ||
+    pathname.startsWith("/api/cron") ||
+    pathname.startsWith("/player")
+  ) {
     return NextResponse.next();
   }
 
-  // Routes protégées
+  // Protection temporaire conservée pendant la migration
+  // vers les vérifications d'authentification au niveau des ressources.
   const { userId } = await auth();
 
   if (!userId) {

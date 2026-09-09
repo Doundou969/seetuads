@@ -119,7 +119,7 @@ export async function requireAuth() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("Non authentifié");
+    throw new Error("Non authentifiÃ©");
   }
 
   return user;
@@ -173,7 +173,7 @@ export async function requireAdvertiser() {
     };
   }
 
-  throw new Error("Non authentifié");
+  throw new Error("Non authentifiÃ©");
 }
 
 export async function requireMediaUploader() {
@@ -198,8 +198,23 @@ export async function requireMediaUploader() {
   }
 
   throw new Error(
-    "Accès refusé pour l'upload"
+    "AccÃ¨s refusÃ© pour l'upload"
   );
+}
+
+export async function requirePartner() {
+  const user = await requireAuth();
+
+  if (user.role !== "PARTNER" || !user.partner) {
+    throw new Error(
+      "Accès réservé aux partenaires"
+    );
+  }
+
+  return {
+    user,
+    partner: user.partner,
+  };
 }
 
 export async function requireAdmin() {
@@ -210,7 +225,7 @@ export async function requireAdmin() {
     user.role !== "OPERATOR"
   ) {
     throw new Error(
-      "Accès réservé aux administrateurs"
+      "AccÃ¨s rÃ©servÃ© aux administrateurs"
     );
   }
 
@@ -221,3 +236,4 @@ export {
   TEMP_ADVERTISER_COOKIE,
   hashToken,
 };
+

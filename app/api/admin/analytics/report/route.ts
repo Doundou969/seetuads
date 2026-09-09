@@ -5,75 +5,67 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const TIME_ZONE = "Africa/Dakar";
-
 function formatDuration(seconds: number) {
-  const safeSeconds = Math.max(0, Math.round(seconds || 0));
+  const safe = Math.max(0, Math.round(seconds || 0));
 
-  const hours = Math.floor(safeSeconds / 3600);
-  const minutes = Math.floor((safeSeconds % 3600) / 60);
-  const remainingSeconds = safeSeconds % 60;
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const secs = safe % 60;
 
   if (hours > 0) {
-    return `${hours}h ${minutes}m ${remainingSeconds}s`;
+    return secs > 0
+      ? `${hours}h ${minutes}m ${secs}s`
+      : `${hours}h ${minutes}m`;
   }
 
   if (minutes > 0) {
-    return `${minutes}m ${remainingSeconds}s`;
+    return secs > 0
+      ? `${minutes}m ${secs}s`
+      : `${minutes}m`;
   }
 
-  return `${remainingSeconds}s`;
+  return `${secs}s`;
 }
 
 function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    timeZone: TIME_ZONE,
+  return date.toLocaleString("fr-FR", {
     dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+    timeStyle: "medium",
+  });
 }
 
-function truncate(text: string, maxLength = 60) {
-  if (text.length <= maxLength) {
-    return text;
+function cleanText(value: string | null | undefined) {
+  return (value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function cleanMediaName(
+  name: string | null | undefined,
+  maxLength = 55
+) {
+  const value = cleanText(name) || "Média sans nom";
+
+  if (value.length <= maxLength) {
+    return value;
   }
 
-  return `${text.slice(0, maxLength - 3)}...`;
-}
-
-function startOfDayInDakar(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-
-  const values = Object.fromEntries(
-    parts.map((part) => [part.type, part.value])
-  );
-
-  const year = Number(values.year);
-  const month = Number(values.month);
-  const day = Number(values.day);
-
-  return new Date(Date.UTC(year, month - 1, day));
-}
-
-function getSevenDaysStart(now: Date) {
-  const start = startOfDayInDakar(now);
-
-  start.setUTCDate(start.getUTCDate() - 6);
-
-  return start;
+  return `${value.slice(0, maxLength - 3)}...`;
 }
 
 export async function GET() {
   try {
     const now = new Date();
 
-    const todayStart = startOfDayInDakar(now);
-    const sevenDaysStart = getSevenDaysStart(now);
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+
+    const sevenDaysStart = new Date(now);
+    sevenDaysStart.setDate(sevenDaysStart.getDate() - 6);
+    sevenDaysStart.setHours(0, 0, 0, 0);
 
     const [
       todayLogs,
@@ -98,7 +90,6 @@ export async function GET() {
           },
         },
         select: {
-          id: true,
           startedAt: true,
           durationSeconds: true,
           status: true,
@@ -125,7 +116,6 @@ export async function GET() {
             },
           },
         },
-
         orderBy: {
           startedAt: "desc",
         },
@@ -142,12 +132,10 @@ export async function GET() {
       prisma.player.count(),
 
       prisma.playbackLog.findMany({
-        take: 20,
-
+        take: 15,
         orderBy: {
           startedAt: "desc",
         },
-
         select: {
           startedAt: true,
           durationSeconds: true,
@@ -191,22 +179,37 @@ export async function GET() {
       (log) => log.status === "SKIPPED"
     );
 
-    const logsWithoutCampaign = sevenDaysLogs.filter(
-      (log) => !log.campaign
-    );
-
-    const successfulDuration = playedLogs.reduce(
-      (total, log) =>
-        total + Math.max(0, log.durationSeconds ?? 0),
+    const totalDuration = sevenDaysLogs.reduce(
+      (total, log) => total + (log.durationSeconds ?? 0),
       0
     );
 
+    /*
+     * Taux de lecture réussie.
+     *
+     * On utilise Math.floor() afin d'éviter qu'un taux
+     * de 99,50 % soit affiché à tort comme 100 %.
+     *
+     * Exemple :
+     * 4202 / 4223 = 99,50 % -> affichage 99 %
+     */
     const successRate =
       sevenDaysLogs.length > 0
-        ? Math.round(
-            (playedLogs.length / sevenDaysLogs.length) * 100
+        ? Number(
+            ((playedLogs.length / sevenDaysLogs.length) * 100).toFixed(2)
           )
         : 0;
+
+    const logsWithoutCampaign = sevenDaysLogs.filter(
+      (log) => !log.campaign
+    ).length;
+
+    const durationWithoutCampaign = sevenDaysLogs
+      .filter((log) => !log.campaign)
+      .reduce(
+        (total, log) => total + (log.durationSeconds ?? 0),
+        0
+      );
 
     const byScreen = new Map<
       string,
@@ -236,219 +239,195 @@ export async function GET() {
       }
     >();
 
-    for (const log of playedLogs) {
-      if (log.screen) {
-        const screenKey = log.screen.id;
+    for (const log of sevenDaysLogs) {
+      const screen = byScreen.get(log.screen.id) ?? {
+        name: cleanText(log.screen.name) || "Écran sans nom",
+        code: cleanText(log.screen.screenCode),
+        count: 0,
+        duration: 0,
+      };
 
-        const screen = byScreen.get(screenKey) ?? {
-          name: log.screen.name || "Écran sans nom",
-          code: log.screen.screenCode || "Sans code",
-          count: 0,
-          duration: 0,
-        };
+      screen.count += 1;
+      screen.duration += log.durationSeconds ?? 0;
 
-        screen.count += 1;
-        screen.duration += Math.max(
-          0,
-          log.durationSeconds ?? 0
-        );
-
-        byScreen.set(screenKey, screen);
-      }
+      byScreen.set(log.screen.id, screen);
 
       if (log.campaign) {
-        const campaignKey = log.campaign.id;
-
-        const campaign =
-          byCampaign.get(campaignKey) ?? {
-            name:
-              log.campaign.name ||
-              "Campagne sans nom",
-            count: 0,
-            duration: 0,
-          };
-
-        campaign.count += 1;
-        campaign.duration += Math.max(
-          0,
-          log.durationSeconds ?? 0
-        );
-
-        byCampaign.set(
-          campaignKey,
-          campaign
-        );
-      }
-
-      if (log.media) {
-        const mediaKey = log.media.id;
-
-        const media = byMedia.get(mediaKey) ?? {
+        const campaign = byCampaign.get(log.campaign.id) ?? {
           name:
-            log.media.name ||
-            "Média sans nom",
+            cleanText(log.campaign.name) ||
+            "Campagne sans nom",
           count: 0,
           duration: 0,
         };
 
-        media.count += 1;
-        media.duration += Math.max(
-          0,
-          log.durationSeconds ?? 0
-        );
+        campaign.count += 1;
+        campaign.duration += log.durationSeconds ?? 0;
 
-        byMedia.set(mediaKey, media);
+        byCampaign.set(log.campaign.id, campaign);
       }
+
+      const media = byMedia.get(log.media.id) ?? {
+        name: cleanMediaName(log.media.name, 70),
+        count: 0,
+        duration: 0,
+      };
+
+      media.count += 1;
+      media.duration += log.durationSeconds ?? 0;
+
+      byMedia.set(log.media.id, media);
     }
 
-    const screenStats = Array.from(
-      byScreen.values()
-    )
+    const screenStats = Array.from(byScreen.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    const campaignStats = Array.from(
-      byCampaign.values()
-    )
+    const campaignStats = Array.from(byCampaign.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    const mediaStats = Array.from(
-      byMedia.values()
-    )
+    const mediaStats = Array.from(byMedia.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
+
 
     const doc = new jsPDF({
+      orientation: "portrait",
       unit: "mm",
       format: "a4",
     });
 
-    const pageWidth =
-      doc.internal.pageSize.getWidth();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-    const pageHeight =
-      doc.internal.pageSize.getHeight();
+    const marginLeft = 15;
+    const marginRight = 15;
+    const topMargin = 20;
 
-    const margin = 15;
+    // Espace réservé au footer.
+    const footerReserved = 24;
+
     const contentWidth =
-      pageWidth - margin * 2;
+      pageWidth - marginLeft - marginRight;
 
-    let y = 18;
+    const maxContentY =
+      pageHeight - footerReserved;
 
-    const addPageIfNeeded = (
-      requiredHeight = 10
-    ) => {
-      if (
-        y + requiredHeight >
-        pageHeight - 18
-      ) {
-        doc.addPage();
-        y = 18;
+    let y = topMargin;
+
+    const newPage = () => {
+      doc.addPage();
+      y = topMargin;
+    };
+
+    const ensureSpace = (height: number) => {
+      if (y + height > maxContentY) {
+        newPage();
       }
     };
 
     const addTitle = (text: string) => {
-      addPageIfNeeded(15);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
 
-      doc.setFont(
-        "helvetica",
-        "bold"
+      const lines = doc.splitTextToSize(
+        text,
+        contentWidth
       );
 
-      doc.setFontSize(18);
+      ensureSpace(lines.length * 8 + 12);
 
-      const lines =
-        doc.splitTextToSize(
-          text,
-          contentWidth
-        );
+      doc.text(lines, marginLeft, y);
+
+      y += lines.length * 8 + 4;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
 
       doc.text(
-        lines,
-        margin,
+        "Plateforme de gestion d'affichage publicitaire",
+        marginLeft,
         y
       );
 
-      y += lines.length * 8 + 5;
+      y += 10;
     };
 
-    const addSection = (
-      text: string
-    ) => {
-      addPageIfNeeded(12);
-
-      doc.setFont(
-        "helvetica",
-        "bold"
-      );
-
+    const addSection = (text: string) => {
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(13);
 
-      doc.text(
+      const lines = doc.splitTextToSize(
         text,
-        margin,
-        y
+        contentWidth
       );
 
-      y += 8;
+      ensureSpace(lines.length * 7 + 12);
+
+      y += 3;
+
+      doc.text(lines, marginLeft, y);
+
+      y += lines.length * 7 + 5;
     };
 
     const addLine = (
       label: string,
       value: string | number
     ) => {
-      doc.setFont(
-        "helvetica",
-        "normal"
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+
+      const text = `${label} : ${value}`;
+
+      const lines = doc.splitTextToSize(
+        text,
+        contentWidth
       );
 
-      doc.setFontSize(10);
+      ensureSpace(lines.length * 5.5 + 3);
 
-      const line =
-        `${label}: ${value}`;
+      doc.text(lines, marginLeft, y);
 
-      const lines =
-        doc.splitTextToSize(
-          line,
-          contentWidth
-        );
+      y += lines.length * 5.5 + 3;
+    };
 
-      addPageIfNeeded(
-        lines.length * 5 + 2
+    const addBullet = (text: string) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+
+      const lines = doc.splitTextToSize(
+        `• ${text}`,
+        contentWidth
       );
 
-      doc.text(
-        lines,
-        margin,
+      ensureSpace(lines.length * 5 + 3);
+
+      doc.text(lines, marginLeft, y);
+
+      y += lines.length * 5 + 3;
+    };
+
+    const addDivider = () => {
+      ensureSpace(5);
+
+      doc.setLineWidth(0.2);
+      doc.line(
+        marginLeft,
+        y,
+        pageWidth - marginRight,
         y
       );
 
-      y += lines.length * 5 + 2;
+      y += 5;
     };
 
-    const addSpacing = (
-      amount = 4
-    ) => {
-      y += amount;
-    };
-
-    addTitle(
-      "SeetuAds - Rapport Analytics"
-    );
-
-    doc.setFont(
-      "helvetica",
-      "normal"
-    );
-
-    doc.setFontSize(9);
+    addTitle("SeetuAds - Rapport Analytics");
 
     addLine(
       "Période",
-      `${formatDate(
-        sevenDaysStart
-      )} au ${formatDate(now)}`
+      `${formatDate(sevenDaysStart)} au ${formatDate(now)}`
     );
 
     addLine(
@@ -456,11 +435,9 @@ export async function GET() {
       formatDate(now)
     );
 
-    addSpacing(4);
+    addDivider();
 
-    addSection(
-      "Résumé général"
-    );
+    addSection("Résumé général");
 
     addLine(
       "Diffusions aujourd'hui",
@@ -473,20 +450,13 @@ export async function GET() {
     );
 
     addLine(
-      "Diffusions réussies",
-      playedLogs.length
-    );
-
-    addLine(
-      "Temps réel de diffusion",
-      formatDuration(
-        successfulDuration
-      )
+      "Temps total de diffusion",
+      formatDuration(totalDuration)
     );
 
     addLine(
       "Taux de lecture réussie",
-      `${successRate}%`
+      `${successRate.toFixed(2)}%`
     );
 
     addLine(
@@ -499,196 +469,209 @@ export async function GET() {
       totalPlayers
     );
 
-    addLine(
-      "Logs sans campagne",
-      logsWithoutCampaign.length
-    );
+    addDivider();
 
-    addSpacing(4);
+    addSection("Statuts des diffusions");
 
-    addSection(
-      "Statuts des diffusions"
-    );
+    const totalLogs = sevenDaysLogs.length;
+
+    const playedRate =
+      totalLogs > 0
+        ? ((playedLogs.length / totalLogs) * 100).toFixed(2)
+        : "0.00";
+
+    const interruptedRate =
+      totalLogs > 0
+        ? ((interruptedLogs.length / totalLogs) * 100).toFixed(2)
+        : "0.00";
+
+    const failedRate =
+      totalLogs > 0
+        ? ((failedLogs.length / totalLogs) * 100).toFixed(2)
+        : "0.00";
+
+    const skippedRate =
+      totalLogs > 0
+        ? ((skippedLogs.length / totalLogs) * 100).toFixed(2)
+        : "0.00";
 
     addLine(
       "PLAYED",
-      playedLogs.length
+      `${playedLogs.length} (${playedRate}%)`
     );
 
     addLine(
       "INTERRUPTED",
-      interruptedLogs.length
+      `${interruptedLogs.length} (${interruptedRate}%)`
     );
 
     addLine(
       "FAILED",
-      failedLogs.length
+      `${failedLogs.length} (${failedRate}%)`
     );
 
     addLine(
       "SKIPPED",
-      skippedLogs.length
+      `${skippedLogs.length} (${skippedRate}%)`
     );
 
-    addSpacing(4);
+    addDivider();
 
-    addSection(
-      "Top écrans"
+    addSection("Couverture des campagnes");
+
+    const campaignLogs =
+      sevenDaysLogs.length - logsWithoutCampaign;
+
+    const campaignCoverageRate =
+      totalLogs > 0
+        ? ((campaignLogs / totalLogs) * 100).toFixed(2)
+        : "0.00";
+
+    const withoutCampaignRate =
+      totalLogs > 0
+        ? ((logsWithoutCampaign / totalLogs) * 100).toFixed(2)
+        : "0.00";
+
+    addLine(
+      "Diffusions avec campagne",
+      `${campaignLogs} (${campaignCoverageRate}%)`
     );
 
-    if (
-      screenStats.length === 0
-    ) {
-      addLine(
-        "Information",
-        "Aucune diffusion réussie enregistrée"
-      );
-    } else {
-      screenStats.forEach(
-        (screen, index) => {
-          addLine(
-            `${index + 1}. ${screen.name}`,
-            `${screen.code} - ${screen.count} diffusions - ${formatDuration(
-              screen.duration
-            )}`
-          );
-        }
-      );
-    }
-
-    addSpacing(4);
-
-    addSection(
-      "Top campagnes"
+    addLine(
+      "Diffusions sans campagne",
+      `${logsWithoutCampaign} (${withoutCampaignRate}%)`
     );
 
-    if (
-      campaignStats.length === 0
-    ) {
-      addLine(
-        "Information",
-        "Aucune campagne associée à une diffusion réussie"
-      );
-    } else {
-      campaignStats.forEach(
-        (
-          campaign,
-          index
-        ) => {
-          addLine(
-            `${index + 1}. ${truncate(
-              campaign.name,
-              65
-            )}`,
-            `${campaign.count} diffusions - ${formatDuration(
-              campaign.duration
-            )}`
-          );
-        }
-      );
-    }
+    addDivider();
 
-    addSpacing(4);
+    addSection("Top écrans");
 
-    addSection(
-      "Top médias"
-    );
-
-    if (
-      mediaStats.length === 0
-    ) {
-      addLine(
-        "Information",
-        "Aucun média diffusé avec succès"
-      );
-    } else {
-      mediaStats.forEach(
-        (media, index) => {
-          addLine(
-            `${index + 1}. ${truncate(
-              media.name,
-              70
-            )}`,
-            `${media.count} diffusions - ${formatDuration(
-              media.duration
-            )}`
-          );
-        }
-      );
-    }
-
-    addSpacing(4);
-
-    addSection(
-      "Dernières diffusions"
-    );
-
-    if (
-      recentLogs.length === 0
-    ) {
+    if (screenStats.length === 0) {
       addLine(
         "Information",
         "Aucune diffusion enregistrée"
       );
     } else {
-      recentLogs.forEach(
-        (log, index) => {
-          const mediaName =
-            log.media?.name ||
-            "Média inconnu";
+      screenStats.forEach((screen, index) => {
+        addBullet(
+          `${index + 1}. ${screen.name} (${screen.code}) — ` +
+            `${screen.count} diffusions — ` +
+            `${formatDuration(screen.duration)}`
+        );
+      });
+    }
 
-          const screenName =
-            log.screen?.name ||
-            log.screen?.screenCode ||
-            "Écran inconnu";
+    addDivider();
 
-          const campaignName =
-            log.campaign?.name
-              ? ` | Campagne: ${truncate(
-                  log.campaign.name,
-                  35
-                )}`
-              : " | Sans campagne";
+    addSection("Top campagnes");
 
-          addLine(
-            `${index + 1}. ${truncate(
-              mediaName,
-              55
-            )}`,
-            `${screenName}${campaignName} | ${log.status} | ${formatDuration(
-              log.durationSeconds ?? 0
-            )} | ${formatDate(
-              log.startedAt
-            )}`
-          );
+    if (campaignStats.length === 0) {
+      addLine(
+        "Information",
+        "Aucune campagne associée"
+      );
+    } else {
+      campaignStats.forEach((campaign, index) => {
+        addBullet(
+          `${index + 1}. ${campaign.name} — ` +
+            `${campaign.count} diffusions — ` +
+            `${formatDuration(campaign.duration)}`
+        );
+      });
+    }
+
+    addDivider();
+
+    addSection("Top médias");
+
+    if (mediaStats.length === 0) {
+      addLine(
+        "Information",
+        "Aucun média diffusé"
+      );
+    } else {
+      mediaStats.forEach((media, index) => {
+        addBullet(
+          `${index + 1}. ${media.name} — ` +
+            `${media.count} diffusions — ` +
+            `${formatDuration(media.duration)}`
+        );
+      });
+    }
+
+    addDivider();
+
+    addSection("15 dernières diffusions");
+
+    if (recentLogs.length === 0) {
+      addLine(
+        "Information",
+        "Aucune diffusion enregistrée"
+      );
+    } else {
+      recentLogs.forEach((log, index) => {
+        const screenName =
+          cleanText(log.screen.name) ||
+          cleanText(log.screen.screenCode) ||
+          "Écran inconnu";
+
+        const campaignText = log.campaign
+          ? cleanText(log.campaign.name)
+          : "Sans campagne";
+
+        const recentText =
+          `${index + 1}. ` +
+          `${cleanMediaName(log.media.name)} | ` +
+          `${screenName} | ` +
+          `${campaignText} | ` +
+          `${log.status} | ` +
+          `${formatDuration(log.durationSeconds ?? 0)} | ` +
+          `${formatDate(log.startedAt)}`;
+
+        addBullet(recentText);
+      });
+    }
+
+    // Footer ajouté après la génération de tout le contenu.
+    const totalPages = doc.getNumberOfPages();
+
+    for (
+      let pageNumber = 1;
+      pageNumber <= totalPages;
+      pageNumber += 1
+    ) {
+      doc.setPage(pageNumber);
+
+      const footerY = pageHeight - 9;
+
+      doc.setDrawColor(180);
+      doc.setLineWidth(0.2);
+
+      doc.line(
+        marginLeft,
+        footerY - 4,
+        pageWidth - marginRight,
+        footerY - 4
+      );
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+
+      doc.text(
+        "SeetuAds • Rapport Analytics",
+        marginLeft,
+        footerY
+      );
+
+      doc.text(
+        `Page ${pageNumber} / ${totalPages}`,
+        pageWidth - marginRight,
+        footerY,
+        {
+          align: "right",
         }
       );
     }
-
-    const totalPages =
-      doc.getNumberOfPages();
-
-    for (
-      let page = 1;
-      page <= totalPages;
-      page += 1
-    ) {
-      doc.setPage(page);
-
-      doc.setFont(
-        "helvetica",
-        "normal"
-      );
-
-      doc.setFontSize(8);
-
-      doc.text(
-        `SeetuAds | Page ${page}/${totalPages}`,
-        margin,
-        pageHeight - 10
-      );
-    }
-
     const pdfArrayBuffer =
       doc.output("arraybuffer");
 
@@ -708,11 +691,7 @@ export async function GET() {
             `attachment; filename="${fileName}"`,
 
           "Cache-Control":
-            "no-store, no-cache, must-revalidate, max-age=0",
-
-          Pragma: "no-cache",
-
-          Expires: "0",
+            "no-store, no-cache, must-revalidate",
         },
       }
     );
@@ -730,11 +709,16 @@ export async function GET() {
       },
       {
         status: 500,
-        headers: {
-          "Cache-Control":
-            "no-store",
-        },
       }
     );
   }
 }
+
+
+
+
+
+
+
+
+

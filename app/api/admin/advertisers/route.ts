@@ -3,6 +3,50 @@ import crypto from "crypto";
 import { requireAdmin, hashToken } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
+
+export async function GET() {
+  try {
+    await requireAdmin();
+
+    const advertisers =
+      await prisma.advertiser.findMany({
+        where: {
+          status: "ACTIVE",
+        },
+        orderBy: {
+          companyName: "asc",
+        },
+        select: {
+          id: true,
+          companyName: true,
+          status: true,
+        },
+      });
+
+    return NextResponse.json({
+      success: true,
+      advertisers,
+    });
+  } catch (error: unknown) {
+    console.error(
+      "GET ADVERTISERS ERROR:",
+      error
+    );
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Erreur inconnue.";
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+      },
+      { status: 500 }
+    );
+  }
+}
 export async function POST(req: Request) {
   try {
     await requireAdmin();
@@ -142,3 +186,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

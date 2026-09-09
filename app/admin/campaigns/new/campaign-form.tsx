@@ -152,6 +152,18 @@ export function CampaignForm({
     );
   }, [startDate, endDate]);
 
+  const hasPricingError = useMemo(() => {
+    return selectedScreens.some((screenId) => {
+      const screen = screens.find((item) => item.id === screenId);
+      if (!screen) return true;
+
+      return !(
+        pricingRules.some((item) => item.screenId === screenId) ||
+        pricingRules.some((item) => item.zoneId === screen.zone?.id)
+      );
+    });
+  }, [selectedScreens, screens, pricingRules]);
+
   const estimatedPrice = useMemo(() => {
     if (
       numberOfDays === 0 ||
@@ -177,8 +189,7 @@ export function CampaignForm({
         ) ||
         pricingRules.find(
           (item) => item.zoneId === screen.zone?.id
-        ) ||
-        pricingRules[0];
+        );
 
       if (!rule) {
         continue;
@@ -196,12 +207,14 @@ export function CampaignForm({
       const basePrice =
         Number(rule.basePrice) || 0;
 
-      total +=
+      // PRIX = tarif écran/jour × durée × fréquence × zone × jours
+      const screenPrice =
         basePrice *
         durationMultiplier *
         frequencyMultiplier *
-        zoneMultiplier *
-        numberOfDays;
+        zoneMultiplier;
+
+      total += screenPrice * numberOfDays;
     }
 
     return Math.round(total);
@@ -231,7 +244,8 @@ export function CampaignForm({
     selectedMedia.length > 0 &&
     availableMedia.length > 0 &&
     numberOfDays > 0 &&
-    !invalidDates;
+    !invalidDates &&
+    !hasPricingError;
 
   const handleSubmit = async (formData: FormData) => {
     if (isSubmitting) {
@@ -298,6 +312,26 @@ export function CampaignForm({
     if (!selectedMediaBelongsToAdvertiser) {
       window.alert(
         "Un ou plusieurs médias ne correspondent pas à l'annonceur sélectionné."
+      );
+      return;
+    }
+
+    /*
+     * Chaque écran sélectionné doit avoir une règle tarifaire.
+     */
+    const screensWithoutPricing = selectedScreens.filter((screenId) => {
+      const screen = screens.find((item) => item.id === screenId);
+      if (!screen) return true;
+
+      return !(
+        pricingRules.some((item) => item.screenId === screenId) ||
+        pricingRules.some((item) => item.zoneId === screen.zone?.id)
+      );
+    });
+
+    if (screensWithoutPricing.length > 0) {
+      window.alert(
+        "Un ou plusieurs écrans sélectionnés n'ont pas de tarif configuré. Veuillez contacter l'administrateur avant de créer cette campagne."
       );
       return;
     }
@@ -753,12 +787,14 @@ export function CampaignForm({
 
         <div className="mt-4 flex items-baseline gap-2">
           <span className="text-4xl font-bold text-primary-700">
-            {estimatedPrice.toLocaleString("fr-FR")}
+            {hasPricingError ? "Tarif non configuré" : estimatedPrice.toLocaleString("fr-FR")}
           </span>
 
-          <span className="text-primary-600">
-            XOF
-          </span>
+          {!hasPricingError && (
+            <span className="text-primary-600">
+              XOF
+            </span>
+          )}
         </div>
 
         <p className="text-sm text-primary-600 mt-2">
@@ -794,3 +830,8 @@ export function CampaignForm({
     </form>
   );
 }
+
+
+
+
+

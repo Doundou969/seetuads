@@ -64,7 +64,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       endDate,
       spotDuration,
       frequencyPerLoop,
-      status,
+
     } = body;
 
     const updated = await prisma.campaign.update({
@@ -76,7 +76,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         ...(endDate && { endDate: new Date(endDate) }),
         ...(spotDuration && { spotDuration }),
         ...(frequencyPerLoop && { frequencyPerLoop }),
-        ...(status && { status }),
       },
     });
 

@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
@@ -25,126 +25,143 @@ export async function GET(req: Request) {
       );
     }
 
-    const now = new Date();
-
     const player = await prisma.player.findFirst({
       where: {
         deviceId,
         apiKey,
       },
       include: {
-        screen: {
-          include: {
-            playlists: {
-              where: {
-                status: "ACTIVE",
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              include: {
-                items: {
-                  include: {
-                    media: true,
-                  },
-                  orderBy: {
-                    position: "asc",
-                  },
-                },
-              },
-            },
-          },
-        },
+        screen: true,
       },
     });
 
     if (!player?.screen) {
       return NextResponse.json(
-        { error: "Player non autorisé" },
+        { error: "Player non autorisé ou aucun écran associé" },
         { status: 401 }
       );
     }
 
-    const playlists = player.screen.playlists;
+    const screen = player.screen;
 
-    if (!playlists || playlists.length === 0) {
-      return NextResponse.json(
-        { error: "Aucune playlist active" },
-        { status: 404 }
-      );
-    }
+    /*
+     * ============================================================
+     * PLAYLIST ACTIVE DE L'ÉCRAN
+     * ============================================================
+     *
+     * La page admin /admin/playlists sauvegarde les médias dans :
+     *
+     * Playlist
+     *   -> PlaylistItem
+     *      -> Media
+     *
+     * Le player doit donc lire cette même source.
+     */
 
-    // Fusionne toutes les publicités des playlists actives,
-    // puis filtre précisément celles qui sont actuellement diffusables.
-    const items = playlists
-  .flatMap((playlist) =>
-    playlist.items
-      .filter((item) => {
-        // Le média doit être approuvé.
-        if (item.media.status !== "APPROVED") {
-          return false;
-        }
+    const playlist = await prisma.playlist.findFirst({
+      where: {
+        screenId: screen.id,
+        status: "ACTIVE",
+      },
+      orderBy: {
+        version: "desc",
+      },
+      include: {
+        items: {
+          orderBy: {
+            position: "asc",
+          },
+          include: {
+            media: true,
+          },
+        },
+      },
+    });
 
-        // Si une date de début existe,
-        // la publicité ne doit pas commencer dans le futur.
-        if (item.startDate) {
-          const startDate = new Date(item.startDate);
+    if (!playlist) {
+      console.log("Playlist player :", {
+        deviceId,
+        screenId: screen.id,
+        playlistFound: false,
+      });
 
-          if (startDate.getTime() > now.getTime()) {
-            return false;
-          }
-        }
-
-        // Si aucune date de fin n'existe,
-        // la publicité reste active.
-        if (!item.endDate) {
-          return true;
-        }
-
-        const endDate = new Date(item.endDate);
-
-        // Une date enregistrée à minuit signifie
-        // que la publicité reste active toute cette journée.
-        if (
-          endDate.getHours() === 0 &&
-          endDate.getMinutes() === 0 &&
-          endDate.getSeconds() === 0 &&
-          endDate.getMilliseconds() === 0
-        ) {
-          endDate.setHours(23, 59, 59, 999);
-        }
-
-        return endDate.getTime() >= now.getTime();
-      })
-      .map((item) => ({
-        ...item,
-        playlistId: playlist.id,
-      }))
-  )
-  .sort((a, b) => a.position - b.position);
-
-    if (items.length === 0) {
       return NextResponse.json(
         {
-          error: "Aucune publicité active actuellement",
-          serverTime: now.toISOString(),
+          playlist: {
+            id: `screen-${screen.id}`,
+            name: `${screen.name || screen.screenCode} - Playlist`,
+            screenId: screen.id,
+            screenCode: screen.screenCode,
+            playerId: player.id,
+            deviceId: player.deviceId,
+            items: [],
+            activeCampaignsCount: 0,
+            activeItemsCount: 0,
+            serverTime: new Date().toISOString(),
+          },
         },
-        { status: 404 }
+        { status: 200 }
       );
     }
+
+    const validItems = playlist.items
+      .filter((item) => {
+        return (
+          Boolean(item.media?.id) &&
+          Boolean(item.media?.fileUrl) &&
+          Boolean(item.media?.fileType)
+        );
+      })
+      .map((item, position) => ({
+        id: item.id,
+        position,
+        durationSeconds:
+          item.durationSeconds ||
+          item.media.durationSeconds ||
+          15,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        campaignId: item.campaignId,
+        media: {
+          id: item.media.id,
+          name: item.media.name,
+          fileUrl: item.media.fileUrl,
+          fileType: item.media.fileType,
+          mimeType: item.media.mimeType,
+        },
+      }));
+
+    console.log("Playlist API :", {
+      deviceId,
+      screenId: screen.id,
+      playlistId: playlist.id,
+      playlistVersion: playlist.version,
+      playlistStatus: playlist.status,
+      totalItems: playlist.items.length,
+      validItems: validItems.length,
+      invalidItems: playlist.items.length - validItems.length,
+    });
 
     const serializedData = JSON.parse(
       JSON.stringify(
         {
-          id: `screen-${player.screen.id}`,
-          name: `${player.screen.name} - Multi Ads Loop`,
-          items,
-          playlistsCount: playlists.length,
-          activeItemsCount: items.length,
-          serverTime: now.toISOString(),
+          id: playlist.id,
+          name:
+            `${screen.name || screen.screenCode} - Playlist`,
+          screenId: screen.id,
+          screenCode: screen.screenCode,
+          playerId: player.id,
+          deviceId: player.deviceId,
+          playlistVersion: playlist.version,
+          items: validItems,
+          activeCampaignsCount: 0,
+          activeItemsCount: validItems.length,
+          serverTime: new Date().toISOString(),
         },
         (_key, value) =>
-          typeof value === "bigint" ? value.toString() : value
+          typeof value === "bigint"
+            ? value.toString()
+            : value
       )
     );
 
@@ -152,14 +169,17 @@ export async function GET(req: Request) {
       playlist: serializedData,
     });
   } catch (error) {
-    console.error("Erreur récupération playlist player :", error);
+    console.error(
+      "Erreur récupération playlist player :",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Erreur serveur lors de la récupération des publicités",
+        error:
+          "Erreur serveur lors de la récupération des publicités",
       },
       { status: 500 }
     );
   }
 }
-

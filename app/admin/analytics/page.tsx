@@ -1,32 +1,79 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
+import { DownloadPdfButton } from "./download-pdf-button";
 import {
   BarChart3,
   Monitor,
   Play,
   Clock,
   CheckCircle2,
-  XCircle,
   Activity,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-function formatDuration(seconds: number) {
-  if (seconds < 60) {
-    return `${seconds}s`;
+function formatMediaName(name: string, maxLength = 60) {
+  if (!name) return "Média sans nom";
+
+  let cleaned = name
+    .replace(/\\_/g, " ")
+    .replace(/_/g, " ")
+    .replace(/\\/g, "")
+    .replace(/\*/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  cleaned = cleaned.replace(
+    /^(Gemini Generated Image)[\s\w-]*$/i,
+    "$1"
+  );
+
+  cleaned = cleaned.replace(
+    /^(ChatGPT Image.*?)(\s+\d{1,2}_\d{2}_\d{2})?$/i,
+    "$1"
+  );
+
+  if (cleaned.length > maxLength) {
+    return `${cleaned.slice(0, maxLength).trim()}…`;
   }
 
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
+  return cleaned;
+}
+
+function formatDuration(seconds: number) {
+  const safeSeconds = Math.max(0, Math.round(seconds));
+
+  if (safeSeconds < 60) return `${safeSeconds}s`;
+
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
 
   if (minutes < 60) {
-    return `${minutes}m ${remainingSeconds}s`;
+    return remainingSeconds > 0
+      ? `${minutes}m ${remainingSeconds}s`
+      : `${minutes}m`;
   }
 
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
 
-  return `${hours}h ${remainingMinutes}m`;
+  return remainingMinutes > 0
+    ? `${hours}h ${remainingMinutes}m`
+    : `${hours}h`;
+}
+
+function getStatusClasses(status: string) {
+  switch (status) {
+    case "PLAYED":
+      return "bg-green-100 text-green-700";
+    case "FAILED":
+      return "bg-red-100 text-red-700";
+    case "INTERRUPTED":
+      return "bg-yellow-100 text-yellow-700";
+    case "SKIPPED":
+      return "bg-gray-100 text-gray-700";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
 }
 
 export default async function AdminAnalyticsPage() {
@@ -48,19 +95,11 @@ export default async function AdminAnalyticsPage() {
     recentLogs,
   ] = await Promise.all([
     prisma.playbackLog.count({
-      where: {
-        startedAt: {
-          gte: todayStart,
-        },
-      },
+      where: { startedAt: { gte: todayStart } },
     }),
 
     prisma.playbackLog.findMany({
-      where: {
-        startedAt: {
-          gte: sevenDaysStart,
-        },
-      },
+      where: { startedAt: { gte: sevenDaysStart } },
       select: {
         id: true,
         startedAt: true,
@@ -86,26 +125,20 @@ export default async function AdminAnalyticsPage() {
           },
         },
       },
-      orderBy: {
-        startedAt: "desc",
-      },
+      orderBy: { startedAt: "desc" },
     }),
 
     prisma.screen.count(),
 
     prisma.screen.count({
-      where: {
-        status: "ONLINE",
-      },
+      where: { status: "ONLINE" },
     }),
 
     prisma.player.count(),
 
     prisma.playbackLog.findMany({
       take: 20,
-      orderBy: {
-        startedAt: "desc",
-      },
+      orderBy: { startedAt: "desc" },
       select: {
         id: true,
         startedAt: true,
@@ -118,14 +151,10 @@ export default async function AdminAnalyticsPage() {
           },
         },
         media: {
-          select: {
-            name: true,
-          },
+          select: { name: true },
         },
         campaign: {
-          select: {
-            name: true,
-          },
+          select: { name: true },
         },
       },
     }),
@@ -154,8 +183,8 @@ export default async function AdminAnalyticsPage() {
 
   const successRate =
     sevenDaysLogs.length > 0
-      ? Math.round(
-          (playedLogs.length / sevenDaysLogs.length) * 100
+      ? Number(
+          ((playedLogs.length / sevenDaysLogs.length) * 100).toFixed(2)
         )
       : 0;
 
@@ -181,7 +210,6 @@ export default async function AdminAnalyticsPage() {
 
     current.count += 1;
     current.duration += log.durationSeconds ?? 0;
-
     byScreen.set(key, current);
   }
 
@@ -211,7 +239,6 @@ export default async function AdminAnalyticsPage() {
 
     current.count += 1;
     current.duration += log.durationSeconds ?? 0;
-
     byCampaign.set(key, current);
   }
 
@@ -239,7 +266,6 @@ export default async function AdminAnalyticsPage() {
 
     current.count += 1;
     current.duration += log.durationSeconds ?? 0;
-
     byMedia.set(key, current);
   }
 
@@ -285,12 +311,10 @@ export default async function AdminAnalyticsPage() {
       <div>
         <div className="flex items-center gap-3">
           <BarChart3 className="h-8 w-8 text-primary-600" />
-
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
               Analytics
             </h1>
-
             <p className="text-gray-600">
               Performances du réseau publicitaire SeetuAds
             </p>
@@ -298,7 +322,28 @@ export default async function AdminAnalyticsPage() {
         </div>
       </div>
 
-      {/* KPI */}
+      <div className="flex justify-end">
+        <DownloadPdfButton
+          data={{
+            generatedAt: now.toLocaleString("fr-FR"),
+            periodLabel: "Les 7 derniers jours",
+            todayLogs,
+            totalLogs: sevenDaysLogs.length,
+            totalDuration,
+            successRate,
+            totalScreens,
+            onlineScreens,
+            totalPlayers,
+            played: playedLogs.length,
+            interrupted: interruptedLogs.length,
+            failed: failedLogs.length,
+            skipped: skippedLogs.length,
+            screenStats,
+            campaignStats,
+            mediaStats,
+          }}
+        />
+      </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => {
@@ -314,7 +359,6 @@ export default async function AdminAnalyticsPage() {
                   <p className="text-sm font-medium text-gray-500">
                     {card.label}
                   </p>
-
                   <p className="mt-2 text-3xl font-bold text-gray-900">
                     {card.value}
                   </p>
@@ -329,46 +373,30 @@ export default async function AdminAnalyticsPage() {
         })}
       </div>
 
-      {/* Statuts */}
-
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-sm text-gray-500">PLAYED</p>
-          <p className="mt-2 text-2xl font-bold text-green-600">
-            {playedLogs.length}
-          </p>
-        </div>
-
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-sm text-gray-500">INTERRUPTED</p>
-          <p className="mt-2 text-2xl font-bold text-yellow-600">
-            {interruptedLogs.length}
-          </p>
-        </div>
-
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-sm text-gray-500">FAILED</p>
-          <p className="mt-2 text-2xl font-bold text-red-600">
-            {failedLogs.length}
-          </p>
-        </div>
-
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-sm text-gray-500">SKIPPED</p>
-          <p className="mt-2 text-2xl font-bold text-gray-600">
-            {skippedLogs.length}
-          </p>
-        </div>
+        {[
+          ["PLAYED", playedLogs.length, "text-green-600"],
+          ["INTERRUPTED", interruptedLogs.length, "text-yellow-600"],
+          ["FAILED", failedLogs.length, "text-red-600"],
+          ["SKIPPED", skippedLogs.length, "text-gray-600"],
+        ].map(([label, value, color]) => (
+          <div
+            key={String(label)}
+            className="rounded-xl border bg-white p-5"
+          >
+            <p className="text-sm text-gray-500">{label}</p>
+            <p className={`mt-2 text-2xl font-bold ${color}`}>
+              {value}
+            </p>
+          </div>
+        ))}
       </div>
-
-      {/* Écrans */}
 
       <div className="rounded-xl border bg-white shadow-sm">
         <div className="border-b p-6">
           <h2 className="text-xl font-semibold text-gray-900">
             Diffusions par écran
           </h2>
-
           <p className="text-sm text-gray-500">
             Activité des écrans sur les 7 derniers jours
           </p>
@@ -383,13 +411,12 @@ export default async function AdminAnalyticsPage() {
             screenStats.map((screen) => (
               <div
                 key={screen.code}
-                className="flex items-center justify-between p-5"
+                className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="font-medium text-gray-900">
                     {screen.name}
                   </p>
-
                   <p className="text-sm text-gray-500">
                     {screen.code}
                   </p>
@@ -397,9 +424,9 @@ export default async function AdminAnalyticsPage() {
 
                 <div className="text-right">
                   <p className="font-bold text-gray-900">
-                    {screen.count} diffusions
+                    {screen.count} diffusion
+                    {screen.count > 1 ? "s" : ""}
                   </p>
-
                   <p className="text-sm text-gray-500">
                     {formatDuration(screen.duration)}
                   </p>
@@ -409,8 +436,6 @@ export default async function AdminAnalyticsPage() {
           )}
         </div>
       </div>
-
-      {/* Campagnes */}
 
       <div className="rounded-xl border bg-white shadow-sm">
         <div className="border-b p-6">
@@ -428,7 +453,7 @@ export default async function AdminAnalyticsPage() {
             campaignStats.map((campaign) => (
               <div
                 key={campaign.name}
-                className="flex items-center justify-between p-5"
+                className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
               >
                 <p className="font-medium text-gray-900">
                   {campaign.name}
@@ -436,9 +461,9 @@ export default async function AdminAnalyticsPage() {
 
                 <div className="text-right">
                   <p className="font-bold">
-                    {campaign.count} diffusions
+                    {campaign.count} diffusion
+                    {campaign.count > 1 ? "s" : ""}
                   </p>
-
                   <p className="text-sm text-gray-500">
                     {formatDuration(campaign.duration)}
                   </p>
@@ -448,8 +473,6 @@ export default async function AdminAnalyticsPage() {
           )}
         </div>
       </div>
-
-      {/* Médias */}
 
       <div className="rounded-xl border bg-white shadow-sm">
         <div className="border-b p-6">
@@ -467,17 +490,22 @@ export default async function AdminAnalyticsPage() {
             mediaStats.map((media) => (
               <div
                 key={media.name}
-                className="flex items-center justify-between p-5"
+                className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
               >
-                <p className="font-medium text-gray-900">
-                  {media.name}
-                </p>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="truncate font-medium text-gray-900"
+                    title={media.name}
+                  >
+                    {formatMediaName(media.name)}
+                  </p>
+                </div>
 
                 <div className="text-right">
                   <p className="font-bold">
-                    {media.count} diffusions
+                    {media.count} diffusion
+                    {media.count > 1 ? "s" : ""}
                   </p>
-
                   <p className="text-sm text-gray-500">
                     {formatDuration(media.duration)}
                   </p>
@@ -487,8 +515,6 @@ export default async function AdminAnalyticsPage() {
           )}
         </div>
       </div>
-
-      {/* Dernières diffusions */}
 
       <div className="rounded-xl border bg-white shadow-sm">
         <div className="border-b p-6">
@@ -506,14 +532,17 @@ export default async function AdminAnalyticsPage() {
             recentLogs.map((log) => (
               <div
                 key={log.id}
-                className="flex flex-col gap-2 p-5 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between"
               >
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {log.media.name}
+                <div className="min-w-0">
+                  <p
+                    className="max-w-full truncate font-medium text-gray-900 lg:max-w-xl"
+                    title={log.media.name}
+                  >
+                    {formatMediaName(log.media.name, 70)}
                   </p>
 
-                  <p className="text-sm text-gray-500">
+                  <p className="truncate text-sm text-gray-500">
                     {log.screen.name || log.screen.screenCode}
                     {log.campaign
                       ? ` · ${log.campaign.name}`
@@ -521,15 +550,11 @@ export default async function AdminAnalyticsPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:flex-nowrap">
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      log.status === "PLAYED"
-                        ? "bg-green-100 text-green-700"
-                        : log.status === "FAILED"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(
+                      log.status
+                    )}`}
                   >
                     {log.status}
                   </span>
@@ -539,9 +564,7 @@ export default async function AdminAnalyticsPage() {
                   </span>
 
                   <span className="text-sm text-gray-500">
-                    {new Date(log.startedAt).toLocaleString(
-                      "fr-FR"
-                    )}
+                    {new Date(log.startedAt).toLocaleString("fr-FR")}
                   </span>
                 </div>
               </div>

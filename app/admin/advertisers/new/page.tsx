@@ -1,11 +1,9 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function NewAdvertiserPage() {
-  const router = useRouter();
 
   const [companyName, setCompanyName] = useState("");
   const [contactName, setContactName] = useState("");

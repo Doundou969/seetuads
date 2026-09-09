@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -6,7 +6,7 @@ export async function GET() {
   try {
     await requireAdmin();
   } catch {
-    return NextResponse.json({ error: "AccÃ¨s non autorisÃ©" }, { status: 403 });
+    return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 });
   }
 
   try {
