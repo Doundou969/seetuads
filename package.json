@@ -28,7 +28,6 @@
     "tailwind-merge": "^2.5.0"
   },
   "devDependencies": {
-    "@tailwindcss/oxide-win32-x64-msvc": "^4.3.3",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22.20.1",
     "@types/react": "^19.0.0",
@@ -37,7 +36,6 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.5.23",
     "lightningcss": "^1.33.0",
-    "lightningcss-win32-x64-msvc": "^1.33.0",
     "postcss": "^8.5.28",
     "prisma": "^5.22.0",
     "tailwindcss": "^4.3.3",
