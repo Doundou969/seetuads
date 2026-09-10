@@ -2136,3 +2136,131 @@ export async function updateAdvertiserStatus(
 
 
 
+
+
+// ============================================================================
+// VALIDATION SIMPLIFIEE (approuve les medias + active en une seule action)
+// ============================================================================
+
+export async function approveAndActivateCampaign(id: string) {
+  const user = await requireAuth();
+
+  if (user.role !== "ADMIN" && user.role !== "OPERATOR") {
+    throw new Error(
+      "Seuls les administrateurs peuvent valider une campagne."
+    );
+  }
+
+  const { campaign } = await getAuthorizedCampaign(id);
+
+  if (campaign.status !== "DRAFT") {
+    throw new Error(
+      "Seules les campagnes en brouillon peuvent etre activees."
+    );
+  }
+
+  if (campaign.campaignMedia.length === 0) {
+    throw new Error(
+      "La campagne doit contenir au moins un media."
+    );
+  }
+
+  if (campaign.campaignScreens.length === 0) {
+    throw new Error(
+      "La campagne doit contenir au moins un ecran."
+    );
+  }
+
+  const rejectedMedia = campaign.campaignMedia.find(
+    (campaignMedia) => campaignMedia.media.status === "REJECTED"
+  );
+
+  if (rejectedMedia) {
+    throw new Error(
+      `Le media "${rejectedMedia.media.name}" a ete rejete et doit etre remplace avant d'activer la campagne.`
+    );
+  }
+
+  const mediaIdsToApprove = campaign.campaignMedia
+    .filter((campaignMedia) => campaignMedia.media.status !== "APPROVED")
+    .map((campaignMedia) => campaignMedia.mediaId);
+
+  await prisma.$transaction(async (tx) => {
+    const currentCampaign = await tx.campaign.findUnique({
+      where: { id: campaign.id },
+      select: { status: true },
+    });
+
+    if (!currentCampaign) {
+      throw new Error("Campagne introuvable.");
+    }
+
+    if (currentCampaign.status !== "DRAFT") {
+      throw new Error(
+        "La campagne a deja ete activee ou ne peut plus etre activee."
+      );
+    }
+
+    if (mediaIdsToApprove.length > 0) {
+      await tx.media.updateMany({
+        where: { id: { in: mediaIdsToApprove } },
+        data: { status: "APPROVED" },
+      });
+    }
+
+    for (const campaignScreen of campaign.campaignScreens) {
+      await tx.$executeRaw`
+        SELECT pg_advisory_xact_lock(
+          hashtextextended(${campaignScreen.screenId}, 0)
+        )
+      `;
+
+      await tx.playlist.updateMany({
+        where: {
+          screenId: campaignScreen.screenId,
+          status: "ACTIVE",
+        },
+        data: { status: "INACTIVE" },
+      });
+
+      const lastPlaylist = await tx.playlist.findFirst({
+        where: { screenId: campaignScreen.screenId },
+        orderBy: { version: "desc" },
+        select: { version: true },
+      });
+
+      const newVersion = (lastPlaylist?.version ?? 0) + 1;
+
+      const playlist = await tx.playlist.create({
+        data: {
+          screenId: campaignScreen.screenId,
+          version: newVersion,
+          status: "ACTIVE",
+          publishedAt: new Date(),
+        },
+      });
+
+      await tx.playlistItem.createMany({
+        data: campaign.campaignMedia.map((campaignMedia) => ({
+          playlistId: playlist.id,
+          campaignId: campaign.id,
+          mediaId: campaignMedia.mediaId,
+          position: campaignMedia.displayOrder,
+          durationSeconds: campaignMedia.durationSeconds,
+          startDate: campaign.startDate,
+          endDate: campaign.endDate,
+        })),
+      });
+    }
+
+    await tx.campaign.update({
+      where: { id: campaign.id },
+      data: { status: "ACTIVE" },
+    });
+  });
+
+  revalidatePath("/admin/campaigns");
+  revalidatePath("/admin/media");
+  revalidatePath("/advertiser/campaigns");
+  revalidatePath("/advertiser/media");
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { DataTable } from "@/components/admin/data-table";
-import { deleteCampaign, activateCampaign, deactivateCampaign, reactivateCampaign } from "@/lib/actions";
+import { deleteCampaign, approveAndActivateCampaign, deactivateCampaign, reactivateCampaign } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Trash2, Play, Pause, RotateCcw, BarChart3 } from "lucide-react";
 
@@ -67,7 +67,7 @@ export function CampaignsDataTable({
 
             {c.status === "DRAFT" && (
               <form
-                action={() => activateCampaign(c.id)}
+                action={() => approveAndActivateCampaign(c.id)}
                 onSubmit={(event) => {
                   if (!canActivate) {
                     event.preventDefault();
@@ -86,7 +86,7 @@ export function CampaignsDataTable({
                   disabled={!canActivate}
                   title={
                     canActivate
-                      ? "Activer la campagne"
+                      ? "Valider et activer (approuve automatiquement les medias en attente)"
                       : "Ajoutez au moins un ecran et un media avant l'activation"
                   }
                 >
@@ -138,3 +138,4 @@ export function CampaignsDataTable({
     />
   );
 }
+
