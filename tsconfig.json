@@ -1,4 +1,4 @@
-﻿{
+{
   "compilerOptions": {
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -30,6 +30,9 @@
   ],
   "exclude": [
     "node_modules",
-    "backup-script-*"
+    "backup-script-*",
+    "encoding-backup",
+    "encoding-backup2",
+    "content-backup"
   ]
 }

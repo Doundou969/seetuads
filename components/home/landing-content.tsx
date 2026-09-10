@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 
@@ -191,10 +191,10 @@ export function LandingContent({ stats }: { stats: Stats }) {
       <section className="relative z-10 mx-auto -mt-8 max-w-7xl px-6">
         <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl md:grid-cols-4">
           {[
-            { value: stats.zones, label: "zones couvertes", icon: MapPin },
+            { value: stats.zones, label: "Reseau en expansion a Dakar", icon: MapPin },
             {
               value: stats.partners,
-              label: "commerces partenaires",
+              label: "Nouveaux partenaires chaque mois",
               icon: Store,
             },
             {
@@ -213,7 +213,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
               className="border-b border-r border-slate-100 p-6 last:border-r-0 md:border-b-0"
             >
               <item.icon className="h-5 w-5 text-[#2388FF]" />
-              <p className="mt-3 text-3xl font-bold">{item.value}</p>
+              
               <p className="mt-1 text-sm text-slate-500">{item.label}</p>
             </div>
           ))}
@@ -637,12 +637,12 @@ export function LandingContent({ stats }: { stats: Stats }) {
               {[
                 {
                   value: stats.zones,
-                  label: "Zones couvertes",
+                  label: "Presence multi-zones",
                   icon: MapPin,
                 },
                 {
                   value: stats.partners,
-                  label: "Commerces partenaires",
+                  label: "Reseau en croissance",
                   icon: Store,
                 },
                 {
@@ -667,10 +667,6 @@ export function LandingContent({ stats }: { stats: Stats }) {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
                     <item.icon className="h-6 w-6" />
                   </div>
-
-                  <p className="mt-6 text-3xl font-bold text-slate-950">
-                    {item.value}
-                  </p>
 
                   <p className="mt-1 text-sm font-medium text-slate-500">
                     {item.label}
