@@ -28,7 +28,7 @@ export default async function AdminDashboardPage() {
     {
       label: "Utilisateurs",
       value: usersCount,
-      description: "Comptes enregistrés",
+      description: "Comptes enregistrÃ©s",
       color: "blue",
     },
     {
@@ -40,37 +40,37 @@ export default async function AdminDashboardPage() {
     {
       label: "Campagnes",
       value: campaignsCount,
-      description: "Campagnes créées",
+      description: "Campagnes crÃ©Ã©es",
       color: "emerald",
     },
     {
-      label: "Médias",
+      label: "MÃ©dias",
       value: mediaCount,
-      description: "Images et vidéos",
+      description: "Images et vidÃ©os",
       color: "orange",
     },
     {
-      label: "Écrans",
+      label: "Ã‰crans",
       value: screensCount,
-      description: "Écrans enregistrés",
+      description: "Ã‰crans enregistrÃ©s",
       color: "cyan",
     },
     {
       label: "Partenaires",
       value: partnersCount,
-      description: "Partenaires enregistrés",
+      description: "Partenaires enregistrÃ©s",
       color: "pink",
     },
     {
       label: "Emplacements",
       value: locationsCount,
-      description: "Emplacements configurés",
+      description: "Emplacements configurÃ©s",
       color: "indigo",
     },
     {
       label: "Players",
       value: playersCount,
-      description: "Players connectés",
+      description: "Players connectÃ©s",
       color: "green",
     },
   ];
@@ -80,7 +80,7 @@ export default async function AdminDashboardPage() {
       <section className="dashboard-welcome">
         <div className="relative z-10 max-w-2xl">
           <div className="mb-3 inline-flex items-center rounded-full border border-blue-300/20 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100 backdrop-blur">
-            SEETUADS · ADMINISTRATION
+            SEETUADS Â· ADMINISTRATION
           </div>
 
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -88,8 +88,8 @@ export default async function AdminDashboardPage() {
           </h1>
 
           <p className="mt-3 max-w-xl text-sm leading-6 sm:text-base">
-            Pilotez vos annonceurs, campagnes, médias et infrastructures
-            depuis un espace centralisé.
+            Pilotez vos annonceurs, campagnes, mÃ©dias et infrastructures
+            depuis un espace centralisÃ©.
           </p>
         </div>
       </section>
@@ -153,24 +153,47 @@ export default async function AdminDashboardPage() {
           </h2>
         </div>
 
-        <div className="card p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h3 className="font-semibold text-slate-900">
-                Nouveau player
-              </h3>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div className="card p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-slate-900">
+                  Nouveau player
+                </h3>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Enregistrer un appareil de lecture pour un ecran.
-              </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Enregistrer un appareil de lecture pour un ecran.
+                </p>
+              </div>
+
+              <Link href="/admin/players/new">
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nouveau player
+                </Button>
+              </Link>
             </div>
+          </div>
 
-            <Link href="/admin/players/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nouveau player
-              </Button>
-            </Link>
+          <div className="card p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-slate-900">
+                  Nouvel ecran
+                </h3>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Enregistrer un nouvel ecran d'affichage.
+                </p>
+              </div>
+
+              <Link href="/admin/screens/new">
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nouvel ecran
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -188,7 +211,7 @@ export default async function AdminDashboardPage() {
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-500">
-                Gérez votre réseau publicitaire digital, vos écrans,
+                GÃ©rez votre rÃ©seau publicitaire digital, vos Ã©crans,
                 vos campagnes et vos partenaires depuis cet espace.
               </p>
             </div>
@@ -198,17 +221,17 @@ export default async function AdminDashboardPage() {
         <div className="card p-6">
           <div className="flex items-start gap-4">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <span className="text-lg font-bold">✓</span>
+              <span className="text-lg font-bold">âœ“</span>
             </div>
 
             <div>
               <h2 className="font-bold text-slate-900">
-                Infrastructure opérationnelle
+                Infrastructure opÃ©rationnelle
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-500">
                 Consultez les statistiques, surveillez vos players et
-                gardez le contrôle sur votre inventaire publicitaire.
+                gardez le contrÃ´le sur votre inventaire publicitaire.
               </p>
             </div>
           </div>
