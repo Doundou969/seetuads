@@ -10,6 +10,7 @@ import {
   WifiOff,
   XCircle,
 } from "lucide-react";
+import { generatePlayerShortCode } from "@/lib/actions";
 
 type MonitoredPlayer = {
   id: string;
@@ -56,7 +57,7 @@ function formatTimeAgo(date: string | null) {
     (Date.now() - new Date(date).getTime()) / 1000
   );
 
-  if (seconds < 10) return "Ã€ l'instant";
+  if (seconds < 10) return "Ãƒâ‚¬ l'instant";
   if (seconds < 60) return `Il y a ${seconds} sec`;
 
   const minutes = Math.floor(seconds / 60);
@@ -77,6 +78,7 @@ export function PlayersMonitoring() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
 
   const loadMonitoring = useCallback(async (showRefreshing = false) => {
     try {
@@ -97,7 +99,7 @@ export function PlayersMonitoring() {
       const result: MonitoringResponse = await response.json();
 
       if (!result.success) {
-        throw new Error("Impossible de rÃ©cupÃ©rer le monitoring");
+        throw new Error("Impossible de rÃƒÂ©cupÃƒÂ©rer le monitoring");
       }
 
       setData(result);
@@ -114,6 +116,19 @@ export function PlayersMonitoring() {
       setRefreshing(false);
     }
   }, []);
+
+  const handleGenerateShortCode = async (id: string) => {
+    try {
+      setGeneratingId(id);
+      await generatePlayerShortCode(id);
+      await loadMonitoring(true);
+    } catch (err) {
+      console.error("Generate short code error:", err);
+      alert("Impossible de generer le lien court.");
+    } finally {
+      setGeneratingId(null);
+    }
+  };
 
   useEffect(() => {
     loadMonitoring();
@@ -148,7 +163,7 @@ export function PlayersMonitoring() {
           onClick={() => loadMonitoring(true)}
           className="mt-4 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium hover:bg-red-100"
         >
-          RÃ©essayer
+          RÃƒÂ©essayer
         </button>
       </div>
     );
@@ -206,7 +221,7 @@ export function PlayersMonitoring() {
           <div>
             <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
               <Activity className="h-5 w-5" />
-              Monitoring en temps rÃ©el
+              Monitoring en temps rÃƒÂ©el
             </h2>
 
             <p className="mt-1 text-sm text-gray-500">
@@ -232,12 +247,12 @@ export function PlayersMonitoring() {
               <tr>
                 <th className="px-5 py-3">Statut</th>
                 <th className="px-5 py-3">Player</th>
-                <th className="px-5 py-3">Ã‰cran</th>
+                <th className="px-5 py-3">Ãƒâ€°cran</th>
                 <th className="px-5 py-3">Dernier heartbeat</th>
                 <th className="px-5 py-3">IP</th>
                 <th className="px-5 py-3">Application</th>
                 <th className="px-5 py-3">Lien</th>
-                <th className="px-5 py-3">SystÃ¨me</th>
+                <th className="px-5 py-3">SystÃƒÂ¨me</th>
               </tr>
             </thead>
 
@@ -282,7 +297,7 @@ export function PlayersMonitoring() {
                       </>
                     ) : (
                       <span className="text-gray-400">
-                        Aucun Ã©cran
+                        Aucun ÃƒÂ©cran
                       </span>
                     )}
                   </td>
@@ -314,7 +329,13 @@ export function PlayersMonitoring() {
                         /p/{player.shortCode}
                       </a>
                     ) : (
-                      <span className="text-gray-400">-</span>
+                      <button
+                        onClick={() => handleGenerateShortCode(player.id)}
+                        disabled={generatingId === player.id}
+                        className="text-blue-600 hover:underline disabled:opacity-50"
+                      >
+                        {generatingId === player.id ? "Generation..." : "Generer un code"}
+                      </button>
                     )}
                   </td>
 
@@ -330,7 +351,7 @@ export function PlayersMonitoring() {
                     colSpan={7}
                     className="px-5 py-12 text-center text-gray-500"
                   >
-                    Aucun player enregistrÃ©.
+                    Aucun player enregistrÃƒÂ©.
                   </td>
                 </tr>
               )}
@@ -339,7 +360,7 @@ export function PlayersMonitoring() {
         </div>
 
         <div className="border-t bg-gray-50 px-5 py-3 text-xs text-gray-500">
-          DerniÃ¨re mise Ã  jour : {formatDate(data.timestamp)}
+          DerniÃƒÂ¨re mise ÃƒÂ  jour : {formatDate(data.timestamp)}
         </div>
       </div>
     </div>

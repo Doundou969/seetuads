@@ -1,4 +1,7 @@
-﻿import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export default async function AdminDashboardPage() {
   const [
@@ -140,6 +143,35 @@ export default async function AdminDashboardPage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-4">
+          <h2 className="text-lg font-bold text-slate-900">
+            Actions rapides
+          </h2>
+        </div>
+
+        <div className="card p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-slate-900">
+                Nouveau player
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Enregistrer un appareil de lecture pour un ecran.
+              </p>
+            </div>
+
+            <Link href="/admin/players/new">
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nouveau player
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
