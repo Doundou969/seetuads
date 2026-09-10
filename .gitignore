@@ -51,3 +51,16 @@ audit-*.js
 seetuads-test-*.txt
 test-rapport.pdf
 player-view-current.txt
+
+# Fichiers de sauvegarde ponctuels
+*.before-*
+*backup*
+
+
+# Sauvegardes ponctuelles (scripts de correction)
+*.bak-*
+
+
+# Cache TypeScript
+tsconfig.tsbuildinfo
+
