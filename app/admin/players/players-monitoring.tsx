@@ -57,7 +57,7 @@ function formatTimeAgo(date: string | null) {
     (Date.now() - new Date(date).getTime()) / 1000
   );
 
-  if (seconds < 10) return "Ãƒâ‚¬ l'instant";
+  if (seconds < 10) return "À l'instant";
   if (seconds < 60) return `Il y a ${seconds} sec`;
 
   const minutes = Math.floor(seconds / 60);
@@ -99,7 +99,7 @@ export function PlayersMonitoring() {
       const result: MonitoringResponse = await response.json();
 
       if (!result.success) {
-        throw new Error("Impossible de rÃƒÂ©cupÃƒÂ©rer le monitoring");
+        throw new Error("Impossible de récupérer le monitoring");
       }
 
       setData(result);
@@ -163,7 +163,7 @@ export function PlayersMonitoring() {
           onClick={() => loadMonitoring(true)}
           className="mt-4 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium hover:bg-red-100"
         >
-          RÃƒÂ©essayer
+          Réessayer
         </button>
       </div>
     );
@@ -221,7 +221,7 @@ export function PlayersMonitoring() {
           <div>
             <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
               <Activity className="h-5 w-5" />
-              Monitoring en temps rÃƒÂ©el
+              Monitoring en temps réel
             </h2>
 
             <p className="mt-1 text-sm text-gray-500">
@@ -247,12 +247,12 @@ export function PlayersMonitoring() {
               <tr>
                 <th className="px-5 py-3">Statut</th>
                 <th className="px-5 py-3">Player</th>
-                <th className="px-5 py-3">Ãƒâ€°cran</th>
+                <th className="px-5 py-3">Écran</th>
                 <th className="px-5 py-3">Dernier heartbeat</th>
                 <th className="px-5 py-3">IP</th>
                 <th className="px-5 py-3">Application</th>
                 <th className="px-5 py-3">Lien</th>
-                <th className="px-5 py-3">SystÃƒÂ¨me</th>
+                <th className="px-5 py-3">Système</th>
               </tr>
             </thead>
 
@@ -297,7 +297,7 @@ export function PlayersMonitoring() {
                       </>
                     ) : (
                       <span className="text-gray-400">
-                        Aucun ÃƒÂ©cran
+                        Aucun écran
                       </span>
                     )}
                   </td>
@@ -351,7 +351,7 @@ export function PlayersMonitoring() {
                     colSpan={7}
                     className="px-5 py-12 text-center text-gray-500"
                   >
-                    Aucun player enregistrÃƒÂ©.
+                    Aucun player enregistré.
                   </td>
                 </tr>
               )}
@@ -360,7 +360,7 @@ export function PlayersMonitoring() {
         </div>
 
         <div className="border-t bg-gray-50 px-5 py-3 text-xs text-gray-500">
-          DerniÃƒÂ¨re mise ÃƒÂ  jour : {formatDate(data.timestamp)}
+          Dernière mise à jour : {formatDate(data.timestamp)}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-﻿import { put } from "@vercel/blob";
+import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { requireMediaUploader } from "@/lib/permissions";
 
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Le fichier doit ÃƒÆ’Ã‚Âªtre envoyÃƒÆ’Ã‚Â© en multipart/form-data.",
+          error: "Le fichier doit être envoyé en multipart/form-data.",
         },
         { status: 400 }
       );
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Aucun fichier reÃƒÆ’Ã‚Â§u avec le champ 'file'.",
+          error: "Aucun fichier reçu avec le champ 'file'.",
         },
         { status: 400 }
       );
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
         {
           success: false,
           error:
-            `Type non supportÃƒÆ’Ã‚Â© : ${
+            `Type non supporté : ${
               file.type || "inconnu"
             }. ` +
             "Utilisez MP4, WebM, MOV, JPG, PNG ou WebP.",
@@ -163,7 +163,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Impossible de dÃƒÆ’Ã‚Â©terminer une extension valide.",
+          error: "Impossible de déterminer une extension valide.",
         },
         { status: 400 }
       );

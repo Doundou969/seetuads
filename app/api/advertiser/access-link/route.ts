@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { requireAdvertiser, hashToken } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";

@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { DownloadPdfButton } from "./download-pdf-button";
 import {
   BarChart3,

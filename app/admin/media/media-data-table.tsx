@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { DataTable } from "@/components/admin/data-table";
 import {

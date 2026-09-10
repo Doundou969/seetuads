@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { CampaignsDataTable } from "./campaigns-data-table";
 import { Button } from "@/components/ui/button";

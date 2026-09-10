@@ -28,7 +28,7 @@ export default async function AdminDashboardPage() {
     {
       label: "Utilisateurs",
       value: usersCount,
-      description: "Comptes enregistrÃ©s",
+      description: "Comptes enregistrés",
       color: "blue",
     },
     {
@@ -40,37 +40,37 @@ export default async function AdminDashboardPage() {
     {
       label: "Campagnes",
       value: campaignsCount,
-      description: "Campagnes crÃ©Ã©es",
+      description: "Campagnes créées",
       color: "emerald",
     },
     {
-      label: "MÃ©dias",
+      label: "Médias",
       value: mediaCount,
-      description: "Images et vidÃ©os",
+      description: "Images et vidéos",
       color: "orange",
     },
     {
-      label: "Ã‰crans",
+      label: "Écrans",
       value: screensCount,
-      description: "Ã‰crans enregistrÃ©s",
+      description: "Écrans enregistrés",
       color: "cyan",
     },
     {
       label: "Partenaires",
       value: partnersCount,
-      description: "Partenaires enregistrÃ©s",
+      description: "Partenaires enregistrés",
       color: "pink",
     },
     {
       label: "Emplacements",
       value: locationsCount,
-      description: "Emplacements configurÃ©s",
+      description: "Emplacements configurés",
       color: "indigo",
     },
     {
       label: "Players",
       value: playersCount,
-      description: "Players connectÃ©s",
+      description: "Players connectés",
       color: "green",
     },
   ];
@@ -80,7 +80,7 @@ export default async function AdminDashboardPage() {
       <section className="dashboard-welcome">
         <div className="relative z-10 max-w-2xl">
           <div className="mb-3 inline-flex items-center rounded-full border border-blue-300/20 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100 backdrop-blur">
-            SEETUADS Â· ADMINISTRATION
+            SEETUADS · ADMINISTRATION
           </div>
 
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -88,8 +88,8 @@ export default async function AdminDashboardPage() {
           </h1>
 
           <p className="mt-3 max-w-xl text-sm leading-6 sm:text-base">
-            Pilotez vos annonceurs, campagnes, mÃ©dias et infrastructures
-            depuis un espace centralisÃ©.
+            Pilotez vos annonceurs, campagnes, médias et infrastructures
+            depuis un espace centralisé.
           </p>
         </div>
       </section>
@@ -211,7 +211,7 @@ export default async function AdminDashboardPage() {
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-500">
-                GÃ©rez votre rÃ©seau publicitaire digital, vos Ã©crans,
+                Gérez votre réseau publicitaire digital, vos écrans,
                 vos campagnes et vos partenaires depuis cet espace.
               </p>
             </div>
@@ -221,17 +221,17 @@ export default async function AdminDashboardPage() {
         <div className="card p-6">
           <div className="flex items-start gap-4">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <span className="text-lg font-bold">âœ“</span>
+              <span className="text-lg font-bold">✓</span>
             </div>
 
             <div>
               <h2 className="font-bold text-slate-900">
-                Infrastructure opÃ©rationnelle
+                Infrastructure opérationnelle
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-500">
                 Consultez les statistiques, surveillez vos players et
-                gardez le contrÃ´le sur votre inventaire publicitaire.
+                gardez le contrôle sur votre inventaire publicitaire.
               </p>
             </div>
           </div>

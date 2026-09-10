@@ -16,8 +16,7 @@ import {
 // ============================================================================
 
 export async function createZone(formData: FormData) {
-  await requireAuth();
-
+  await requireAdmin();
   const name = String(formData.get("name") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
   const district = String(formData.get("district") ?? "").trim();
@@ -56,8 +55,7 @@ export async function updateZone(
   id: string,
   formData: FormData
 ) {
-  await requireAuth();
-
+  await requireAdmin();
   const name = String(formData.get("name") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
   const district = String(formData.get("district") ?? "").trim();
@@ -98,8 +96,7 @@ export async function updateZone(
 }
 
 export async function deleteZone(id: string) {
-  await requireAuth();
-
+  await requireAdmin();
   if (!id) {
     throw new Error("Zone introuvable.");
   }
@@ -116,8 +113,7 @@ export async function deleteZone(id: string) {
 // ============================================================================
 
 export async function createPartner(formData: FormData) {
-  await requireAuth();
-
+  await requireAdmin();
   const businessName = String(
     formData.get("businessName") ?? ""
   ).trim();
@@ -153,16 +149,16 @@ export async function createPartner(formData: FormData) {
 
   if (!phone) {
     throw new Error(
-      "Le tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©lÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©phone est requis."
+      "Le téléphone est requis."
     );
   }
 
   // --------------------------------------------------------------------------
-  // CRÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°ATION D'UN UTILISATEUR PARTENAIRE
+  // CRÉATION D'UN UTILISATEUR PARTENAIRE
   // --------------------------------------------------------------------------
   //
-  // Partner.userId est une clÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©trangÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨re obligatoire vers users.id.
-  // On crÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e donc d'abord un vrai User, puis on utilise son id pour Partner.
+  // Partner.userId est une clé étrangère obligatoire vers users.id.
+  // On crée donc d'abord un vrai User, puis on utilise son id pour Partner.
   //
 
   const generatedClerkUserId =
@@ -200,8 +196,7 @@ export async function createPartner(formData: FormData) {
   redirect("/admin/partners");
 }
 export async function deletePartner(id: string) {
-  await requireAuth();
-
+  await requireAdmin();
   if (!id) {
     throw new Error("Partenaire introuvable.");
   }
@@ -218,8 +213,7 @@ export async function deletePartner(id: string) {
 // ============================================================================
 
 export async function createLocation(formData: FormData) {
-  await requireAuth();
-
+  await requireAdmin();
   const partnerId = String(
     formData.get("partnerId") ?? ""
   ).trim();
@@ -284,8 +278,7 @@ export async function createLocation(formData: FormData) {
 }
 
 export async function deleteLocation(id: string) {
-  await requireAuth();
-
+  await requireAdmin();
   if (!id) {
     throw new Error("Emplacement introuvable.");
   }
@@ -302,8 +295,7 @@ export async function deleteLocation(id: string) {
 // ============================================================================
 
 export async function createScreen(formData: FormData) {
-  await requireAuth();
-
+  await requireAdmin();
   const locationId = String(
     formData.get("locationId") ?? ""
   ).trim();
@@ -347,7 +339,7 @@ export async function createScreen(formData: FormData) {
   }
 
   if (!screenCode) {
-    throw new Error("Le code ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©cran est requis.");
+    throw new Error("Le code écran est requis.");
   }
 
   await prisma.screen.create({
@@ -368,10 +360,9 @@ export async function createScreen(formData: FormData) {
 }
 
 export async function deleteScreen(id: string) {
-  await requireAuth();
-
+  await requireAdmin();
   if (!id) {
-    throw new Error("ÃƒÆ’Ã¢â‚¬Â°cran introuvable.");
+    throw new Error("Écran introuvable.");
   }
 
   await prisma.screen.delete({
@@ -397,8 +388,7 @@ function generateShortCode(length = 6) {
 }
 
 export async function createPlayer(formData: FormData) {
-  await requireAuth();
-
+  await requireAdmin();
   const screenId = String(
     formData.get("screenId") ?? ""
   ).trim();
@@ -512,8 +502,7 @@ export async function generatePlayerShortCode(id: string) {
 }
 
 export async function deletePlayer(id: string) {
-  await requireAuth();
-
+  await requireAdmin();
   if (!id) {
     throw new Error("Player introuvable.");
   }
@@ -547,7 +536,7 @@ export async function createCampaign(formData: FormData) {
   ).trim();
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(startDateValue)) {
-    throw new Error("La date de dÃƒÆ’Ã‚Â©but est invalide.");
+    throw new Error("La date de début est invalide.");
   }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(endDateValue)) {
@@ -558,7 +547,7 @@ export async function createCampaign(formData: FormData) {
   const endDate = new Date(`${endDateValue}T00:00:00`);
 
   if (Number.isNaN(startDate.getTime())) {
-    throw new Error("La date de dÃƒÆ’Ã‚Â©but est invalide.");
+    throw new Error("La date de début est invalide.");
   }
 
   if (Number.isNaN(endDate.getTime())) {
@@ -567,7 +556,7 @@ export async function createCampaign(formData: FormData) {
 
   if (endDate < startDate) {
     throw new Error(
-      "La date de fin doit ÃƒÆ’Ã‚Âªtre postÃƒÆ’Ã‚Â©rieure ou ÃƒÆ’Ã‚Â©gale ÃƒÆ’Ã‚Â  la date de dÃƒÆ’Ã‚Â©but."
+      "La date de fin doit être postérieure ou égale à la date de début."
     );
   }
 
@@ -585,7 +574,7 @@ export async function createCampaign(formData: FormData) {
     spotDuration > 60
   ) {
     throw new Error(
-      "La durÃƒÆ’Ã‚Â©e du spot doit ÃƒÆ’Ã‚Âªtre comprise entre 5 et 60 secondes."
+      "La durée du spot doit être comprise entre 5 et 60 secondes."
     );
   }
 
@@ -595,7 +584,7 @@ export async function createCampaign(formData: FormData) {
     frequencyPerLoop > 10
   ) {
     throw new Error(
-      "La frÃƒÆ’Ã‚Â©quence doit ÃƒÆ’Ã‚Âªtre comprise entre 1 et 10."
+      "La fréquence doit être comprise entre 1 et 10."
     );
   }
 
@@ -624,19 +613,19 @@ export async function createCampaign(formData: FormData) {
       return [...new Set(ids)];
     } catch {
       throw new Error(
-        `La sÃƒÆ’Ã‚Â©lection des ${label} est invalide.`
+        `La sélection des ${label} est invalide.`
       );
     }
   };
 
   const screenIds = parseIdList(
     String(formData.get("screenIds") ?? ""),
-    "ÃƒÆ’Ã‚Â©crans"
+    "écrans"
   );
 
   const mediaIds = parseIdList(
     String(formData.get("mediaIds") ?? ""),
-    "mÃƒÆ’Ã‚Â©dias"
+    "médias"
   );
 
   if (!name) {
@@ -645,13 +634,13 @@ export async function createCampaign(formData: FormData) {
 
   if (screenIds.length === 0) {
     throw new Error(
-      "La campagne doit contenir au moins un ÃƒÆ’Ã‚Â©cran."
+      "La campagne doit contenir au moins un écran."
     );
   }
 
   if (mediaIds.length === 0) {
     throw new Error(
-      "La campagne doit contenir au moins un mÃƒÆ’Ã‚Â©dia."
+      "La campagne doit contenir au moins un média."
     );
   }
 
@@ -667,7 +656,7 @@ export async function createCampaign(formData: FormData) {
   ) {
     if (!selectedAdvertiserId) {
       throw new Error(
-        "Veuillez sÃƒÆ’Ã‚Â©lectionner un annonceur."
+        "Veuillez sélectionner un annonceur."
       );
     }
 
@@ -675,7 +664,7 @@ export async function createCampaign(formData: FormData) {
   } else {
     if (!user.advertiser) {
       throw new Error(
-        "AccÃƒÆ’Ã‚Â¨s rÃƒÆ’Ã‚Â©servÃƒÆ’Ã‚Â© aux annonceurs."
+        "Accès réservé aux annonceurs."
       );
     }
 
@@ -706,7 +695,7 @@ export async function createCampaign(formData: FormData) {
 
     if (!advertiser) {
       throw new Error(
-        "L'annonceur sÃƒÆ’Ã‚Â©lectionnÃƒÆ’Ã‚Â© est introuvable ou inactif."
+        "L'annonceur sélectionné est introuvable ou inactif."
       );
     }
 
@@ -728,7 +717,7 @@ export async function createCampaign(formData: FormData) {
       approvedMedia.length !== mediaIds.length
     ) {
       throw new Error(
-        "Un ou plusieurs mÃƒÆ’Ã‚Â©dias sÃƒÆ’Ã‚Â©lectionnÃƒÆ’Ã‚Â©s sont introuvables, appartiennent ÃƒÆ’Ã‚Â  un autre annonceur ou ne sont pas approuvÃƒÆ’Ã‚Â©s."
+        "Un ou plusieurs médias sélectionnés sont introuvables, appartiennent à un autre annonceur ou ne sont pas approuvés."
       );
     }
 
@@ -749,7 +738,7 @@ export async function createCampaign(formData: FormData) {
       validScreens.length !== screenIds.length
     ) {
       throw new Error(
-        "Un ou plusieurs ÃƒÆ’Ã‚Â©crans sÃƒÆ’Ã‚Â©lectionnÃƒÆ’Ã‚Â©s sont introuvables."
+        "Un ou plusieurs écrans sélectionnés sont introuvables."
       );
     }
 
@@ -825,7 +814,7 @@ export async function createCampaign(formData: FormData) {
 
       if (!rule) {
         throw new Error(
-          `Aucune rÃƒÆ’Ã‚Â¨gle de tarification active n'est dÃƒÆ’Ã‚Â©finie pour l'ÃƒÆ’Ã‚Â©cran sÃƒÆ’Ã‚Â©lectionnÃƒÆ’Ã‚Â©.`
+          `Aucune règle de tarification active n'est définie pour l'écran sélectionné.`
         );
       }
 
@@ -891,7 +880,7 @@ async function getAuthorizedCampaign(
   }
 
   // ADMIN / OPERATOR :
-  // accÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨s aux campagnes de tous les annonceurs.
+  // accès aux campagnes de tous les annonceurs.
   if (
     user.role === "ADMIN" ||
     user.role === "OPERATOR"
@@ -931,10 +920,10 @@ async function getAuthorizedCampaign(
   }
 
   // ANNONCEUR :
-  // accÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨s uniquement ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â  ses propres campagnes.
+  // accès uniquement à ses propres campagnes.
   if (!user.advertiser) {
     throw new Error(
-      "AccÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨s rÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©servÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© aux annonceurs."
+      "Accès réservé aux annonceurs."
     );
   }
 
@@ -1031,13 +1020,13 @@ export async function createMedia(formData: FormData) {
 
   if (!name) {
     throw new Error(
-      "Le nom du mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia est requis."
+      "Le nom du média est requis."
     );
   }
 
   if (!fileUrl) {
     throw new Error(
-      "L'URL du mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia est requise."
+      "L'URL du média est requise."
     );
   }
 
@@ -1046,7 +1035,7 @@ export async function createMedia(formData: FormData) {
     fileType !== "video"
   ) {
     throw new Error(
-      "Le type du mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia est invalide."
+      "Le type du média est invalide."
     );
   }
 
@@ -1102,8 +1091,8 @@ export async function createMedia(formData: FormData) {
     )
   ) {
     throw new Error(
-      `Le type MIME du mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia est invalide : ${
-        mimeType || "non renseignÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©"
+      `Le type MIME du média est invalide : ${
+        mimeType || "non renseigné"
       }.`
     );
   }
@@ -1114,7 +1103,7 @@ export async function createMedia(formData: FormData) {
     durationSeconds > 60
   ) {
     throw new Error(
-      "La durÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e doit ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªtre comprise entre 5 et 60 secondes."
+      "La durée doit être comprise entre 5 et 60 secondes."
     );
   }
 
@@ -1126,7 +1115,7 @@ export async function createMedia(formData: FormData) {
     )
   ) {
     throw new Error(
-      "La largeur du mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia est invalide."
+      "La largeur du média est invalide."
     );
   }
 
@@ -1138,7 +1127,7 @@ export async function createMedia(formData: FormData) {
     )
   ) {
     throw new Error(
-      "La hauteur du mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia est invalide."
+      "La hauteur du média est invalide."
     );
   }
 
@@ -1147,7 +1136,7 @@ export async function createMedia(formData: FormData) {
     fileSizeBytes <= BigInt(0)
   ) {
     throw new Error(
-      "La taille du mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia est invalide."
+      "La taille du média est invalide."
     );
   }
 
@@ -1160,7 +1149,7 @@ export async function createMedia(formData: FormData) {
   ) {
     if (!selectedAdvertiserId) {
       throw new Error(
-        "Veuillez sÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©lectionner l'annonceur propriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©taire du mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia."
+        "Veuillez sélectionner l'annonceur propriétaire du média."
       );
     }
 
@@ -1177,7 +1166,7 @@ export async function createMedia(formData: FormData) {
 
     if (!advertiser) {
       throw new Error(
-        "L'annonceur sÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©lectionnÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© est introuvable ou inactif."
+        "L'annonceur sélectionné est introuvable ou inactif."
       );
     }
 
@@ -1186,7 +1175,7 @@ export async function createMedia(formData: FormData) {
     // ANNONCEUR
     if (!user.advertiser) {
       throw new Error(
-        "AccÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨s rÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©servÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© aux annonceurs."
+        "Accès réservé aux annonceurs."
       );
     }
 
@@ -1205,7 +1194,7 @@ export async function createMedia(formData: FormData) {
       heightPx,
       fileSizeBytes,
 
-      // Le mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia attend la validation admin
+      // Le média attend la validation admin
       status: "UPLOADED",
     },
   });
@@ -1393,7 +1382,7 @@ export async function deleteCampaign(
 
   if (campaign.status === "ACTIVE") {
     throw new Error(
-      "Une campagne active ne peut pas Ãªtre supprimÃ©e."
+      "Une campagne active ne peut pas être supprimée."
     );
   }
 
@@ -1414,7 +1403,7 @@ export async function activateCampaign(
 
   if (campaign.status !== "DRAFT") {
     throw new Error(
-      "Seules les campagnes en brouillon peuvent ÃƒÂªtre activÃƒÂ©es."
+      "Seules les campagnes en brouillon peuvent être activées."
     );
   }
 
@@ -1422,7 +1411,7 @@ export async function activateCampaign(
     campaign.campaignMedia.length === 0
   ) {
     throw new Error(
-      "La campagne doit contenir au moins un mÃƒÂ©dia."
+      "La campagne doit contenir au moins un média."
     );
   }
 
@@ -1435,7 +1424,7 @@ export async function activateCampaign(
 
   if (unapprovedMedia) {
     throw new Error(
-      `Le mÃƒÂ©dia "${unapprovedMedia.media.name}" n'est pas approuvÃƒÂ©.`
+      `Le média "${unapprovedMedia.media.name}" n'est pas approuvé.`
     );
   }
 
@@ -1443,7 +1432,7 @@ export async function activateCampaign(
     campaign.campaignScreens.length === 0
   ) {
     throw new Error(
-      "La campagne doit contenir au moins un ÃƒÂ©cran."
+      "La campagne doit contenir au moins un écran."
     );
   }
 
@@ -1466,24 +1455,24 @@ export async function activateCampaign(
 
     if (currentCampaign.status !== "DRAFT") {
       throw new Error(
-        "La campagne a dÃƒÂ©jÃƒÂ  ÃƒÂ©tÃƒÂ© activÃƒÂ©e ou ne peut plus ÃƒÂªtre activÃƒÂ©e."
+        "La campagne a déjà été activée ou ne peut plus être activée."
       );
     }
 
     // --------------------------------------------------------------------------
-    // CRÃƒâ€°ATION DES PLAYLISTS
+    // CRÉATION DES PLAYLISTS
     // --------------------------------------------------------------------------
 
     for (const campaignScreen of campaign.campaignScreens) {
-      // Verrou transactionnel par Ã©cran :
-      // une seule activation Ã  la fois peut calculer/crÃ©er la prochaine version.
+      // Verrou transactionnel par écran :
+      // une seule activation à la fois peut calculer/créer la prochaine version.
       await tx.$executeRaw`
         SELECT pg_advisory_xact_lock(
           hashtextextended(${campaignScreen.screenId}, 0)
         )
       `;
 
-      // DÃ©sactiver toutes les anciennes playlists actives de cet Ã©cran.
+      // Désactiver toutes les anciennes playlists actives de cet écran.
       await tx.playlist.updateMany({
         where: {
           screenId: campaignScreen.screenId,
@@ -1494,7 +1483,7 @@ export async function activateCampaign(
         },
       });
 
-      // RÃ©cupÃ©rer la derniÃ¨re version aprÃ¨s acquisition du verrou.
+      // Récupérer la dernière version après acquisition du verrou.
       const lastPlaylist = await tx.playlist.findFirst({
         where: {
           screenId: campaignScreen.screenId,
@@ -1509,7 +1498,7 @@ export async function activateCampaign(
 
       const newVersion = (lastPlaylist?.version ?? 0) + 1;
 
-      // CrÃ©er la nouvelle playlist ACTIVE.
+      // Créer la nouvelle playlist ACTIVE.
       const playlist = await tx.playlist.create({
         data: {
           screenId: campaignScreen.screenId,
@@ -1609,8 +1598,8 @@ export async function reactivateCampaign(
       );
     }
 
-    // RÃ©activer la campagne dans la transaction.
-    // Si une Ã©tape suivante Ã©choue, toute la transaction est annulÃ©e.
+    // Réactiver la campagne dans la transaction.
+    // Si une étape suivante échoue, toute la transaction est annulée.
     await tx.campaign.update({
       where: {
         id: campaign.id,
@@ -1635,14 +1624,14 @@ export async function reactivateCampaign(
     ].sort();
 
     for (const screenId of screenIds) {
-      // Verrou transactionnel par Ã©cran.
+      // Verrou transactionnel par écran.
       await tx.$executeRaw`
         SELECT pg_advisory_xact_lock(
           hashtextextended(${screenId}, 0)
         )
       `;
 
-      // DÃ©sactiver l'ancienne playlist ACTIVE.
+      // Désactiver l'ancienne playlist ACTIVE.
       await tx.playlist.updateMany({
         where: {
           screenId,
@@ -1653,8 +1642,8 @@ export async function reactivateCampaign(
         },
       });
 
-      // RÃ©cupÃ©rer TOUTES les campagnes actuellement actives
-      // sur cet Ã©cran, y compris celle que nous venons de rÃ©activer.
+      // Récupérer TOUTES les campagnes actuellement actives
+      // sur cet écran, y compris celle que nous venons de réactiver.
       const activeCampaigns =
         await tx.campaign.findMany({
           where: {
@@ -1678,7 +1667,7 @@ export async function reactivateCampaign(
           },
         });
 
-      // Calculer la prochaine version aprÃ¨s le verrou.
+      // Calculer la prochaine version après le verrou.
       const lastPlaylist =
         await tx.playlist.findFirst({
           where: {
@@ -1695,7 +1684,7 @@ export async function reactivateCampaign(
       const newVersion =
         (lastPlaylist?.version ?? 0) + 1;
 
-      // CrÃ©er la nouvelle playlist ACTIVE.
+      // Créer la nouvelle playlist ACTIVE.
       const playlist =
         await tx.playlist.create({
           data: {
@@ -1742,7 +1731,7 @@ export async function deleteMedia(
   const user = await requireAuth();
 
   if (!id) {
-    throw new Error("MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia introuvable.");
+    throw new Error("Média introuvable.");
   }
 
   const media = await prisma.media.findUnique({
@@ -1752,16 +1741,16 @@ export async function deleteMedia(
   });
 
   if (!media) {
-    throw new Error("MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia introuvable.");
+    throw new Error("Média introuvable.");
   }
 
-  // Seuls ADMIN et OPERATOR peuvent supprimer un mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia depuis l'administration.
+  // Seuls ADMIN et OPERATOR peuvent supprimer un média depuis l'administration.
   if (
     user.role !== "ADMIN" &&
     user.role !== "OPERATOR"
   ) {
     throw new Error(
-      "Vous n'avez pas l'autorisation de supprimer ce mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia."
+      "Vous n'avez pas l'autorisation de supprimer ce média."
     );
   }
 
@@ -1785,12 +1774,12 @@ export async function approveMedia(
     user.role !== "OPERATOR"
   ) {
     throw new Error(
-      "Vous n'avez pas l'autorisation d'approuver un mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia."
+      "Vous n'avez pas l'autorisation d'approuver un média."
     );
   }
 
   if (!id) {
-    throw new Error("MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia introuvable.");
+    throw new Error("Média introuvable.");
   }
 
   const media = await prisma.media.findUnique({
@@ -1803,7 +1792,7 @@ export async function approveMedia(
   });
 
   if (!media) {
-    throw new Error("MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia introuvable.");
+    throw new Error("Média introuvable.");
   }
 
   await prisma.media.update({
@@ -1830,12 +1819,12 @@ export async function rejectMedia(
     user.role !== "OPERATOR"
   ) {
     throw new Error(
-      "Vous n'avez pas l'autorisation de rejeter un mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia."
+      "Vous n'avez pas l'autorisation de rejeter un média."
     );
   }
 
   if (!id) {
-    throw new Error("MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia introuvable.");
+    throw new Error("Média introuvable.");
   }
 
   const media = await prisma.media.findUnique({
@@ -1848,7 +1837,7 @@ export async function rejectMedia(
   });
 
   if (!media) {
-    throw new Error("MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dia introuvable.");
+    throw new Error("Média introuvable.");
   }
 
   await prisma.media.update({
@@ -1920,7 +1909,7 @@ export async function updateContract(
   }
 
   if (!startDateValue || !endDateValue) {
-    throw new Error("Les dates de dÃƒÆ’Ã‚Â©but et de fin sont requises.");
+    throw new Error("Les dates de début et de fin sont requises.");
   }
 
   const startDate = new Date(`${startDateValue}T00:00:00`);
@@ -1932,7 +1921,7 @@ export async function updateContract(
 
   if (endDate < startDate) {
     throw new Error(
-      "La date de fin doit ÃƒÆ’Ã‚Âªtre postÃƒÆ’Ã‚Â©rieure ou ÃƒÆ’Ã‚Â©gale ÃƒÆ’Ã‚Â  la date de dÃƒÆ’Ã‚Â©but."
+      "La date de fin doit être postérieure ou égale à la date de début."
     );
   }
 
@@ -1994,7 +1983,7 @@ export async function updateContract(
     });
 
     if (!screen) {
-      throw new Error("ÃƒÆ’Ã¢â‚¬Â°cran introuvable.");
+      throw new Error("Écran introuvable.");
     }
   }
 
@@ -2075,7 +2064,7 @@ export async function createContract(formData: FormData) {
   }
 
   if (!startDateValue || !endDateValue) {
-    throw new Error("Les dates de dÃƒÆ’Ã‚Â©but et de fin sont requises.");
+    throw new Error("Les dates de début et de fin sont requises.");
   }
 
   const startDate = new Date(`${startDateValue}T00:00:00`);
@@ -2087,7 +2076,7 @@ export async function createContract(formData: FormData) {
 
   if (endDate < startDate) {
     throw new Error(
-      "La date de fin doit ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªtre postÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rieure ou ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©gale ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â  la date de dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©but."
+      "La date de fin doit être postérieure ou égale à la date de début."
     );
   }
 
@@ -2140,7 +2129,7 @@ export async function createContract(formData: FormData) {
     });
 
     if (!screen) {
-      throw new Error("ÃƒÆ’Ã¢â‚¬Â°cran introuvable.");
+      throw new Error("Écran introuvable.");
     }
   }
 

@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { requireAdvertiser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 

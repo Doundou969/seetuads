@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -15,7 +15,7 @@ export async function PUT(
     await requireAdmin();
   } catch {
     return NextResponse.json(
-      { error: "AccÃ¨s non autorisÃ©" },
+      { error: "Accès non autorisé" },
       { status: 403 }
     );
   }
@@ -33,18 +33,18 @@ export async function PUT(
 
   const { items } = body;
 
-  // La propriÃ©tÃ© items doit obligatoirement Ãªtre un tableau.
+  // La propriété items doit obligatoirement être un tableau.
   if (!Array.isArray(items)) {
     return NextResponse.json(
-      { error: "La playlist doit contenir une liste d'Ã©lÃ©ments" },
+      { error: "La playlist doit contenir une liste d'éléments" },
       { status: 400 }
     );
   }
 
   // IMPORTANT :
-  // Une playlist vide ne doit jamais Ãªtre publiÃ©e.
-  // Sans cette vÃ©rification, le code dÃ©sactive l'ancienne playlist
-  // puis crÃ©e une nouvelle playlist ACTIVE avec 0 item.
+  // Une playlist vide ne doit jamais être publiée.
+  // Sans cette vérification, le code désactive l'ancienne playlist
+  // puis crée une nouvelle playlist ACTIVE avec 0 item.
   if (items.length === 0) {
     return NextResponse.json(
       { error: "Impossible de publier une playlist vide" },
@@ -52,7 +52,7 @@ export async function PUT(
     );
   }
 
-  // Validation de chaque Ã©lÃ©ment.
+  // Validation de chaque élément.
   if (
     !items.every(
       (item) =>
@@ -66,7 +66,7 @@ export async function PUT(
     return NextResponse.json(
       {
         error:
-          "Chaque Ã©lÃ©ment doit contenir un mÃ©dia et une durÃ©e de 1 Ã  300 secondes",
+          "Chaque élément doit contenir un média et une durée de 1 à 300 secondes",
       },
       { status: 400 }
     );
@@ -75,7 +75,7 @@ export async function PUT(
   const { id: screenId } = await params;
 
   try {
-    // VÃ©rifier que l'Ã©cran existe.
+    // Vérifier que l'écran existe.
     const screen = await prisma.screen.findUnique({
       where: { id: screenId },
       select: { id: true },
@@ -83,15 +83,15 @@ export async function PUT(
 
     if (!screen) {
       return NextResponse.json(
-        { error: "Ã‰cran non trouvÃ©" },
+        { error: "Écran non trouvé" },
         { status: 404 }
       );
     }
 
-    // RÃ©cupÃ©rer les IDs uniques des mÃ©dias.
+    // Récupérer les IDs uniques des médias.
     const mediaIds = [...new Set(items.map((item) => item.mediaId))];
 
-    // VÃ©rifier que tous les mÃ©dias existent et sont APPROVED.
+    // Vérifier que tous les médias existent et sont APPROVED.
     const approvedMedia = await prisma.media.findMany({
       where: {
         id: { in: mediaIds },
@@ -102,21 +102,21 @@ export async function PUT(
 
     if (approvedMedia.length !== mediaIds.length) {
       return NextResponse.json(
-        { error: "Certains mÃ©dias sont absents ou non approuvÃ©s" },
+        { error: "Certains médias sont absents ou non approuvés" },
         { status: 400 }
       );
     }
 
-    // CrÃ©er une nouvelle version de la playlist dans une transaction.
+    // Créer une nouvelle version de la playlist dans une transaction.
     const playlist = await prisma.$transaction(async (tx) => {
-      // Verrou transactionnel par écran :
-      // une seule publication à la fois peut calculer la prochaine version.
+      // Verrou transactionnel par �cran :
+      // une seule publication � la fois peut calculer la prochaine version.
       await tx.$executeRaw`
         SELECT pg_advisory_xact_lock(
           hashtextextended(${screenId}, 0)
         )
       `;
-      // DÃ©sactiver uniquement l'ancienne playlist ACTIVE.
+      // Désactiver uniquement l'ancienne playlist ACTIVE.
       await tx.playlist.updateMany({
         where: {
           screenId,
@@ -127,7 +127,7 @@ export async function PUT(
         },
       });
 
-      // RÃ©cupÃ©rer la derniÃ¨re version pour calculer la suivante.
+      // Récupérer la dernière version pour calculer la suivante.
       const lastPlaylist = await tx.playlist.findFirst({
         where: { screenId },
         orderBy: { version: "desc" },
@@ -136,7 +136,7 @@ export async function PUT(
 
       const newVersion = (lastPlaylist?.version ?? 0) + 1;
 
-      // CrÃ©er la nouvelle playlist ACTIVE avec ses items.
+      // Créer la nouvelle playlist ACTIVE avec ses items.
       return tx.playlist.create({
         data: {
           screenId,
@@ -171,12 +171,12 @@ export async function PUT(
     );
   } catch (error) {
     console.error(
-      `Erreur lors de la crÃ©ation de la playlist pour l'Ã©cran ${screenId}:`,
+      `Erreur lors de la création de la playlist pour l'écran ${screenId}:`,
       error
     );
 
     return NextResponse.json(
-      { error: "Impossible de crÃ©er la playlist" },
+      { error: "Impossible de créer la playlist" },
       { status: 500 }
     );
   }

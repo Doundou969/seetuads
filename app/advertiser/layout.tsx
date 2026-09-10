@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { headers } from "next/headers";
 import { requireAdvertiser } from "@/lib/permissions";

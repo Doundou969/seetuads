@@ -1,4 +1,4 @@
-﻿import { del } from "@vercel/blob";
+import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { requireAdvertiser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";

@@ -1,4 +1,4 @@
-﻿import {
+import {
   auth,
   currentUser,
 } from "@clerk/nextjs/server";
@@ -128,7 +128,7 @@ export async function requireAuth() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new HttpError("Non authentifiÃ©", 401);
+    throw new HttpError("Non authentifié", 401);
   }
 
   return user;
@@ -211,14 +211,14 @@ export async function requireMediaUploader() {
     return null;
   }
 
-  throw new HttpError("AccÃ¨s refusÃ© pour l'upload");
+  throw new HttpError("Accès refusé pour l'upload");
 }
 
 export async function requirePartner() {
   const user = await requireAuth();
 
   if (user.role !== "PARTNER" || !user.partner) {
-    throw new HttpError("AccÃ¨s rÃ©servÃ© aux partenaires");
+    throw new HttpError("Accès réservé aux partenaires");
   }
 
   return {
@@ -234,7 +234,7 @@ export async function requireAdmin() {
     user.role !== "ADMIN" &&
     user.role !== "OPERATOR"
   ) {
-    throw new HttpError("AccÃ¨s rÃ©servÃ© aux administrateurs");
+    throw new HttpError("Accès réservé aux administrateurs");
   }
 
   return user;

@@ -60,7 +60,7 @@ export async function GET(
         error:
           error instanceof Error
             ? error.message
-            : "Impossible de générer le lien Player.",
+            : "Impossible de gÃ©nÃ©rer le lien Player.",
       },
       { status: 500 }
     );
