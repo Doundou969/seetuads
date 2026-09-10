@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
 
-  // AccÃ¨s public par lien annonceur
+  // Accès public par lien annonceur
   if (
     pathname.startsWith("/advertiser/access/") ||
     pathname.startsWith("/api/advertiser/access-link/")
@@ -34,8 +34,8 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.next();
   }
 
-  // Protection temporaire conservÃ©e pendant la migration
-  // vers les vÃ©rifications d'authentification au niveau des ressources.
+  // Protection temporaire conservée pendant la migration
+  // vers les vérifications d'authentification au niveau des ressources.
   const { userId } = await auth();
 
   if (!userId) {
