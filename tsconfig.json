@@ -33,6 +33,7 @@
     "backup-script-*",
     "encoding-backup",
     "encoding-backup2",
-    "content-backup"
+    "content-backup",
+    "scripts"
   ]
 }
