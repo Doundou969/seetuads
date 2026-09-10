@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 const ONLINE_THRESHOLD_MS = 2 * 60 * 1000;
@@ -94,6 +94,7 @@ export async function GET() {
       select: {
         id: true,
         deviceId: true,
+        shortCode: true,
         status: true,
         lastHeartbeat: true,
         lastIp: true,

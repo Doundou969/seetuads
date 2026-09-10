@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
 
-  // Accès public par lien annonceur
+  // AccÃ¨s public par lien annonceur
   if (
     pathname.startsWith("/advertiser/access/") ||
     pathname.startsWith("/api/advertiser/access-link/")
@@ -28,13 +28,14 @@ export default clerkMiddleware(async (auth, req) => {
     pathname.startsWith("/api/player") ||
     pathname.startsWith("/api/monitoring") ||
     pathname.startsWith("/api/cron") ||
-    pathname.startsWith("/player")
+    pathname.startsWith("/player") ||
+    pathname.startsWith("/p/")
   ) {
     return NextResponse.next();
   }
 
-  // Protection temporaire conservée pendant la migration
-  // vers les vérifications d'authentification au niveau des ressources.
+  // Protection temporaire conservÃ©e pendant la migration
+  // vers les vÃ©rifications d'authentification au niveau des ressources.
   const { userId } = await auth();
 
   if (!userId) {

@@ -1,6 +1,6 @@
-﻿"use server";
+"use server";
 
-import { randomUUID } from "crypto";
+import { randomUUID, randomInt } from "crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -385,6 +385,17 @@ export async function deleteScreen(id: string) {
 // PLAYERS
 // ============================================================================
 
+const SHORT_CODE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+
+function generateShortCode(length = 6) {
+  let code = "";
+  for (let i = 0; i < length; i++) {
+    const index = randomInt(SHORT_CODE_ALPHABET.length);
+    code += SHORT_CODE_ALPHABET[index];
+  }
+  return code;
+}
+
 export async function createPlayer(formData: FormData) {
   await requireAuth();
 
@@ -408,14 +419,36 @@ export async function createPlayer(formData: FormData) {
     throw new Error("Le Device ID est requis.");
   }
 
-  await prisma.player.create({
-    data: {
-      screenId: screenId || null,
-      deviceId,
-      serialNumber: serialNumber || null,
-      appVersion,
-    },
-  });
+  let created = null;
+  let attempts = 0;
+
+  while (!created && attempts < 5) {
+    attempts++;
+    const shortCode = generateShortCode();
+
+    try {
+      created = await prisma.player.create({
+        data: {
+          screenId: screenId || null,
+          deviceId,
+          serialNumber: serialNumber || null,
+          appVersion,
+          shortCode,
+        },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2002" && attempts < 5) {
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  if (!created) {
+    throw new Error(
+      "Impossible de generer un code court unique, veuillez reessayer."
+    );
+  }
 
   revalidatePath("/admin/players");
   redirect("/admin/players");
