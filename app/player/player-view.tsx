@@ -70,6 +70,28 @@ export default function PlayerView() {
   const loggedSessionRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (!("serviceWorker" in navigator)) {
+      console.warn("Service Worker non supporte sur ce navigateur.");
+      return;
+    }
+
+    navigator.serviceWorker
+      .register("/sw-player.js")
+      .then((registration) => {
+        console.log("Service Worker enregistre :", registration.scope);
+      })
+      .catch((err) => {
+        console.error("Erreur enregistrement Service Worker :", err);
+      });
+
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then((granted) => {
+        console.log("Stockage persistant accorde :", granted);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
     itemsRef.current = items;
   }, [items]);
 
@@ -260,6 +282,20 @@ export default function PlayerView() {
 
           setItems(playlistItems);
           setCurrentIndex(safeIndex);
+
+          if (navigator.serviceWorker.controller) {
+            const mediaUrls = playlistItems.map((item) => item.media.fileUrl);
+
+            navigator.serviceWorker.controller.postMessage({
+              type: "SET_PLAYLIST_URLS",
+              urls: mediaUrls,
+            });
+
+            navigator.serviceWorker.controller.postMessage({
+              type: "PREFETCH_URLS",
+              urls: mediaUrls,
+            });
+          }
         }
 
         setError("");
