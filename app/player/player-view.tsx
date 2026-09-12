@@ -38,6 +38,28 @@ export default function PlayerView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [screenOrientation, setScreenOrientation] = useState<string>("landscape");
+  const [needsRotation, setNeedsRotation] = useState(false);
+
+  useEffect(() => {
+    const checkRotation = () => {
+      const isWindowLandscape = window.innerWidth >= window.innerHeight;
+
+      if (screenOrientation === "portrait" && isWindowLandscape) {
+        setNeedsRotation(true);
+      } else {
+        setNeedsRotation(false);
+      }
+    };
+
+    checkRotation();
+
+    window.addEventListener("resize", checkRotation);
+
+    return () => {
+      window.removeEventListener("resize", checkRotation);
+    };
+  }, [screenOrientation]);
 
   const itemsRef = useRef<PlaylistItem[]>([]);
   const currentIndexRef = useRef(0);
@@ -210,6 +232,10 @@ export default function PlayerView() {
       }
 
       const data = await response.json();
+
+      if (data.playlist?.orientation) {
+        setScreenOrientation(data.playlist.orientation);
+      }
 
       const rawPlaylistItems = Array.isArray(data.playlist?.items)
         ? data.playlist.items
@@ -1057,6 +1083,19 @@ export default function PlayerView() {
       ref={containerRef}
       className="relative flex h-screen w-screen cursor-none items-center justify-center overflow-hidden bg-black"
       onClick={goFullscreen}
+      style={
+        needsRotation
+          ? {
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vh",
+              height: "100vw",
+              transformOrigin: "top left",
+              transform: "rotate(90deg) translate(0, -100%)",
+            }
+          : undefined
+      }
     >
       {!isFullscreen && (
         <button
