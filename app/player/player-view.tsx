@@ -24,6 +24,72 @@ const MEDIA_ERROR_DELAY_MS = 3000;
 const PLAYLIST_REFRESH_MS = 60000;
 const HEARTBEAT_INTERVAL_MS = 60000;
 
+const PENDING_LOGS_KEY = "seetuads_pending_playback_logs";
+
+function getPendingLogs(): any[] {
+  try {
+    const raw = localStorage.getItem(PENDING_LOGS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePendingLogs(logs: any[]) {
+  try {
+    localStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(logs));
+  } catch (err) {
+    console.warn("Impossible de sauvegarder les logs en attente :", err);
+  }
+}
+
+function queuePendingLog(payload: unknown, playerKey: string) {
+  const logs = getPendingLogs();
+  logs.push({ payload, playerKey, queuedAt: new Date().toISOString() });
+  savePendingLogs(logs);
+  console.log("Log playback mis en file d'attente (hors ligne) :", payload);
+}
+
+async function flushPendingLogs() {
+  const logs = getPendingLogs();
+
+  if (logs.length === 0) {
+    return;
+  }
+
+  const remaining: typeof logs = [];
+
+  for (const entry of logs) {
+    try {
+      const response = await fetch("/api/player/log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Player-Key": entry.playerKey,
+        },
+        body: JSON.stringify(entry.payload),
+      });
+
+      if (!response.ok) {
+        remaining.push(entry);
+      }
+    } catch {
+      remaining.push(entry);
+    }
+  }
+
+  savePendingLogs(remaining);
+
+  if (remaining.length !== logs.length) {
+    console.log(
+      "Logs en attente envoyes :",
+      logs.length - remaining.length,
+      "restants :",
+      remaining.length
+    );
+  }
+}
+
 export default function PlayerView() {
   const searchParams = useSearchParams();
 
@@ -383,6 +449,26 @@ export default function PlayerView() {
     };
   }, [fetchPlaylist]);
 
+  useEffect(() => {
+    flushPendingLogs();
+
+    const handleOnline = () => {
+      console.log("Connexion retablie : envoi des logs en attente");
+      flushPendingLogs();
+    };
+
+    window.addEventListener("online", handleOnline);
+
+    const flushInterval = setInterval(() => {
+      flushPendingLogs();
+    }, 30000);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      clearInterval(flushInterval);
+    };
+  }, []);
+
   /**
    * ============================================================
    * HEARTBEAT
@@ -634,6 +720,8 @@ export default function PlayerView() {
           "Erreur réseau playback log :",
           err
         );
+
+        queuePendingLog(payload, playerKey);
       }
     },
     [deviceId, playerKey]
