@@ -49,6 +49,7 @@ export async function POST(
       where: { id },
       data: {
         status: newStatus,
+        rejectionReason: action === "reject" ? reason || null : null,
       },
     });
 

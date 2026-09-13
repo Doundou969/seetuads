@@ -8,20 +8,14 @@ export function CampaignReviewActions({ campaignId }: { campaignId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
   const [error, setError] = useState("");
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
-  const handleReview = async (action: "approve" | "reject") => {
+  const submitReview = async (
+    action: "approve" | "reject",
+    reason?: string
+  ) => {
     setError("");
-
-    if (action === "reject") {
-      const confirmed = window.confirm(
-        "Confirmer le refus de cette campagne ? Cette action est irreversible."
-      );
-
-      if (!confirmed) {
-        return;
-      }
-    }
-
     setLoading(action);
 
     try {
@@ -32,7 +26,7 @@ export function CampaignReviewActions({ campaignId }: { campaignId: string }) {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ action }),
+          body: JSON.stringify({ action, reason }),
         }
       );
 
@@ -51,11 +45,65 @@ export function CampaignReviewActions({ campaignId }: { campaignId: string }) {
     }
   };
 
+  const handleApprove = () => {
+    submitReview("approve");
+  };
+
+  const handleRejectClick = () => {
+    setShowRejectForm(true);
+  };
+
+  const handleCancelReject = () => {
+    setShowRejectForm(false);
+    setRejectionReason("");
+  };
+
+  const handleConfirmReject = () => {
+    submitReview("reject", rejectionReason);
+    setShowRejectForm(false);
+  };
+
+  if (showRejectForm) {
+    return (
+      <div className="flex w-full max-w-xs flex-col gap-2">
+        <textarea
+          value={rejectionReason}
+          onChange={(e) => setRejectionReason(e.target.value)}
+          placeholder="Motif du refus (optionnel)"
+          rows={3}
+          className="w-full rounded-md border border-gray-300 p-2 text-sm"
+        />
+
+        <div className="flex justify-end gap-2">
+          <Button
+            onClick={handleCancelReject}
+            disabled={loading !== null}
+            variant="outline"
+          >
+            Annuler
+          </Button>
+
+          <Button
+            onClick={handleConfirmReject}
+            disabled={loading !== null}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            {loading === "reject" ? "Refus..." : "Confirmer le refus"}
+          </Button>
+        </div>
+
+        {error && (
+          <p className="text-right text-sm text-red-600">{error}</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-end gap-2">
       <div className="flex gap-2">
         <Button
-          onClick={() => handleReview("approve")}
+          onClick={handleApprove}
           disabled={loading !== null}
           className="bg-emerald-600 hover:bg-emerald-700"
         >
@@ -63,12 +111,12 @@ export function CampaignReviewActions({ campaignId }: { campaignId: string }) {
         </Button>
 
         <Button
-          onClick={() => handleReview("reject")}
+          onClick={handleRejectClick}
           disabled={loading !== null}
           variant="outline"
           className="border-red-300 text-red-600 hover:bg-red-50"
         >
-          {loading === "reject" ? "Refus..." : "Refuser"}
+          Refuser
         </Button>
       </div>
 

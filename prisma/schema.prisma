@@ -214,6 +214,7 @@ model Campaign {
   spotDuration          Int                    @default(15) @map("spot_duration")
   frequencyPerLoop      Int                    @default(1) @map("frequency_per_loop")
   status                CampaignStatus         @default(DRAFT)
+  rejectionReason       String?                @map("rejection_reason")
   estimatedPrice        Decimal?               @map("estimated_price") @db.Decimal(12, 2)
   finalPrice            Decimal?               @map("final_price") @db.Decimal(12, 2)
   createdAt             DateTime               @default(now()) @map("created_at")
