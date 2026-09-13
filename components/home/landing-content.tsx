@@ -8,12 +8,17 @@ import {
   ArrowRight,
   BarChart3,
   CheckCircle2,
+  Coffee,
+  Dumbbell,
+  Fuel,
   Mail,
   MapPin,
   MonitorPlay,
   Phone,
   PlayCircle,
+  PlusCircle,
   ShieldCheck,
+  ShoppingCart,
   Store,
   Target,
   TrendingUp,
@@ -56,6 +61,15 @@ export function LandingContent({ stats }: { stats: Stats }) {
     },
   ];
 
+  const categories = [
+    { label: "Boutiques", icon: Store },
+    { label: "Superettes", icon: ShoppingCart },
+    { label: "Restaurants & Snacks", icon: Coffee },
+    { label: "Stations service", icon: Fuel },
+    { label: "Pharmacies", icon: PlusCircle },
+    { label: "Salles de sport & salons", icon: Dumbbell },
+  ];
+
   const advertiserBenefits = [
     "Ciblez les zones les plus pertinentes pour votre audience.",
     "Diffusez vos contenus sur des écrans installés dans les commerces.",
@@ -69,13 +83,13 @@ export function LandingContent({ stats }: { stats: Stats }) {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-50 text-[#07111F]">
-      <section className="relative overflow-hidden bg-[#07111F] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_35%),radial-gradient(circle_at_top_right,rgba(37,99,235,0.22),transparent_40%)]" />
+    <main className="min-h-screen bg-slate-50 text-[#0F1B2E]">
+      <section className="relative overflow-hidden bg-[#0F1B2E] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,130,31,0.16),transparent_35%),radial-gradient(circle_at_top_right,rgba(245,130,31,0.10),transparent_40%)]" />
 
         <header className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
           <Link href="/" className="text-2xl font-bold tracking-tight">
-            Seetu<span className="text-[#00D68F]">Ads</span>
+            Seetu<span className="text-[#F5821F]">Ads</span>
           </Link>
 
           <nav className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
@@ -103,7 +117,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
 
         <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-6 pb-24 pt-16 lg:grid-cols-[1fr_0.95fr] lg:pb-32 lg:pt-24">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-[#00D68F]/10 px-4 py-2 text-sm font-medium text-[#00D68F]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#F5821F]/25 bg-[#F5821F]/10 px-4 py-2 text-sm font-medium text-[#F5821F]">
               <Zap className="h-4 w-4" />
               Publicité digitale locale au Sénégal
             </div>
@@ -122,7 +136,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#00D68F] px-6 py-3.5 font-semibold text-[#07111F] transition hover:bg-emerald-300"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F5821F] px-6 py-3.5 font-semibold text-[#0F1B2E] transition hover:bg-[#FF9A45]"
               >
                 Lancer une campagne
                 <ArrowRight className="h-5 w-5" />
@@ -138,7 +152,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
             </div>
 
             <div className="mt-8 flex items-center gap-2 text-sm text-slate-400">
-              <ShieldCheck className="h-5 w-5 text-[#00D68F]" />
+              <ShieldCheck className="h-5 w-5 text-[#F5821F]" />
               Une plateforme pensée pour les annonceurs et les commerçants.
             </div>
           </div>
@@ -155,7 +169,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
                   className="h-[420px] w-full object-cover md:h-[520px]"
                 />
 
-                <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/20 bg-[#07111F]/80 p-4 backdrop-blur-md">
+                <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/20 bg-[#0F1B2E]/80 p-4 backdrop-blur-md">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-slate-400">
@@ -165,7 +179,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
                         Votre marque au bon endroit
                       </p>
                     </div>
-                    <MonitorPlay className="h-7 w-7 text-[#00D68F]" />
+                    <MonitorPlay className="h-7 w-7 text-[#F5821F]" />
                   </div>
                 </div>
               </div>
@@ -173,8 +187,8 @@ export function LandingContent({ stats }: { stats: Stats }) {
 
             <div className="absolute -bottom-6 -left-4 rounded-2xl border border-white/10 bg-slate-900 p-4 shadow-xl md:-left-8">
               <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-[#00D68F]/15 p-2">
-                  <TrendingUp className="h-5 w-5 text-[#00D68F]" />
+                <div className="rounded-xl bg-[#F5821F]/15 p-2">
+                  <TrendingUp className="h-5 w-5 text-[#F5821F]" />
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">Pilotage simple</p>
@@ -212,25 +226,54 @@ export function LandingContent({ stats }: { stats: Stats }) {
               key={item.label}
               className="border-b border-r border-slate-100 p-6 last:border-r-0 md:border-b-0"
             >
-              <item.icon className="h-5 w-5 text-[#2388FF]" />
-              
+              <item.icon className="h-5 w-5 text-[#F5821F]" />
+
               <p className="mt-1 text-sm text-slate-500">{item.label}</p>
             </div>
           ))}
         </div>
       </section>
 
+      <section className="bg-[#0F1B2E] py-14 text-white">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid gap-10 md:grid-cols-[1.5fr_1fr] md:items-center">
+            <div>
+              <h2 className="text-xl font-bold sm:text-2xl">
+                Présent dans les lieux qui comptent
+              </h2>
+              <div className="mt-8 grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-6">
+                {categories.map(({ label, icon: Icon }) => (
+                  <div key={label} className="flex flex-col items-center gap-3 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
+                      <Icon className="h-6 w-6 text-[#F5821F]" strokeWidth={1.75} />
+                    </div>
+                    <span className="text-xs leading-tight text-white/70">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 rounded-2xl bg-[#F5821F] px-6 py-5">
+              <MapPin className="h-8 w-8 shrink-0 text-[#0F1B2E]" strokeWidth={1.75} />
+              <p className="text-sm font-bold leading-snug text-[#0F1B2E]">
+                Dakar et bientôt partout au Sénégal
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="relative overflow-hidden bg-white px-6 py-24 md:py-32">
-        <div className="absolute left-1/2 top-0 h-80 w-[700px] -translate-x-1/2 rounded-full bg-blue-100/50 blur-3xl" />
+        <div className="absolute left-1/2 top-0 h-80 w-[700px] -translate-x-1/2 rounded-full bg-[#F5821F]/10 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#2388FF]/20 bg-[#2388FF]/10 px-4 py-2 text-sm font-semibold text-[#2388FF]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#F5821F]/20 bg-[#F5821F]/10 px-4 py-2 text-sm font-semibold text-[#F5821F]">
               <Zap className="h-4 w-4" />
               Comment ça marche ?
             </div>
 
-            <h2 className="mt-6 text-4xl font-bold tracking-tight text-[#07111F] md:text-5xl">
+            <h2 className="mt-6 text-4xl font-bold tracking-tight text-[#0F1B2E] md:text-5xl">
               Lancez votre campagne en quelques étapes.
             </h2>
 
@@ -241,7 +284,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
           </div>
 
           <div className="relative mt-16">
-            <div className="absolute left-[12%] right-[12%] top-16 hidden h-px bg-gradient-to-r from-blue-200 via-emerald-300 to-blue-200 lg:block" />
+            <div className="absolute left-[12%] right-[12%] top-16 hidden h-px bg-gradient-to-r from-[#F5821F]/20 via-[#F5821F]/50 to-[#F5821F]/20 lg:block" />
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               {steps.map((step, index) => (
@@ -256,9 +299,9 @@ export function LandingContent({ stats }: { stats: Stats }) {
                   }}
                   className="group relative"
                 >
-                  <div className="relative rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-[#2388FF]/20 hover:shadow-xl">
+                  <div className="relative rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-[#F5821F]/20 hover:shadow-xl">
                     <div className="flex items-center justify-between">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#07111F] text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0F1B2E] text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
                         <step.icon className="h-6 w-6" />
                       </div>
 
@@ -268,7 +311,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
                     </div>
 
                     <div className="mt-8">
-                      <h3 className="text-xl font-bold text-[#07111F]">
+                      <h3 className="text-xl font-bold text-[#0F1B2E]">
                         {step.title}
                       </h3>
 
@@ -277,7 +320,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
                       </p>
                     </div>
 
-                    <div className="mt-7 flex items-center gap-2 text-sm font-semibold text-[#2388FF]">
+                    <div className="mt-7 flex items-center gap-2 text-sm font-semibold text-[#F5821F]">
                       <span>
                         {index === 3
                           ? "Campagne prête"
@@ -299,12 +342,12 @@ export function LandingContent({ stats }: { stats: Stats }) {
             className="mx-auto mt-14 max-w-4xl rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm md:p-8"
           >
             <div className="flex flex-col items-center gap-5 text-center md:flex-row md:text-left">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#00D68F]/15">
-                <ShieldCheck className="h-7 w-7 text-emerald-600" />
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#F5821F]/15">
+                <ShieldCheck className="h-7 w-7 text-[#F5821F]" />
               </div>
 
               <div className="flex-1">
-                <p className="font-bold text-[#07111F]">
+                <p className="font-bold text-[#0F1B2E]">
                   Une expérience pensée pour être simple
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
@@ -315,7 +358,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
 
               <Link
                 href="/register"
-                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#07111F] px-5 py-3 font-semibold text-white transition hover:bg-slate-800"
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#0F1B2E] px-5 py-3 font-semibold text-white transition hover:bg-slate-800"
               >
                 Commencer
                 <ArrowRight className="h-4 w-4" />
@@ -326,9 +369,9 @@ export function LandingContent({ stats }: { stats: Stats }) {
       </section>
       <section className="bg-slate-100 px-6 py-24">
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-2">
-          <div className="rounded-[2rem] bg-[#07111F] p-8 text-white md:p-10">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#2388FF]/15">
-              <Target className="h-6 w-6 text-[#2388FF]" />
+          <div className="rounded-[2rem] bg-[#0F1B2E] p-8 text-white md:p-10">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F5821F]/15">
+              <Target className="h-6 w-6 text-[#F5821F]" />
             </div>
 
             <h2 className="mt-8 text-3xl font-bold">
@@ -343,7 +386,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
             <ul className="mt-7 space-y-4">
               {advertiserBenefits.map((benefit) => (
                 <li key={benefit} className="flex gap-3 text-slate-200">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#00D68F]" />
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#F5821F]" />
                   <span>{benefit}</span>
                 </li>
               ))}
@@ -351,14 +394,14 @@ export function LandingContent({ stats }: { stats: Stats }) {
 
             <Link
               href="/register"
-              className="mt-9 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-[#07111F] transition hover:bg-slate-200"
+              className="mt-9 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-[#0F1B2E] transition hover:bg-slate-200"
             >
               Créer une campagne
               <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
 
-          <div className="rounded-[2rem] bg-[#00D68F] p-8 text-[#07111F] md:p-10">
+          <div className="rounded-[2rem] bg-[#F5821F] p-8 text-[#0F1B2E] md:p-10">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/40">
               <Store className="h-6 w-6" />
             </div>
@@ -367,7 +410,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
               Vous êtes commerçant ?
             </h2>
 
-            <p className="mt-4 leading-7 text-emerald-950/80">
+            <p className="mt-4 leading-7 text-[#0F1B2E]/80">
               Rejoignez le réseau SeetuAds et transformez votre emplacement en
               opportunité de revenus.
             </p>
@@ -383,7 +426,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
 
             <Link
               href="/register"
-              className="mt-9 inline-flex items-center gap-2 rounded-xl bg-[#07111F] px-5 py-3 font-semibold text-white transition hover:bg-slate-800"
+              className="mt-9 inline-flex items-center gap-2 rounded-xl bg-[#0F1B2E] px-5 py-3 font-semibold text-white transition hover:bg-[#16233A]"
             >
               Devenir partenaire
               <ArrowRight className="h-5 w-5" />
@@ -398,7 +441,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
       >
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-600">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#DB6E10]">
               Contact
             </p>
 
@@ -416,45 +459,45 @@ export function LandingContent({ stats }: { stats: Stats }) {
           <div className="grid gap-4 sm:grid-cols-3">
             <a
               href="tel:+221788241442"
-              className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-white hover:shadow-lg"
+              className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-[#F5821F]/40 hover:bg-white hover:shadow-lg"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#00D68F]/15">
-                <Phone className="h-5 w-5 text-emerald-700" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F5821F]/15">
+                <Phone className="h-5 w-5 text-[#DB6E10]" />
               </div>
               <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Téléphone
               </p>
-              <p className="mt-2 font-bold text-[#07111F]">
+              <p className="mt-2 font-bold text-[#0F1B2E]">
                 +221 78 824 14 42
               </p>
             </a>
 
             <a
               href="tel:+221777020818"
-              className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-white hover:shadow-lg"
+              className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-[#F5821F]/40 hover:bg-white hover:shadow-lg"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#00D68F]/15">
-                <Phone className="h-5 w-5 text-emerald-700" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F5821F]/15">
+                <Phone className="h-5 w-5 text-[#DB6E10]" />
               </div>
               <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Téléphone
               </p>
-              <p className="mt-2 font-bold text-[#07111F]">
+              <p className="mt-2 font-bold text-[#0F1B2E]">
                 +221 77 702 08 18
               </p>
             </a>
 
             <a
               href="mailto:seetuads@gmail.com"
-              className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-blue-300 hover:bg-white hover:shadow-lg"
+              className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-[#F5821F]/30 hover:bg-white hover:shadow-lg"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100">
-                <Mail className="h-5 w-5 text-[#2388FF]" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F5821F]/10">
+                <Mail className="h-5 w-5 text-[#DB6E10]" />
               </div>
               <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Email
               </p>
-              <p className="mt-2 break-all font-bold text-[#07111F]">
+              <p className="mt-2 break-all font-bold text-[#0F1B2E]">
                 seetuads@gmail.com
               </p>
             </a>
@@ -463,8 +506,8 @@ export function LandingContent({ stats }: { stats: Stats }) {
       </section>
 
       <section className="px-6 py-20">
-        <div className="mx-auto max-w-5xl rounded-[2rem] bg-gradient-to-br from-[#07111F] to-[#0B1F3A] px-8 py-14 text-center text-white shadow-xl md:px-16">
-          <UsersRound className="mx-auto h-8 w-8 text-[#2388FF]" />
+        <div className="mx-auto max-w-5xl rounded-[2rem] bg-gradient-to-br from-[#0F1B2E] to-[#1B2A44] px-8 py-14 text-center text-white shadow-xl md:px-16">
+          <UsersRound className="mx-auto h-8 w-8 text-[#F5821F]" />
 
           <h2 className="mt-5 text-3xl font-bold md:text-4xl">
             Prêt à faire voir votre marque ?
@@ -478,7 +521,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               href="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-[#2388FF] transition hover:bg-[#2388FF]/10"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-[#DB6E10] transition hover:bg-[#F5821F]/10"
             >
               Commencer avec SeetuAds
               <ArrowRight className="h-5 w-5" />
@@ -495,15 +538,15 @@ export function LandingContent({ stats }: { stats: Stats }) {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-slate-950 px-6 py-24 text-white md:py-32">
+      <section className="relative overflow-hidden bg-[#0F1B2E] px-6 py-24 text-white md:py-32">
         <div className="absolute inset-0 -z-0">
-          <div className="absolute left-1/4 top-0 h-72 w-72 rounded-full bg-blue-600/20 blur-3xl" />
-          <div className="absolute right-1/4 bottom-0 h-72 w-72 rounded-full bg-emerald-400/15 blur-3xl" />
+          <div className="absolute left-1/4 top-0 h-72 w-72 rounded-full bg-[#F5821F]/20 blur-3xl" />
+          <div className="absolute right-1/4 bottom-0 h-72 w-72 rounded-full bg-[#F5821F]/10 blur-3xl" />
         </div>
 
         <div className="relative z-10 mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#F5821F]">
               Pourquoi SeetuAds ?
             </p>
 
@@ -541,9 +584,9 @@ export function LandingContent({ stats }: { stats: Stats }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group rounded-3xl border border-white/10 bg-white/[0.06] p-7 backdrop-blur transition duration-300 hover:-translate-y-2 hover:border-emerald-400/30 hover:bg-white/[0.09]"
+                className="group rounded-3xl border border-white/10 bg-white/[0.06] p-7 backdrop-blur transition duration-300 hover:-translate-y-2 hover:border-[#F5821F]/30 hover:bg-white/[0.09]"
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-400 transition duration-300 group-hover:scale-110 group-hover:bg-emerald-400/20">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5821F]/10 text-[#F5821F] transition duration-300 group-hover:scale-110 group-hover:bg-[#F5821F]/20">
                   <item.icon className="h-7 w-7" />
                 </div>
 
@@ -573,7 +616,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
               />
 
               <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/10 bg-slate-950/80 p-5 backdrop-blur-md md:inset-x-6 md:bottom-6">
-                <p className="text-sm font-medium text-emerald-400">
+                <p className="text-sm font-medium text-[#F5821F]">
                   Publicité digitale locale
                 </p>
                 <p className="mt-1 text-xl font-bold md:text-2xl">
@@ -593,7 +636,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.6 }}
             >
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#DB6E10]">
                 Notre réseau
               </p>
 
@@ -620,7 +663,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
 
               <Link
                 href="/carte"
-                className="mt-9 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-6 py-3.5 font-semibold text-white transition hover:bg-slate-800"
+                className="mt-9 inline-flex items-center gap-2 rounded-xl bg-[#0F1B2E] px-6 py-3.5 font-semibold text-white transition hover:bg-[#16233A]"
               >
                 Découvrir le réseau
                 <MapPin className="h-5 w-5" />
@@ -664,7 +707,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
                   transition={{ duration: 0.4, delay: 0.15 + index * 0.08 }}
                   className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5821F]/10 text-[#DB6E10] transition group-hover:bg-[#F5821F] group-hover:text-white">
                     <item.icon className="h-6 w-6" />
                   </div>
 
@@ -681,15 +724,15 @@ export function LandingContent({ stats }: { stats: Stats }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6 }}
-            className="mt-12 overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-2xl"
+            className="mt-12 overflow-hidden rounded-3xl border border-slate-200 bg-[#0F1B2E] shadow-2xl"
           >
             <div className="grid items-center gap-0 lg:grid-cols-[1fr_0.8fr]">
               <div className="p-8 md:p-10">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-400">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F5821F]/10 text-[#F5821F]">
                     <TrendingUp className="h-5 w-5" />
                   </div>
-                  <span className="text-sm font-semibold uppercase tracking-wider text-emerald-400">
+                  <span className="text-sm font-semibold uppercase tracking-wider text-[#F5821F]">
                     Impact local
                   </span>
                 </div>
@@ -726,7 +769,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
                   alt="Réseau d'écran publicitaire SeetuAds dans un commerce de proximité au Sénégal"
                   className="absolute inset-0 h-full w-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/30 to-transparent lg:bg-gradient-to-r" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0F1B2E] via-[#0F1B2E]/30 to-transparent lg:bg-gradient-to-r" />
               </div>
             </div>
           </motion.div>
@@ -740,7 +783,7 @@ export function LandingContent({ stats }: { stats: Stats }) {
 
           <a
             href="mailto:seetuads@gmail.com"
-            className="transition hover:text-[#07111F]"
+            className="transition hover:text-[#0F1B2E]"
           >
             seetuads@gmail.com
           </a>
@@ -749,11 +792,3 @@ export function LandingContent({ stats }: { stats: Stats }) {
     </main>
   );
 }
-
-
-
-
-
-
-
-
