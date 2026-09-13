@@ -6,7 +6,7 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 function parseIdList(value: unknown, label: string): string[] {
   if (!Array.isArray(value)) {
-    throw new Error(`La s�lection des ${label} est invalide.`);
+    throw new Error(`La sélection des ${label} est invalide.`);
   }
 
   const ids = value.filter(
@@ -15,7 +15,7 @@ function parseIdList(value: unknown, label: string): string[] {
   );
 
   if (ids.length !== value.length) {
-    throw new Error(`La s�lection des ${label} est invalide.`);
+    throw new Error(`La sélection des ${label} est invalide.`);
   }
 
   return [...new Set(ids.map((id) => id.trim()))];
@@ -75,7 +75,7 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        error: "Impossible de r�cup�rer les campagnes.",
+        error: "Impossible de récupérer les campagnes.",
         details,
       },
       {
@@ -154,7 +154,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "La date de fin doit �tre post�rieure ou �gale � la date de d�but.",
+            "La date de fin doit être postérieure ou égale à la date de début.",
         },
         { status: 400 }
       );
@@ -168,7 +168,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "La dur�e du spot doit �tre comprise entre 5 et 60 secondes.",
+            "La durée du spot doit être comprise entre 5 et 60 secondes.",
         },
         { status: 400 }
       );
@@ -182,7 +182,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "La fr�quence par boucle doit �tre comprise entre 1 et 10.",
+            "La fréquence par boucle doit être comprise entre 1 et 10.",
         },
         { status: 400 }
       );
@@ -192,15 +192,15 @@ export async function POST(req: Request) {
     let mediaIds: string[];
 
     try {
-      screenIds = parseIdList(body.screenIds, "�crans");
-      mediaIds = parseIdList(body.mediaIds, "m�dias");
+      screenIds = parseIdList(body.screenIds, "écrans");
+      mediaIds = parseIdList(body.mediaIds, "médias");
     } catch (error) {
       return NextResponse.json(
         {
           error:
             error instanceof Error
               ? error.message
-              : "La s�lection est invalide.",
+              : "La sélection est invalide.",
         },
         { status: 400 }
       );
@@ -209,7 +209,7 @@ export async function POST(req: Request) {
     if (screenIds.length === 0) {
       return NextResponse.json(
         {
-          error: "La campagne doit contenir au moins un �cran.",
+          error: "La campagne doit contenir au moins un écran.",
         },
         { status: 400 }
       );
@@ -218,7 +218,7 @@ export async function POST(req: Request) {
     if (mediaIds.length === 0) {
       return NextResponse.json(
         {
-          error: "La campagne doit contenir au moins un m�dia.",
+          error: "La campagne doit contenir au moins un média.",
         },
         { status: 400 }
       );
@@ -246,7 +246,7 @@ export async function POST(req: Request) {
 
       if (!advertiserRecord) {
         throw new Error(
-          "Votre compte annonceur doit �tre actif pour cr�er une campagne."
+          "Votre compte annonceur doit être actif pour créer une campagne."
         );
       }
 
@@ -265,7 +265,7 @@ export async function POST(req: Request) {
 
       if (approvedMedia.length !== mediaIds.length) {
         throw new Error(
-          "Un ou plusieurs m�dias s�lectionn�s sont introuvables, n'appartiennent pas � votre compte ou ne sont pas approuv�s."
+          "Un ou plusieurs médias sélectionnés sont introuvables, n'appartiennent pas à votre compte ou ne sont pas approuvés."
         );
       }
 
@@ -283,7 +283,7 @@ export async function POST(req: Request) {
 
       if (validScreens.length !== screenIds.length) {
         throw new Error(
-          "Un ou plusieurs �crans s�lectionn�s sont introuvables."
+          "Un ou plusieurs écrans sélectionnés sont introuvables."
         );
       }
 
@@ -383,7 +383,7 @@ export async function POST(req: Request) {
 
         if (!rule) {
           throw new Error(
-            "Aucune r�gle de tarification active n'est d�finie pour un �cran s�lectionn�."
+            "Aucune règle de tarification active n'est définie pour un écran sélectionné."
           );
         }
 
@@ -448,16 +448,16 @@ export async function POST(req: Request) {
 
     const isValidationError =
       details.includes("Votre compte annonceur") ||
-      details.includes("Un ou plusieurs m�dias") ||
-      details.includes("Un ou plusieurs �crans") ||
-      details.includes("Aucune r�gle de tarification") ||
+      details.includes("Un ou plusieurs médias") ||
+      details.includes("Un ou plusieurs écrans") ||
+      details.includes("Aucune règle de tarification") ||
       details.includes("deja reserves sur cette periode");
 
     return NextResponse.json(
       {
         error: isValidationError
           ? details
-          : "Impossible de cr�er la campagne.",
+          : "Impossible de créer la campagne.",
         ...(isValidationError ? {} : { details }),
       },
       {

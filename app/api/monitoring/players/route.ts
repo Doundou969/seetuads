@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 const ONLINE_THRESHOLD_MS = 2 * 60 * 1000;
@@ -8,6 +9,8 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
+    await requireAdmin();
+
     const now = new Date();
 
     const onlineThreshold = new Date(
@@ -19,7 +22,7 @@ export async function GET() {
      * SYNCHRONISATION DES STATUTS
      * ============================================================
      *
-     * Un player est considéré OFFLINE s'il n'a pas envoyé
+     * Un player est considÃ©rÃ© OFFLINE s'il n'a pas envoyÃ©
      * de heartbeat depuis plus de 2 minutes.
      */
 
@@ -112,7 +115,7 @@ export async function GET() {
 
     /*
      * ============================================================
-     * CALCUL DU STATUT TEMPS RÉEL
+     * CALCUL DU STATUT TEMPS RÃ‰EL
      * ============================================================
      */
 

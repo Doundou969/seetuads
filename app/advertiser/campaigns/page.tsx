@@ -11,6 +11,7 @@ interface Campaign {
   endDate: string;
   estimatedPrice: string | null;
   finalPrice: string | null;
+  rejectionReason: string | null;
 }
 
 export default function CampaignsPage() {
@@ -89,6 +90,11 @@ export default function CampaignsPage() {
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusBadge(c.status)}`}>
                       {c.status}
                     </span>
+                    {c.status === "CANCELLED" && c.rejectionReason && (
+                      <p className="mt-1 max-w-xs text-xs text-gray-500">
+                        Motif : {c.rejectionReason}
+                      </p>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-gray-500">
                     {new Date(c.startDate).toLocaleDateString("fr-FR")} →{" "}
