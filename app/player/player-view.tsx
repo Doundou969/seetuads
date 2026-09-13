@@ -1207,7 +1207,7 @@ export default function PlayerView() {
           muted
           playsInline
           preload="auto"
-          className="h-full w-full object-contain"
+          className="h-full w-full object-cover"
           onLoadedMetadata={(event) => {
             const video =
               event.currentTarget;
@@ -1551,7 +1551,7 @@ export default function PlayerView() {
             currentItem.media.name ||
             "SeetuAds"
           }
-          className="h-full w-full object-contain"
+          className="h-full w-full object-cover"
           onError={(event) => {
             const item = currentItem;
             const sessionId =
