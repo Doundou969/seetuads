@@ -1198,6 +1198,29 @@ export default function PlayerView() {
         </button>
       )}
 
+      {currentItem && (
+        <div className="absolute inset-0 -z-10 overflow-hidden">
+          {currentItem.media.fileType === "video" ? (
+            <video
+              key={"bg-" + currentItem.id}
+              src={currentItem.media.fileUrl}
+              muted
+              playsInline
+              autoPlay
+              loop
+              className="h-full w-full scale-110 object-cover opacity-70 blur-2xl"
+            />
+          ) : (
+            <img
+              key={"bg-" + currentItem.id}
+              src={currentItem.media.fileUrl}
+              alt=""
+              className="h-full w-full scale-110 object-cover opacity-70 blur-2xl"
+            />
+          )}
+        </div>
+      )}
+
       {currentItem?.media.fileType ===
       "video" ? (
         <video
@@ -1207,7 +1230,7 @@ export default function PlayerView() {
           muted
           playsInline
           preload="auto"
-          className="h-full w-full object-cover"
+          className="relative z-10 h-full w-full object-contain"
           onLoadedMetadata={(event) => {
             const video =
               event.currentTarget;
@@ -1551,7 +1574,7 @@ export default function PlayerView() {
             currentItem.media.name ||
             "SeetuAds"
           }
-          className="h-full w-full object-cover"
+          className="relative z-10 h-full w-full object-contain"
           onError={(event) => {
             const item = currentItem;
             const sessionId =
