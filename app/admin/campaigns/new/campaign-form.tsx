@@ -830,8 +830,3 @@ export function CampaignForm({
     </form>
   );
 }
-
-
-
-
-

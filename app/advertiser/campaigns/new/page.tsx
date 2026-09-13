@@ -211,27 +211,27 @@ export default function NewCampaignPage() {
 
       if (!form.startDate || !form.endDate) {
         throw new Error(
-          "Veuillez s�lectionner les dates de d�but et de fin."
+          "Veuillez sélectionner les dates de début et de fin."
         );
       }
 
       if (new Date(`${form.endDate}T00:00:00`) < new Date(`${form.startDate}T00:00:00`)) {
         throw new Error(
-          "La date de fin doit �tre post�rieure ou �gale � la date de d�but."
+          "La date de fin doit être postérieure ou égale à la date de début."
         );
       }
 
       if (selectedScreens.length === 0) {
-        throw new Error("Veuillez s�lectionner au moins un �cran.");
+        throw new Error("Veuillez sélectionner au moins un écran.");
       }
 
       if (selectedMedia.length === 0) {
-        throw new Error("Veuillez s�lectionner au moins un m�dia.");
+        throw new Error("Veuillez sélectionner au moins un média.");
       }
 
       if (screensWithoutPricing.length > 0) {
         throw new Error(
-          "Un ou plusieurs �crans s�lectionn�s n'ont pas de r�gle de tarification active."
+          "Un ou plusieurs écrans sélectionnés n'ont pas de règle de tarification active."
         );
       }
 
@@ -260,7 +260,7 @@ export default function NewCampaignPage() {
 
       if (!res.ok) {
         throw new Error(
-          data.error || "Erreur lors de la cr�ation de la campagne."
+          data.error || "Erreur lors de la création de la campagne."
         );
       }
 
@@ -269,7 +269,7 @@ export default function NewCampaignPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Erreur lors de la cr�ation de la campagne."
+          : "Erreur lors de la création de la campagne."
       );
       setLoading(false);
     }
@@ -292,7 +292,7 @@ export default function NewCampaignPage() {
           Nouvelle campagne
         </h1>
         <p className="text-gray-600">
-          S�lectionnez vos �crans et vos m�dias, puis d�finissez la p�riode.
+          Sélectionnez vos écrans et vos médias, puis définissez la période.
         </p>
       </div>
 
@@ -325,7 +325,7 @@ export default function NewCampaignPage() {
                   }))
                 }
                 className="w-full rounded-md border px-3 py-2"
-                placeholder="Ex. Campagne rentr�e 2026"
+                placeholder="Ex. Campagne rentrée 2026"
               />
             </div>
 
@@ -343,18 +343,18 @@ export default function NewCampaignPage() {
                 }
                 className="w-full rounded-md border px-3 py-2"
                 rows={3}
-                placeholder="D�crivez l'objectif de la campagne"
+                placeholder="Décrivez l'objectif de la campagne"
               />
             </div>
           </div>
 
           <div className="rounded-lg border bg-white p-6 space-y-4">
-            <h2 className="text-lg font-semibold">P�riode</h2>
+            <h2 className="text-lg font-semibold">Période</h2>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium">
-                  Date de d�but
+                  Date de début
                 </label>
                 <input
                   type="date"
@@ -389,7 +389,7 @@ export default function NewCampaignPage() {
 
             {numberOfDays > 0 && (
               <p className="text-sm text-gray-600">
-                Dur�e : <strong>{numberOfDays}</strong>{" "}
+                Durée : <strong>{numberOfDays}</strong>{" "}
                 {numberOfDays > 1 ? "jours" : "jour"}
               </p>
             )}
@@ -397,16 +397,16 @@ export default function NewCampaignPage() {
 
           <div className="rounded-lg border bg-white p-6 space-y-4">
             <div>
-              <h2 className="text-lg font-semibold">�crans</h2>
+              <h2 className="text-lg font-semibold">Écrans</h2>
               <p className="text-sm text-gray-600">
-                S�lectionnez un ou plusieurs �crans.
+                Sélectionnez un ou plusieurs écrans.
               </p>
             </div>
 
             <div className="space-y-2">
               {options.screens.length === 0 ? (
                 <p className="text-sm text-gray-500">
-                  Aucun �cran disponible.
+                  Aucun écran disponible.
                 </p>
               ) : (
                 options.screens.map((screen) => (
@@ -429,10 +429,10 @@ export default function NewCampaignPage() {
                       <div className="text-sm text-gray-600">
                         {screen.screenCode}
                         {screen.location?.name
-                          ? ` � ${screen.location.name}`
+                          ? ` — ${screen.location.name}`
                           : ""}
                         {screen.zone?.name
-                          ? ` � ${screen.zone.name}`
+                          ? ` — ${screen.zone.name}`
                           : ""}
                       </div>
 
@@ -447,8 +447,8 @@ export default function NewCampaignPage() {
 
             {selectedScreens.length > 0 && (
               <p className="text-sm text-gray-600">
-                {selectedScreens.length} �cran
-                {selectedScreens.length > 1 ? "s" : ""} s�lectionn�
+                {selectedScreens.length} écran
+                {selectedScreens.length > 1 ? "s" : ""} sélectionné
                 {selectedScreens.length > 1 ? "s" : ""}
               </p>
             )}
@@ -456,16 +456,16 @@ export default function NewCampaignPage() {
 
           <div className="rounded-lg border bg-white p-6 space-y-4">
             <div>
-              <h2 className="text-lg font-semibold">M�dias</h2>
+              <h2 className="text-lg font-semibold">Médias</h2>
               <p className="text-sm text-gray-600">
-                Seuls vos m�dias approuv�s sont disponibles.
+                Seuls vos médias approuvés sont disponibles.
               </p>
             </div>
 
             <div className="space-y-2">
               {options.media.length === 0 ? (
                 <p className="text-sm text-gray-500">
-                  Aucun m�dia approuv� disponible.
+                  Aucun média approuvé disponible.
                 </p>
               ) : (
                 options.media.map((media) => (
@@ -485,7 +485,7 @@ export default function NewCampaignPage() {
                       <div className="text-sm text-gray-600">
                         {media.fileType || media.mimeType}
                         {media.durationSeconds
-                          ? ` � ${media.durationSeconds}s`
+                          ? ` — ${media.durationSeconds}s`
                           : ""}
                       </div>
                     </div>
@@ -496,20 +496,20 @@ export default function NewCampaignPage() {
 
             {selectedMedia.length > 0 && (
               <p className="text-sm text-gray-600">
-                {selectedMedia.length} m�dia
-                {selectedMedia.length > 1 ? "s" : ""} s�lectionn�
+                {selectedMedia.length} média
+                {selectedMedia.length > 1 ? "s" : ""} sélectionné
                 {selectedMedia.length > 1 ? "s" : ""}
               </p>
             )}
           </div>
 
           <div className="rounded-lg border bg-white p-6 space-y-4">
-            <h2 className="text-lg font-semibold">Param�tres de diffusion</h2>
+            <h2 className="text-lg font-semibold">Paramètres de diffusion</h2>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium">
-                  Dur�e du spot
+                  Durée du spot
                 </label>
                 <select
                   value={form.spotDuration}
@@ -531,7 +531,7 @@ export default function NewCampaignPage() {
 
               <div>
                 <label className="mb-1 block text-sm font-medium">
-                  Fr�quence par boucle
+                  Fréquence par boucle
                 </label>
                 <select
                   value={form.frequencyPerLoop}
@@ -554,11 +554,10 @@ export default function NewCampaignPage() {
               </div>
             </div>
           </div>
-
           <div className="rounded-lg border bg-gray-50 p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm text-gray-600">Prix estim�</p>
+                <p className="text-sm text-gray-600">Prix estimé</p>
                 <p className="text-2xl font-bold">
                   {estimatedPrice.toLocaleString("fr-FR")} XOF
                 </p>
@@ -566,7 +565,7 @@ export default function NewCampaignPage() {
 
               <div className="text-right text-sm text-gray-600">
                 <div>
-                  {selectedScreens.length} �cran
+                  {selectedScreens.length} écran
                   {selectedScreens.length > 1 ? "s" : ""}
                 </div>
                 <div>
@@ -578,7 +577,7 @@ export default function NewCampaignPage() {
 
             {screensWithoutPricing.length > 0 && (
               <p className="mt-3 text-sm text-red-600">
-                Certains �crans s�lectionn�s n'ont pas de tarification active.
+                Certains écrans sélectionnés n'ont pas de tarification active.
               </p>
             )}
           </div>
@@ -593,7 +592,7 @@ export default function NewCampaignPage() {
             }
             className="w-full rounded-md bg-black px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "Cr�ation..." : "Cr�er la campagne"}
+            {loading ? "Création..." : "Créer la campagne"}
           </button>
         </form>
       )}
