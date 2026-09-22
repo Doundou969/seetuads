@@ -31,6 +31,11 @@ export async function POST(req: NextRequest) {
         ? body.mediaId.trim()
         : null;
 
+    const playlistItemId =
+      typeof body.playlistItemId === "string"
+        ? body.playlistItemId.trim()
+        : "";
+
     const apiKey = req.headers.get("x-player-key");
 
     if (!deviceId || !mediaId) {
@@ -82,66 +87,29 @@ export async function POST(req: NextRequest) {
     const playlistItem =
       await prisma.playlistItem.findFirst({
         where: {
+          id: playlistItemId,
           mediaId,
           playlist: {
             screenId,
             status: "ACTIVE",
           },
         },
-        orderBy: {
-          playlist: {
-            version: "desc",
-          },
-        },
         select: {
           id: true,
           campaignId: true,
           playlistId: true,
+          mediaId: true,
           durationSeconds: true,
         },
       });
 
     /*
      * ============================================================
-     * FALLBACK CAMPAGNE
+     * MEDIA DANS LA PLAYLIST ACTIVE : OBLIGATOIRE
      * ============================================================
      */
 
-    let campaignId: string | null =
-      playlistItem?.campaignId ?? null;
-
-    if (!campaignId) {
-      const now = new Date();
-
-      const campaignMedia =
-        await prisma.campaignMedia.findFirst({
-          where: {
-            mediaId,
-            campaign: {
-              status: "ACTIVE",
-              startDate: {
-                lte: now,
-              },
-              endDate: {
-                gte: now,
-              },
-              campaignScreens: {
-                some: {
-                  screenId,
-                  status: "ACTIVE",
-                },
-              },
-            },
-          },
-          select: {
-            campaignId: true,
-          },
-        });
-
-      campaignId = campaignMedia?.campaignId ?? null;
-    }
-
-    if (!playlistItem && !campaignId) {
+    if (!playlistItem) {
       return NextResponse.json(
         {
           error:
@@ -151,6 +119,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const campaignId = playlistItem.campaignId;
     /*
      * ============================================================
      * DATES
@@ -316,4 +285,5 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
 

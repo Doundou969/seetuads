@@ -22,7 +22,7 @@ export async function GET() {
      * SYNCHRONISATION DES STATUTS
      * ============================================================
      *
-     * Un player est considÃ©rÃ© OFFLINE s'il n'a pas envoyÃ©
+     * Un player est considéré OFFLINE s'il n'a pas envoyé
      * de heartbeat depuis plus de 2 minutes.
      */
 
@@ -115,7 +115,7 @@ export async function GET() {
 
     /*
      * ============================================================
-     * CALCUL DU STATUT TEMPS RÃ‰EL
+     * CALCUL DU STATUT TEMPS R�?EL
      * ============================================================
      */
 

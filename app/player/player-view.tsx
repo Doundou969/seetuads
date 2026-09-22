@@ -666,8 +666,9 @@ export default function PlayerView() {
       loggedSessionRef.current = sessionId;
 
       const payload = {
-        deviceId,
-        mediaId: item.media.id,
+          deviceId,
+          playlistItemId: item.id,
+          mediaId: item.media.id,
         startedAt: startedAt.toISOString(),
         endedAt: new Date().toISOString(),
         durationSeconds: Math.max(
@@ -1636,6 +1637,4 @@ export default function PlayerView() {
     </div>
   );
 }
-
-
 

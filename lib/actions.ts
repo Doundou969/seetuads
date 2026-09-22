@@ -1,12 +1,11 @@
 "use server";
 
 import { randomUUID, randomInt } from "crypto";
-import { Prisma } from "@prisma/client";
+import { regenerate } from "@/lib/playlist-generator";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  requireAdvertiser,
   requireAuth,
   requireAdmin,
 } from "@/lib/permissions";
@@ -149,16 +148,16 @@ export async function createPartner(formData: FormData) {
 
   if (!phone) {
     throw new Error(
-      "Le téléphone est requis."
+      "Le tÃƒÂ©lÃƒÂ©phone est requis."
     );
   }
 
   // --------------------------------------------------------------------------
-  // CRÉATION D'UN UTILISATEUR PARTENAIRE
+  // CRÃƒâ€°ATION D'UN UTILISATEUR PARTENAIRE
   // --------------------------------------------------------------------------
   //
-  // Partner.userId est une clé étrangère obligatoire vers users.id.
-  // On crée donc d'abord un vrai User, puis on utilise son id pour Partner.
+  // Partner.userId est une clÃƒÂ© ÃƒÂ©trangÃƒÂ¨re obligatoire vers users.id.
+  // On crÃƒÂ©e donc d'abord un vrai User, puis on utilise son id pour Partner.
   //
 
   const generatedClerkUserId =
@@ -339,7 +338,7 @@ export async function createScreen(formData: FormData) {
   }
 
   if (!screenCode) {
-    throw new Error("Le code écran est requis.");
+    throw new Error("Le code ÃƒÂ©cran est requis.");
   }
 
   await prisma.screen.create({
@@ -362,7 +361,17 @@ export async function createScreen(formData: FormData) {
 export async function deleteScreen(id: string) {
   await requireAdmin();
   if (!id) {
-    throw new Error("Écran introuvable.");
+    throw new Error("Ãƒâ€°cran introuvable.");
+  }
+
+  const playbackLogs = await prisma.playbackLog.count({
+    where: { screenId: id },
+  });
+
+  if (playbackLogs > 0) {
+    throw new Error(
+      "\u00c9cran avec historique de diffusion : suppression impossible."
+    );
   }
 
   await prisma.screen.delete({
@@ -507,6 +516,16 @@ export async function deletePlayer(id: string) {
     throw new Error("Player introuvable.");
   }
 
+  const playbackLogs = await prisma.playbackLog.count({
+    where: { playerId: id },
+  });
+
+  if (playbackLogs > 0) {
+    throw new Error(
+      "Player avec historique de diffusion : suppression impossible."
+    );
+  }
+
   await prisma.player.delete({
     where: { id },
   });
@@ -536,7 +555,7 @@ export async function createCampaign(formData: FormData) {
   ).trim();
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(startDateValue)) {
-    throw new Error("La date de début est invalide.");
+    throw new Error("La date de dÃƒÂ©but est invalide.");
   }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(endDateValue)) {
@@ -547,16 +566,16 @@ export async function createCampaign(formData: FormData) {
   const endDate = new Date(`${endDateValue}T00:00:00`);
 
   if (Number.isNaN(startDate.getTime())) {
-    throw new Error("La date de début est invalide.");
+    throw new Error("La date de dÃƒÂ©but est invalide.");
   }
 
   if (Number.isNaN(endDate.getTime())) {
     throw new Error("La date de fin est invalide.");
   }
 
-  if (endDate < startDate) {
+  if (endDate <= startDate) {
     throw new Error(
-      "La date de fin doit être postérieure ou égale à la date de début."
+      "La date de fin doit être strictement postérieure à la date de début."
     );
   }
 
@@ -574,7 +593,7 @@ export async function createCampaign(formData: FormData) {
     spotDuration > 60
   ) {
     throw new Error(
-      "La durée du spot doit être comprise entre 5 et 60 secondes."
+      "La durÃƒÂ©e du spot doit ÃƒÂªtre comprise entre 5 et 60 secondes."
     );
   }
 
@@ -584,7 +603,7 @@ export async function createCampaign(formData: FormData) {
     frequencyPerLoop > 10
   ) {
     throw new Error(
-      "La fréquence doit être comprise entre 1 et 10."
+      "La frÃƒÂ©quence doit ÃƒÂªtre comprise entre 1 et 10."
     );
   }
 
@@ -613,19 +632,19 @@ export async function createCampaign(formData: FormData) {
       return [...new Set(ids)];
     } catch {
       throw new Error(
-        `La sélection des ${label} est invalide.`
+        `La sÃƒÂ©lection des ${label} est invalide.`
       );
     }
   };
 
   const screenIds = parseIdList(
     String(formData.get("screenIds") ?? ""),
-    "écrans"
+    "ÃƒÂ©crans"
   );
 
   const mediaIds = parseIdList(
     String(formData.get("mediaIds") ?? ""),
-    "médias"
+    "mÃƒÂ©dias"
   );
 
   if (!name) {
@@ -634,13 +653,13 @@ export async function createCampaign(formData: FormData) {
 
   if (screenIds.length === 0) {
     throw new Error(
-      "La campagne doit contenir au moins un écran."
+      "La campagne doit contenir au moins un ÃƒÂ©cran."
     );
   }
 
   if (mediaIds.length === 0) {
     throw new Error(
-      "La campagne doit contenir au moins un média."
+      "La campagne doit contenir au moins un mÃƒÂ©dia."
     );
   }
 
@@ -656,7 +675,7 @@ export async function createCampaign(formData: FormData) {
   ) {
     if (!selectedAdvertiserId) {
       throw new Error(
-        "Veuillez sélectionner un annonceur."
+        "Veuillez sÃƒÂ©lectionner un annonceur."
       );
     }
 
@@ -664,7 +683,7 @@ export async function createCampaign(formData: FormData) {
   } else {
     if (!user.advertiser) {
       throw new Error(
-        "Accès réservé aux annonceurs."
+        "AccÃƒÂ¨s rÃƒÂ©servÃƒÂ© aux annonceurs."
       );
     }
 
@@ -673,13 +692,11 @@ export async function createCampaign(formData: FormData) {
 
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-  const numberOfDays = Math.max(
-    1,
-    Math.ceil(
+  const numberOfDays =
+    Math.floor(
       (endDate.getTime() - startDate.getTime()) /
         MS_PER_DAY
-    )
-  );
+    ) ;
 
   await prisma.$transaction(async (tx) => {
     const advertiser =
@@ -695,7 +712,7 @@ export async function createCampaign(formData: FormData) {
 
     if (!advertiser) {
       throw new Error(
-        "L'annonceur sélectionné est introuvable ou inactif."
+        "L'annonceur sÃƒÂ©lectionnÃƒÂ© est introuvable ou inactif."
       );
     }
 
@@ -717,7 +734,7 @@ export async function createCampaign(formData: FormData) {
       approvedMedia.length !== mediaIds.length
     ) {
       throw new Error(
-        "Un ou plusieurs médias sélectionnés sont introuvables, appartiennent à un autre annonceur ou ne sont pas approuvés."
+        "Un ou plusieurs mÃƒÂ©dias sÃƒÂ©lectionnÃƒÂ©s sont introuvables, appartiennent ÃƒÂ  un autre annonceur ou ne sont pas approuvÃƒÂ©s."
       );
     }
 
@@ -738,10 +755,44 @@ export async function createCampaign(formData: FormData) {
       validScreens.length !== screenIds.length
     ) {
       throw new Error(
-        "Un ou plusieurs écrans sélectionnés sont introuvables."
+        "Un ou plusieurs ÃƒÂ©crans sÃƒÂ©lectionnÃƒÂ©s sont introuvables."
       );
     }
 
+    const conflictingScreens =
+      await tx.campaignScreen.findMany({
+        where: {
+          screenId: {
+            in: screenIds,
+          },
+          status: "ACTIVE",
+          campaign: {
+            status: {
+              in: [
+                "PENDING_REVIEW",
+                "AWAITING_PAYMENT",
+                "SCHEDULED",
+                "ACTIVE",
+              ],
+            },
+            startDate: {
+              lt: endDate,
+            },
+            endDate: {
+              gt: startDate,
+            },
+          },
+        },
+        select: {
+          screenId: true,
+        },
+      });
+
+    if (conflictingScreens.length > 0) {
+      throw new Error(
+        "Un ou plusieurs écrans sélectionnés sont déjà réservés sur cette période."
+      );
+    }
     const zoneIds = [
       ...new Set(
         validScreens
@@ -814,7 +865,7 @@ export async function createCampaign(formData: FormData) {
 
       if (!rule) {
         throw new Error(
-          `Aucune règle de tarification active n'est définie pour l'écran sélectionné.`
+          `Aucune rÃƒÂ¨gle de tarification active n'est dÃƒÂ©finie pour l'ÃƒÂ©cran sÃƒÂ©lectionnÃƒÂ©.`
         );
       }
 
@@ -842,7 +893,7 @@ export async function createCampaign(formData: FormData) {
           spotDuration,
           frequencyPerLoop,
           estimatedPrice,
-          status: "DRAFT",
+          status: "PENDING_REVIEW",
         },
       });
 
@@ -850,7 +901,7 @@ export async function createCampaign(formData: FormData) {
       data: screenIds.map((screenId) => ({
         campaignId: campaign.id,
         screenId,
-        reservedSeconds: spotDuration,
+        reservedSeconds: spotDuration * frequencyPerLoop,
         status: "ACTIVE",
       })),
     });
@@ -880,7 +931,7 @@ async function getAuthorizedCampaign(
   }
 
   // ADMIN / OPERATOR :
-  // accès aux campagnes de tous les annonceurs.
+  // accÃƒÂ¨s aux campagnes de tous les annonceurs.
   if (
     user.role === "ADMIN" ||
     user.role === "OPERATOR"
@@ -920,10 +971,10 @@ async function getAuthorizedCampaign(
   }
 
   // ANNONCEUR :
-  // accès uniquement à ses propres campagnes.
+  // accÃƒÂ¨s uniquement ÃƒÂ  ses propres campagnes.
   if (!user.advertiser) {
     throw new Error(
-      "Accès réservé aux annonceurs."
+      "AccÃƒÂ¨s rÃƒÂ©servÃƒÂ© aux annonceurs."
     );
   }
 
@@ -1020,13 +1071,13 @@ export async function createMedia(formData: FormData) {
 
   if (!name) {
     throw new Error(
-      "Le nom du média est requis."
+      "Le nom du mÃƒÂ©dia est requis."
     );
   }
 
   if (!fileUrl) {
     throw new Error(
-      "L'URL du média est requise."
+      "L'URL du mÃƒÂ©dia est requise."
     );
   }
 
@@ -1035,7 +1086,7 @@ export async function createMedia(formData: FormData) {
     fileType !== "video"
   ) {
     throw new Error(
-      "Le type du média est invalide."
+      "Le type du mÃƒÂ©dia est invalide."
     );
   }
 
@@ -1091,8 +1142,8 @@ export async function createMedia(formData: FormData) {
     )
   ) {
     throw new Error(
-      `Le type MIME du média est invalide : ${
-        mimeType || "non renseigné"
+      `Le type MIME du mÃƒÂ©dia est invalide : ${
+        mimeType || "non renseignÃƒÂ©"
       }.`
     );
   }
@@ -1103,7 +1154,7 @@ export async function createMedia(formData: FormData) {
     durationSeconds > 60
   ) {
     throw new Error(
-      "La durée doit être comprise entre 5 et 60 secondes."
+      "La durÃƒÂ©e doit ÃƒÂªtre comprise entre 5 et 60 secondes."
     );
   }
 
@@ -1115,7 +1166,7 @@ export async function createMedia(formData: FormData) {
     )
   ) {
     throw new Error(
-      "La largeur du média est invalide."
+      "La largeur du mÃƒÂ©dia est invalide."
     );
   }
 
@@ -1127,7 +1178,7 @@ export async function createMedia(formData: FormData) {
     )
   ) {
     throw new Error(
-      "La hauteur du média est invalide."
+      "La hauteur du mÃƒÂ©dia est invalide."
     );
   }
 
@@ -1136,7 +1187,7 @@ export async function createMedia(formData: FormData) {
     fileSizeBytes <= BigInt(0)
   ) {
     throw new Error(
-      "La taille du média est invalide."
+      "La taille du mÃƒÂ©dia est invalide."
     );
   }
 
@@ -1149,7 +1200,7 @@ export async function createMedia(formData: FormData) {
   ) {
     if (!selectedAdvertiserId) {
       throw new Error(
-        "Veuillez sélectionner l'annonceur propriétaire du média."
+        "Veuillez sÃƒÂ©lectionner l'annonceur propriÃƒÂ©taire du mÃƒÂ©dia."
       );
     }
 
@@ -1166,7 +1217,7 @@ export async function createMedia(formData: FormData) {
 
     if (!advertiser) {
       throw new Error(
-        "L'annonceur sélectionné est introuvable ou inactif."
+        "L'annonceur sÃƒÂ©lectionnÃƒÂ© est introuvable ou inactif."
       );
     }
 
@@ -1175,7 +1226,7 @@ export async function createMedia(formData: FormData) {
     // ANNONCEUR
     if (!user.advertiser) {
       throw new Error(
-        "Accès réservé aux annonceurs."
+        "AccÃƒÂ¨s rÃƒÂ©servÃƒÂ© aux annonceurs."
       );
     }
 
@@ -1194,7 +1245,7 @@ export async function createMedia(formData: FormData) {
       heightPx,
       fileSizeBytes,
 
-      // Le média attend la validation admin
+      // Le mÃƒÂ©dia attend la validation admin
       status: "UPLOADED",
     },
   });
@@ -1213,8 +1264,17 @@ export async function createMedia(formData: FormData) {
 export async function deactivateCampaign(
   id: string
 ) {
+  console.log("[deactivateCampaign] START", id);
+
   const { campaign } =
     await getAuthorizedCampaign(id);
+
+  console.log("[deactivateCampaign] AUTHORIZED", {
+    id,
+    status: campaign.status,
+    mediaCount: campaign.campaignMedia.length,
+    screenCount: campaign.campaignScreens.length,
+  });
 
   if (campaign.status !== "ACTIVE") {
     throw new Error(
@@ -1222,7 +1282,6 @@ export async function deactivateCampaign(
     );
   }
 
-  // Verifier et effectuer toute la transition dans une transaction.
   await prisma.$transaction(async (tx) => {
     const currentCampaign =
       await tx.campaign.findUnique({
@@ -1230,7 +1289,12 @@ export async function deactivateCampaign(
           id: campaign.id,
         },
         select: {
+          id: true,
           status: true,
+          spotDuration: true,
+          frequencyPerLoop: true,
+          endDate: true,
+          startDate: true,
         },
       });
 
@@ -1244,8 +1308,6 @@ export async function deactivateCampaign(
       );
     }
 
-    // Trier les ecrans pour eviter les deadlocks
-    // lorsque plusieurs campagnes sont modifiees simultanement.
     const screenIds = [
       ...new Set(
         campaign.campaignScreens
@@ -1260,105 +1322,28 @@ export async function deactivateCampaign(
       ),
     ].sort();
 
+    /*
+     * Verrouiller tous les ecrans dans un ordre deterministe
+     * avant la transition et la regeneration.
+     */
     for (const screenId of screenIds) {
-      // Verrou transactionnel par ecran.
       await tx.$executeRaw`
         SELECT pg_advisory_xact_lock(
           hashtextextended(${screenId}, 0)
         )
       `;
-
-      // L'ancienne playlist ne doit plus etre servie au player.
-      await tx.playlist.updateMany({
-        where: {
-          screenId,
-          status: "ACTIVE",
-        },
-        data: {
-          status: "INACTIVE",
-        },
-      });
-
-      // Recuperer les autres campagnes encore actives sur cet ecran.
-      const activeCampaigns =
-        await tx.campaign.findMany({
-          where: {
-            status: "ACTIVE",
-            id: {
-              not: campaign.id,
-            },
-            campaignScreens: {
-              some: {
-                screenId,
-                status: "ACTIVE",
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "asc",
-          },
-          include: {
-            campaignMedia: {
-              orderBy: {
-                displayOrder: "asc",
-              },
-            },
-          },
-        });
-
-      // Determiner la prochaine version de playlist.
-      const lastPlaylist =
-        await tx.playlist.findFirst({
-          where: {
-            screenId,
-          },
-          orderBy: {
-            version: "desc",
-          },
-          select: {
-            version: true,
-          },
-        });
-
-      const newVersion =
-        (lastPlaylist?.version ?? 0) + 1;
-
-      const playlist =
-        await tx.playlist.create({
-          data: {
-            screenId,
-            version: newVersion,
-            status: "ACTIVE",
-            publishedAt: new Date(),
-          },
-        });
-
-      // Reconstruire la playlist uniquement avec
-      // les campagnes qui restent ACTIVE.
-      let position = 1;
-
-      for (const activeCampaign of activeCampaigns) {
-        for (const campaignMedia of activeCampaign.campaignMedia) {
-          await tx.playlistItem.create({
-            data: {
-              playlistId: playlist.id,
-              campaignId: activeCampaign.id,
-              mediaId: campaignMedia.mediaId,
-              position,
-              durationSeconds:
-                campaignMedia.durationSeconds,
-              startDate: activeCampaign.startDate,
-              endDate: activeCampaign.endDate,
-            },
-          });
-
-          position++;
-        }
-      }
     }
 
-    // La campagne est mise en pause apres reconstruction
-    // des playlists des ecrans concernes.
+    /*
+     * regenerate() ignore les campagnes qui ne sont pas ACTIVE.
+     */
+    console.log(
+      "[deactivateCampaign] TRANSITION",
+      currentCampaign.id,
+      currentCampaign.status,
+      "-> PAUSED"
+    );
+
     await tx.campaign.update({
       where: {
         id: campaign.id,
@@ -1367,6 +1352,32 @@ export async function deactivateCampaign(
         status: "PAUSED",
       },
     });
+
+    /*
+     * Les reservations CONFIRMED sont conservees pendant la pause.
+     */
+    for (const screenId of screenIds) {
+      console.log("[deactivateCampaign] BEFORE REGENERATE", {
+        campaignId: campaign.id,
+        screenId,
+      });
+
+      await regenerate(screenId, tx);
+
+      console.log("[deactivateCampaign] AFTER REGENERATE", {
+        campaignId: campaign.id,
+        screenId,
+      });
+    }
+
+    console.log("[deactivateCampaign] TRANSACTION BODY COMPLETE", {
+      campaignId: campaign.id,
+    });
+
+    console.log(
+      "[deactivateCampaign] TRANSACTION READY",
+      campaign.id
+    );
   });
 
   revalidatePath("/admin/campaigns");
@@ -1382,7 +1393,7 @@ export async function deleteCampaign(
 
   if (campaign.status === "ACTIVE") {
     throw new Error(
-      "Une campagne active ne peut pas être supprimée."
+      "Une campagne active ne peut pas ÃƒÂªtre supprimÃƒÂ©e."
     );
   }
 
@@ -1398,41 +1409,59 @@ export async function deleteCampaign(
 export async function activateCampaign(
   id: string
 ) {
+  console.log("[activateCampaign] START", id);
   const { campaign } =
     await getAuthorizedCampaign(id);
 
-  if (campaign.status !== "DRAFT") {
+  console.log("[activateCampaign] AUTHORIZED", {
+    id,
+    status: campaign.status,
+    mediaCount: campaign.campaignMedia.length,
+    screenCount: campaign.campaignScreens.length,
+  });
+
+  if (campaign.status !== "SCHEDULED") {
     throw new Error(
-      "Seules les campagnes en brouillon peuvent être activées."
+      "Seules les campagnes planifiÃƒÂ©es peuvent ÃƒÂªtre activÃƒÂ©es."
     );
   }
 
-  if (
-    campaign.campaignMedia.length === 0
-  ) {
+  const today = new Date();
+  const todayUtc = new Date(
+    Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate()
+    )
+  );
+
+  if (campaign.startDate > todayUtc) {
     throw new Error(
-      "La campagne doit contenir au moins un média."
+      "La campagne ne peut ÃƒÂªtre activÃƒÂ©e qu'ÃƒÂ  partir de sa date de dÃƒÂ©but."
+    );
+  }
+
+  if (campaign.campaignMedia.length === 0) {
+    throw new Error(
+      "La campagne doit contenir au moins un mÃƒÂ©dia."
     );
   }
 
   const unapprovedMedia =
     campaign.campaignMedia.find(
       (campaignMedia) =>
-        campaignMedia.media.status !==
-        "APPROVED"
+        campaignMedia.media.status !== "APPROVED"
     );
 
   if (unapprovedMedia) {
     throw new Error(
-      `Le média "${unapprovedMedia.media.name}" n'est pas approuvé.`
+      `Le mÃƒÂ©dia "${unapprovedMedia.media.name}" n'est pas approuvÃƒÂ©.`
     );
   }
 
-  if (
-    campaign.campaignScreens.length === 0
-  ) {
+  if (campaign.campaignScreens.length === 0) {
     throw new Error(
-      "La campagne doit contenir au moins un écran."
+      "La campagne doit contenir au moins un ÃƒÂ©cran."
     );
   }
 
@@ -1443,7 +1472,20 @@ export async function activateCampaign(
           id: campaign.id,
         },
         select: {
+          id: true,
           status: true,
+          startDate: true,
+          endDate: true,
+          spotDuration: true,
+          frequencyPerLoop: true,
+          campaignScreens: {
+            where: {
+              status: "ACTIVE",
+            },
+            select: {
+              screenId: true,
+            },
+          },
         },
       });
 
@@ -1453,96 +1495,158 @@ export async function activateCampaign(
       );
     }
 
-    if (currentCampaign.status !== "DRAFT") {
+    if (currentCampaign.status !== "SCHEDULED") {
       throw new Error(
-        "La campagne a déjà été activée ou ne peut plus être activée."
+        "La campagne n'est plus planifiÃƒÂ©e ou ne peut plus ÃƒÂªtre activÃƒÂ©e."
       );
     }
 
-    // --------------------------------------------------------------------------
-    // CRÉATION DES PLAYLISTS
-    // --------------------------------------------------------------------------
-
-    for (const campaignScreen of campaign.campaignScreens) {
-      // Verrou transactionnel par écran :
-      // une seule activation à la fois peut calculer/créer la prochaine version.
-      await tx.$executeRaw`
-        SELECT pg_advisory_xact_lock(
-          hashtextextended(${campaignScreen.screenId}, 0)
-        )
-      `;
-
-      // Désactiver toutes les anciennes playlists actives de cet écran.
-      await tx.playlist.updateMany({
-        where: {
-          screenId: campaignScreen.screenId,
-          status: "ACTIVE",
-        },
-        data: {
-          status: "INACTIVE",
-        },
-      });
-
-      // Récupérer la dernière version après acquisition du verrou.
-      const lastPlaylist = await tx.playlist.findFirst({
-        where: {
-          screenId: campaignScreen.screenId,
-        },
-        orderBy: {
-          version: "desc",
-        },
-        select: {
-          version: true,
-        },
-      });
-
-      const newVersion = (lastPlaylist?.version ?? 0) + 1;
-
-      // Créer la nouvelle playlist ACTIVE.
-      const playlist = await tx.playlist.create({
-        data: {
-          screenId: campaignScreen.screenId,
-          version: newVersion,
-          status: "ACTIVE",
-          publishedAt: new Date(),
-        },
-      });
-
-      await tx.playlistItem.createMany({
-        data: campaign.campaignMedia.map((campaignMedia) => ({
-          playlistId: playlist.id,
-          campaignId: campaign.id,
-          mediaId: campaignMedia.mediaId,
-          position: campaignMedia.displayOrder,
-          durationSeconds: campaignMedia.durationSeconds,
-          startDate: campaign.startDate,
-          endDate: campaign.endDate,
-        })),
-      });
+    if (currentCampaign.startDate > todayUtc) {
+      throw new Error(
+        "La campagne ne peut ÃƒÂªtre activÃƒÂ©e qu'ÃƒÂ  partir de sa date de dÃƒÂ©but."
+      );
     }
 
-    // --------------------------------------------------------------------------
-    // ACTIVATION
-    // --------------------------------------------------------------------------
+    if (currentCampaign.campaignScreens.length === 0) {
+      throw new Error(
+        "La campagne ne possÃƒÂ¨de aucun ÃƒÂ©cran actif."
+      );
+    }
 
+    const screenIds = [
+      ...new Set(
+        currentCampaign.campaignScreens
+          .map(
+            (campaignScreen) =>
+              campaignScreen.screenId
+          )
+      ),
+    ].sort();
+
+    /*
+     * Une campagne SCHEDULED doit possÃƒÂ©der une rÃƒÂ©servation
+     * CONFIRMED pour chaque ÃƒÂ©cran avant de pouvoir devenir ACTIVE.
+     *
+     * On verrouille dans un ordre dÃƒÂ©terministe afin d'ÃƒÂ©viter
+     * les deadlocks avec les autres opÃƒÂ©rations d'inventaire.
+     */
+    for (const screenId of screenIds) {
+      await tx.$executeRaw`
+        SELECT pg_advisory_xact_lock(
+          hashtextextended(${screenId}, 0)
+        )
+      `;
+    }
+
+    const reservations =
+      await tx.inventoryReservation.findMany({
+        where: {
+          campaignId: currentCampaign.id,
+          screenId: {
+            in: screenIds,
+          },
+          status: "CONFIRMED",
+          startDate: {
+            lt: currentCampaign.endDate,
+          },
+          endDate: {
+            gt: currentCampaign.startDate,
+          },
+        },
+        select: {
+          id: true,
+          screenId: true,
+          reservedSeconds: true,
+        },
+      });
+
+    const reservationByScreen =
+      new Map(
+        reservations.map(
+          (reservation) => [
+            reservation.screenId,
+            reservation,
+          ]
+        )
+      );
+
+    const expectedReservedSeconds =
+      currentCampaign.spotDuration *
+      currentCampaign.frequencyPerLoop;
+
+    for (const screenId of screenIds) {
+      const reservation =
+        reservationByScreen.get(screenId);
+
+      if (!reservation) {
+        throw new Error(
+          `Aucune rÃƒÂ©servation CONFIRMED n'est disponible pour l'ÃƒÂ©cran ${screenId}.`
+        );
+      }
+
+      if (
+        reservation.reservedSeconds !==
+        expectedReservedSeconds
+      ) {
+        throw new Error(
+          `La rÃƒÂ©servation de l'ÃƒÂ©cran ${screenId} est incohÃƒÂ©rente : ${reservation.reservedSeconds}s rÃƒÂ©servÃƒÂ©es, ${expectedReservedSeconds}s attendues.`
+        );
+      }
+    }
+
+    /*
+     * La campagne devient ACTIVE avant la rÃƒÂ©gÃƒÂ©nÃƒÂ©ration afin que
+     * regenerate() puisse la sÃƒÂ©lectionner comme campagne ÃƒÂ©ligible.
+     *
+     * Si regenerate() ÃƒÂ©choue, toute la transaction est annulÃƒÂ©e :
+     * la campagne reste donc SCHEDULED et l'ancienne playlist
+     * reste ACTIVE.
+     */
     await tx.campaign.update({
       where: {
-        id: campaign.id,
+        id: currentCampaign.id,
       },
       data: {
         status: "ACTIVE",
       },
     });
+
+    for (const screenId of screenIds) {
+      console.log("[activateCampaign] BEFORE REGENERATE", {
+        campaignId: campaign.id,
+        screenId,
+      });
+
+      await regenerate(screenId, tx);
+
+      console.log("[activateCampaign] AFTER REGENERATE", {
+        campaignId: campaign.id,
+        screenId,
+      });
+    }
+
+    console.log("[activateCampaign] TRANSACTION BODY COMPLETE", {
+      campaignId: campaign.id,
+    });
   });
 
   revalidatePath("/admin/campaigns");
   revalidatePath("/advertiser/campaigns");
+  revalidatePath("/admin/playlists");
 }
 export async function reactivateCampaign(
   id: string
 ) {
+  console.log("[reactivateCampaign] START", id);
   const { campaign } =
     await getAuthorizedCampaign(id);
+
+  console.log("[reactivateCampaign] AUTHORIZED", {
+    id,
+    status: campaign.status,
+    mediaCount: campaign.campaignMedia.length,
+    screenCount: campaign.campaignScreens.length,
+  });
 
   if (campaign.status !== "PAUSED") {
     throw new Error(
@@ -1582,7 +1686,12 @@ export async function reactivateCampaign(
           id: campaign.id,
         },
         select: {
+          id: true,
           status: true,
+          spotDuration: true,
+          frequencyPerLoop: true,
+          endDate: true,
+          startDate: true,
         },
       });
 
@@ -1592,22 +1701,38 @@ export async function reactivateCampaign(
       );
     }
 
+    console.log("[reactivateCampaign] CURRENT CAMPAIGN", {
+      status: currentCampaign.status,
+      startDate: currentCampaign.startDate,
+      endDate: currentCampaign.endDate,
+    });
+
     if (currentCampaign.status !== "PAUSED") {
       throw new Error(
         "La campagne n'est plus en pause ou ne peut plus etre reactivee."
       );
     }
 
-    // Réactiver la campagne dans la transaction.
-    // Si une étape suivante échoue, toute la transaction est annulée.
-    await tx.campaign.update({
-      where: {
-        id: campaign.id,
-      },
-      data: {
-        status: "ACTIVE",
-      },
-    });
+    const today = new Date();
+    const todayUtc = new Date(
+      Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth(),
+        today.getUTCDate()
+      )
+    );
+
+    if (currentCampaign.startDate > todayUtc) {
+      throw new Error(
+        "La campagne ne peut pas etre reactivee avant sa date de debut."
+      );
+    }
+
+    if (currentCampaign.endDate <= todayUtc) {
+      throw new Error(
+        "La campagne ne peut pas etre reactivee car sa date de fin est depassee."
+      );
+    }
 
     const screenIds = [
       ...new Set(
@@ -1623,115 +1748,141 @@ export async function reactivateCampaign(
       ),
     ].sort();
 
+    console.log("[reactivateCampaign] SCREEN IDS", screenIds);
+
+    /*
+     * Meme ordre de verrouillage que reserve() et le cron.
+     */
     for (const screenId of screenIds) {
-      // Verrou transactionnel par écran.
       await tx.$executeRaw`
         SELECT pg_advisory_xact_lock(
           hashtextextended(${screenId}, 0)
         )
       `;
+    }
 
-      // Désactiver l'ancienne playlist ACTIVE.
-      await tx.playlist.updateMany({
+    /*
+     * Une campagne PAUSED conserve ses reservations CONFIRMED.
+     * On verifie leur presence et leur coherence avant de reactiver
+     * afin que ACTIVE implique toujours une allocation d'inventaire valide.
+     */
+    const reservations =
+      await tx.inventoryReservation.findMany({
         where: {
-          screenId,
-          status: "ACTIVE",
+          campaignId: currentCampaign.id,
+          screenId: {
+            in: screenIds,
+          },
+          status: "CONFIRMED",
+          startDate: {
+            lt: currentCampaign.endDate,
+          },
+          endDate: {
+            gt: currentCampaign.startDate,
+          },
         },
-        data: {
-          status: "INACTIVE",
+        select: {
+          id: true,
+          screenId: true,
+          reservedSeconds: true,
         },
       });
 
-      // Récupérer TOUTES les campagnes actuellement actives
-      // sur cet écran, y compris celle que nous venons de réactiver.
-      const activeCampaigns =
-        await tx.campaign.findMany({
-          where: {
-            status: "ACTIVE",
-            campaignScreens: {
-              some: {
-                screenId,
-                status: "ACTIVE",
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "asc",
-          },
-          include: {
-            campaignMedia: {
-              orderBy: {
-                displayOrder: "asc",
-              },
-            },
-          },
-        });
+    const reservationByScreen =
+      new Map(
+        reservations.map(
+          (reservation) => [
+            reservation.screenId,
+            reservation,
+          ]
+        )
+      );
 
-      // Calculer la prochaine version après le verrou.
-      const lastPlaylist =
-        await tx.playlist.findFirst({
-          where: {
-            screenId,
-          },
-          orderBy: {
-            version: "desc",
-          },
-          select: {
-            version: true,
-          },
-        });
+    const expectedReservedSeconds =
+      currentCampaign.spotDuration *
+      currentCampaign.frequencyPerLoop;
 
-      const newVersion =
-        (lastPlaylist?.version ?? 0) + 1;
+    for (const screenId of screenIds) {
+      const reservation =
+        reservationByScreen.get(screenId);
 
-      // Créer la nouvelle playlist ACTIVE.
-      const playlist =
-        await tx.playlist.create({
-          data: {
-            screenId,
-            version: newVersion,
-            status: "ACTIVE",
-            publishedAt: new Date(),
-          },
-        });
+      if (!reservation) {
+        throw new Error(
+          `Aucune rÃƒÂ©servation CONFIRMED n'est disponible pour l'ÃƒÂ©cran ${screenId}.`
+        );
+      }
 
-      let position = 1;
-
-      // Reconstruire la playlist avec toutes les campagnes actives.
-      for (const activeCampaign of activeCampaigns) {
-        for (const campaignMedia of activeCampaign.campaignMedia) {
-          await tx.playlistItem.create({
-            data: {
-              playlistId: playlist.id,
-              campaignId: activeCampaign.id,
-              mediaId: campaignMedia.mediaId,
-              position,
-              durationSeconds:
-                campaignMedia.durationSeconds,
-              startDate:
-                activeCampaign.startDate,
-              endDate:
-                activeCampaign.endDate,
-            },
-          });
-
-          position++;
-        }
+      if (
+        reservation.reservedSeconds !==
+        expectedReservedSeconds
+      ) {
+        throw new Error(
+          `La rÃƒÂ©servation de l'ÃƒÂ©cran ${screenId} est incohÃƒÂ©rente : ${reservation.reservedSeconds}s rÃƒÂ©servÃƒÂ©es, ${expectedReservedSeconds}s attendues.`
+        );
       }
     }
+
+    console.log("[reactivateCampaign] VALIDATION OK", {
+      expectedReservedSeconds,
+    });
+
+    /*
+     * La campagne doit etre ACTIVE avant regenerate().
+     */
+    console.log("[reactivateCampaign] BEFORE CAMPAIGN UPDATE", {
+      campaignId: campaign.id,
+      currentStatus: currentCampaign.status,
+    });
+
+    await tx.campaign.update({
+      where: {
+        id: campaign.id,
+      },
+      data: {
+        status: "ACTIVE",
+      },
+    });
+
+    console.log("[reactivateCampaign] AFTER CAMPAIGN UPDATE", {
+      campaignId: campaign.id,
+      status: "ACTIVE",
+    });
+
+    /*
+     * regenerate() construit la playlist depuis les reservations
+     * CONFIRMED, et non directement depuis CampaignMedia.
+     */
+    for (const screenId of screenIds) {
+      console.log("[reactivateCampaign] BEFORE REGENERATE", {
+        campaignId: campaign.id,
+        screenId,
+      });
+
+      await regenerate(screenId, tx);
+
+      console.log("[reactivateCampaign] AFTER REGENERATE", {
+        campaignId: campaign.id,
+        screenId,
+      });
+    }
+
+    console.log("[reactivateCampaign] TRANSACTION BODY COMPLETE", {
+      campaignId: campaign.id,
+    });
   });
 
   revalidatePath("/admin/campaigns");
   revalidatePath("/advertiser/campaigns");
   revalidatePath("/admin/playlists");
 }
+
 export async function deleteMedia(
   id: string
 ) {
   const user = await requireAuth();
 
   if (!id) {
-    throw new Error("Média introuvable.");
+    throw new Error("MÃƒÂ©dia introuvable.");
   }
 
   const media = await prisma.media.findUnique({
@@ -1741,16 +1892,26 @@ export async function deleteMedia(
   });
 
   if (!media) {
-    throw new Error("Média introuvable.");
+    throw new Error("MÃƒÂ©dia introuvable.");
   }
 
-  // Seuls ADMIN et OPERATOR peuvent supprimer un média depuis l'administration.
+  // Seuls ADMIN et OPERATOR peuvent supprimer un mÃƒÂ©dia depuis l'administration.
   if (
     user.role !== "ADMIN" &&
     user.role !== "OPERATOR"
   ) {
     throw new Error(
-      "Vous n'avez pas l'autorisation de supprimer ce média."
+      "Vous n'avez pas l'autorisation de supprimer ce mÃƒÂ©dia."
+    );
+  }
+
+  const playbackLogs = await prisma.playbackLog.count({
+    where: { mediaId: id },
+  });
+
+  if (playbackLogs > 0) {
+    throw new Error(
+      "M\u00e9dia avec historique de diffusion : suppression impossible."
     );
   }
 
@@ -1774,12 +1935,12 @@ export async function approveMedia(
     user.role !== "OPERATOR"
   ) {
     throw new Error(
-      "Vous n'avez pas l'autorisation d'approuver un média."
+      "Vous n'avez pas l'autorisation d'approuver un mÃƒÂ©dia."
     );
   }
 
   if (!id) {
-    throw new Error("Média introuvable.");
+    throw new Error("MÃƒÂ©dia introuvable.");
   }
 
   const media = await prisma.media.findUnique({
@@ -1792,7 +1953,7 @@ export async function approveMedia(
   });
 
   if (!media) {
-    throw new Error("Média introuvable.");
+    throw new Error("MÃƒÂ©dia introuvable.");
   }
 
   await prisma.media.update({
@@ -1819,12 +1980,12 @@ export async function rejectMedia(
     user.role !== "OPERATOR"
   ) {
     throw new Error(
-      "Vous n'avez pas l'autorisation de rejeter un média."
+      "Vous n'avez pas l'autorisation de rejeter un mÃƒÂ©dia."
     );
   }
 
   if (!id) {
-    throw new Error("Média introuvable.");
+    throw new Error("MÃƒÂ©dia introuvable.");
   }
 
   const media = await prisma.media.findUnique({
@@ -1837,7 +1998,7 @@ export async function rejectMedia(
   });
 
   if (!media) {
-    throw new Error("Média introuvable.");
+    throw new Error("MÃƒÂ©dia introuvable.");
   }
 
   await prisma.media.update({
@@ -1909,7 +2070,7 @@ export async function updateContract(
   }
 
   if (!startDateValue || !endDateValue) {
-    throw new Error("Les dates de début et de fin sont requises.");
+    throw new Error("Les dates de dÃƒÂ©but et de fin sont requises.");
   }
 
   const startDate = new Date(`${startDateValue}T00:00:00`);
@@ -1921,7 +2082,7 @@ export async function updateContract(
 
   if (endDate < startDate) {
     throw new Error(
-      "La date de fin doit être postérieure ou égale à la date de début."
+      "La date de fin doit être strictement postérieure à la date de début."
     );
   }
 
@@ -1983,7 +2144,7 @@ export async function updateContract(
     });
 
     if (!screen) {
-      throw new Error("Écran introuvable.");
+      throw new Error("Ãƒâ€°cran introuvable.");
     }
   }
 
@@ -2064,7 +2225,7 @@ export async function createContract(formData: FormData) {
   }
 
   if (!startDateValue || !endDateValue) {
-    throw new Error("Les dates de début et de fin sont requises.");
+    throw new Error("Les dates de dÃƒÂ©but et de fin sont requises.");
   }
 
   const startDate = new Date(`${startDateValue}T00:00:00`);
@@ -2076,7 +2237,7 @@ export async function createContract(formData: FormData) {
 
   if (endDate < startDate) {
     throw new Error(
-      "La date de fin doit être postérieure ou égale à la date de début."
+      "La date de fin doit être strictement postérieure à la date de début."
     );
   }
 
@@ -2129,7 +2290,7 @@ export async function createContract(formData: FormData) {
     });
 
     if (!screen) {
-      throw new Error("Écran introuvable.");
+      throw new Error("Ãƒâ€°cran introuvable.");
     }
   }
 
@@ -2213,133 +2374,3 @@ export async function updateAdvertiserStatus(
   revalidatePath("/admin/advertisers");
 }
 
-
-
-
-
-// ============================================================================
-// VALIDATION SIMPLIFIEE (approuve les medias + active en une seule action)
-// ============================================================================
-
-export async function approveAndActivateCampaign(id: string) {
-  const user = await requireAuth();
-
-  if (user.role !== "ADMIN" && user.role !== "OPERATOR") {
-    throw new Error(
-      "Seuls les administrateurs peuvent valider une campagne."
-    );
-  }
-
-  const { campaign } = await getAuthorizedCampaign(id);
-
-  if (campaign.status !== "DRAFT") {
-    throw new Error(
-      "Seules les campagnes en brouillon peuvent etre activees."
-    );
-  }
-
-  if (campaign.campaignMedia.length === 0) {
-    throw new Error(
-      "La campagne doit contenir au moins un media."
-    );
-  }
-
-  if (campaign.campaignScreens.length === 0) {
-    throw new Error(
-      "La campagne doit contenir au moins un ecran."
-    );
-  }
-
-  const rejectedMedia = campaign.campaignMedia.find(
-    (campaignMedia) => campaignMedia.media.status === "REJECTED"
-  );
-
-  if (rejectedMedia) {
-    throw new Error(
-      `Le media "${rejectedMedia.media.name}" a ete rejete et doit etre remplace avant d'activer la campagne.`
-    );
-  }
-
-  const mediaIdsToApprove = campaign.campaignMedia
-    .filter((campaignMedia) => campaignMedia.media.status !== "APPROVED")
-    .map((campaignMedia) => campaignMedia.mediaId);
-
-  await prisma.$transaction(async (tx) => {
-    const currentCampaign = await tx.campaign.findUnique({
-      where: { id: campaign.id },
-      select: { status: true },
-    });
-
-    if (!currentCampaign) {
-      throw new Error("Campagne introuvable.");
-    }
-
-    if (currentCampaign.status !== "DRAFT") {
-      throw new Error(
-        "La campagne a deja ete activee ou ne peut plus etre activee."
-      );
-    }
-
-    if (mediaIdsToApprove.length > 0) {
-      await tx.media.updateMany({
-        where: { id: { in: mediaIdsToApprove } },
-        data: { status: "APPROVED" },
-      });
-    }
-
-    for (const campaignScreen of campaign.campaignScreens) {
-      await tx.$executeRaw`
-        SELECT pg_advisory_xact_lock(
-          hashtextextended(${campaignScreen.screenId}, 0)
-        )
-      `;
-
-      await tx.playlist.updateMany({
-        where: {
-          screenId: campaignScreen.screenId,
-          status: "ACTIVE",
-        },
-        data: { status: "INACTIVE" },
-      });
-
-      const lastPlaylist = await tx.playlist.findFirst({
-        where: { screenId: campaignScreen.screenId },
-        orderBy: { version: "desc" },
-        select: { version: true },
-      });
-
-      const newVersion = (lastPlaylist?.version ?? 0) + 1;
-
-      const playlist = await tx.playlist.create({
-        data: {
-          screenId: campaignScreen.screenId,
-          version: newVersion,
-          status: "ACTIVE",
-          publishedAt: new Date(),
-        },
-      });
-
-      await tx.playlistItem.createMany({
-        data: campaign.campaignMedia.map((campaignMedia) => ({
-          playlistId: playlist.id,
-          campaignId: campaign.id,
-          mediaId: campaignMedia.mediaId,
-          position: campaignMedia.displayOrder,
-          durationSeconds: campaignMedia.durationSeconds,
-          startDate: campaign.startDate,
-          endDate: campaign.endDate,
-        })),
-      });
-    }
-
-    await tx.campaign.update({
-      where: { id: campaign.id },
-      data: { status: "ACTIVE" },
-    });
-  });
-
-  revalidatePath("/admin/campaigns");
-  revalidatePath("/admin/media");
-  revalidatePath("/advertiser/campaigns");
-  revalidatePath("/advertiser/media");
-}

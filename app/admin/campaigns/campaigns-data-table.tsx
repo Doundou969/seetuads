@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { DataTable } from "@/components/admin/data-table";
-import { deleteCampaign, approveAndActivateCampaign, deactivateCampaign, reactivateCampaign } from "@/lib/actions";
+import { activateCampaign, deleteCampaign, deactivateCampaign, reactivateCampaign } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
-import { Trash2, Play, Pause, RotateCcw, BarChart3 } from "lucide-react";
+import { Trash2, Play, Pause, RotateCcw, BarChart3, FileCheck2 } from "lucide-react";
 
 type CampaignRow = Record<string, unknown> & {
   id: string;
@@ -47,10 +47,7 @@ export function CampaignsDataTable({
       actions={(row) => {
         const c = row as CampaignRow;
 
-        const canActivate =
-          c.status === "DRAFT" &&
-          c.screensCount > 0 &&
-          c.mediaCount > 0;
+        const canActivate = c.status === "SCHEDULED";
 
         return (
           <div className="flex items-center gap-2 justify-end">
@@ -65,63 +62,66 @@ export function CampaignsDataTable({
               </Button>
             </Link>
 
-            {c.status === "DRAFT" && (
-              <form
-                action={() => approveAndActivateCampaign(c.id)}
-                onSubmit={(event) => {
-                  if (!canActivate) {
-                    event.preventDefault();
-                  }
-                }}
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={
-                    canActivate
-                      ? "text-green-600 hover:text-green-700"
-                      : "text-gray-400 cursor-not-allowed"
-                  }
-                  type="submit"
-                  disabled={!canActivate}
-                  title={
-                    canActivate
-                      ? "Valider et activer (approuve automatiquement les medias en attente)"
-                      : "Ajoutez au moins un ecran et un media avant l'activation"
-                  }
-                >
-                  <Play className="w-4 h-4" />
-                </Button>
-              </form>
-            )}
-
-            {c.status === "PAUSED" && (
-              <form action={reactivateCampaign.bind(null, c.id)}>
+            {c.status === "PENDING_REVIEW" && (
+              <Link href={`/admin/campaigns/${c.id}`}>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="text-green-600 hover:text-green-700"
-                  type="submit"
-                  title="Réactiver la campagne"
+                  title="Examiner la campagne"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <FileCheck2 className="w-4 h-4" />
                 </Button>
-              </form>
-            )}
-            {c.status === "ACTIVE" && (
-              <form action={deactivateCampaign.bind(null, c.id)}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-orange-600 hover:text-orange-700"
-                  type="submit"
-                  title="Desactiver la campagne"
-                >
-                  <Pause className="w-4 h-4" />
-                </Button>
-              </form>
+              </Link>
             )}
 
+            {canActivate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-green-600 hover:text-green-700"
+                type="button"
+                title="Activer la campagne"
+                onClick={async () => {
+                  console.log("[UI] ACTIVATE CLICK", c.id);
+                  await activateCampaign(c.id);
+                }}
+              >
+                <Play className="w-4 h-4" />
+              </Button>
+            )}
+
+            {c.status === "PAUSED" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-green-600 hover:text-green-700"
+                type="button"
+                title="Réactiver la campagne"
+                onClick={async () => {
+                  console.log("[UI] REACTIVATE CLICK", c.id);
+                  await reactivateCampaign(c.id);
+                }}
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+            )}
+
+            {c.status === "ACTIVE" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-orange-600 hover:text-orange-700"
+                type="button"
+                title="Mettre en pause la campagne"
+                onClick={async () => {
+                  console.log("[UI] DEACTIVATE CLICK", c.id);
+                  await deactivateCampaign(c.id);
+                }}
+              >
+                <Pause className="w-4 h-4" />
+              </Button>
+            )}
             <form action={deleteCampaign.bind(null, c.id)}>
               <Button
                 variant="ghost"
@@ -138,4 +138,3 @@ export function CampaignsDataTable({
     />
   );
 }
-

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useClerk, UserButton } from "@clerk/nextjs";
+import { useClerk } from "@clerk/nextjs";
+import { ClerkUserButton } from "@/components/admin/clerk-user-button";
 import {
 LayoutDashboard,
 MapPin,
@@ -237,7 +238,7 @@ return (
   <div className="shrink-0 border-t border-white/[0.08] p-3">
     <div className="mb-2 flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.035] p-3">
       <div className="shrink-0">
-        <UserButton />
+        <ClerkUserButton />
       </div>
 
       <div className="min-w-0 flex-1">

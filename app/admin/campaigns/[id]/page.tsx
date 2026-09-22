@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+import { CampaignReviewActions } from "./campaign-review-actions";
 import {
   ArrowLeft,
   BarChart3,
@@ -201,7 +202,7 @@ export default async function CampaignDetailsPage({
         id: campaignScreen.screen.id,
         name:
           campaignScreen.screen.name ||
-          "Écran sans nom",
+          "�?cran sans nom",
         code: campaignScreen.screen.screenCode,
         played,
         failed,
@@ -289,9 +290,15 @@ export default async function CampaignDetailsPage({
           </p>
         </div>
 
-        <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
-          {String(campaign.status)}
-        </span>
+        <div className="flex flex-col items-end gap-3">
+          <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
+            {String(campaign.status)}
+          </span>
+
+          {campaign.status === "PENDING_REVIEW" && (
+            <CampaignReviewActions campaignId={campaign.id} />
+          )}
+        </div>
       </div>
 
       {/* KPI existants + nouveaux indicateurs */}
@@ -444,10 +451,10 @@ export default async function CampaignDetailsPage({
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-left text-gray-500">
               <tr>
-                <th className="px-5 py-3">Écran</th>
+                <th className="px-5 py-3">�?cran</th>
                 <th className="px-5 py-3">Code</th>
                 <th className="px-5 py-3">Lectures</th>
-                <th className="px-5 py-3">Échecs</th>
+                <th className="px-5 py-3">�?checs</th>
                 <th className="px-5 py-3">Durée</th>
                 <th className="px-5 py-3">Total</th>
               </tr>
@@ -520,7 +527,7 @@ export default async function CampaignDetailsPage({
                 <th className="px-5 py-3">Média</th>
                 <th className="px-5 py-3">Durée / lecture</th>
                 <th className="px-5 py-3">Lectures</th>
-                <th className="px-5 py-3">Échecs</th>
+                <th className="px-5 py-3">�?checs</th>
                 <th className="px-5 py-3">Durée totale</th>
               </tr>
             </thead>
@@ -620,7 +627,7 @@ export default async function CampaignDetailsPage({
 
           <div className="rounded-lg bg-gray-50 p-4">
             <p className="text-sm text-gray-500">
-              Écran / Player
+              �?cran / Player
             </p>
 
             <p className="mt-1 font-semibold">
@@ -668,7 +675,7 @@ export default async function CampaignDetailsPage({
             <thead className="bg-gray-50 text-left text-gray-500">
               <tr>
                 <th className="px-5 py-3">Date</th>
-                <th className="px-5 py-3">Écran</th>
+                <th className="px-5 py-3">�?cran</th>
                 <th className="px-5 py-3">Player</th>
                 <th className="px-5 py-3">Média</th>
                 <th className="px-5 py-3">Durée</th>

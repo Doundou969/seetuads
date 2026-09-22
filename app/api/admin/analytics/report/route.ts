@@ -207,13 +207,6 @@ export async function GET() {
       (log) => !log.campaign
     ).length;
 
-    const durationWithoutCampaign = sevenDaysLogs
-      .filter((log) => !log.campaign)
-      .reduce(
-        (total, log) => total + (log.durationSeconds ?? 0),
-        0
-      );
-
     const byScreen = new Map<
       string,
       {
@@ -244,7 +237,7 @@ export async function GET() {
 
     for (const log of sevenDaysLogs) {
       const screen = byScreen.get(log.screen.id) ?? {
-        name: cleanText(log.screen.name) || "Écran sans nom",
+        name: cleanText(log.screen.name) || "�?cran sans nom",
         code: cleanText(log.screen.screenCode),
         count: 0,
         duration: 0,
@@ -401,7 +394,7 @@ export async function GET() {
       doc.setFontSize(9);
 
       const lines = doc.splitTextToSize(
-        `• ${text}`,
+        `�?� ${text}`,
         contentWidth
       );
 
@@ -463,7 +456,7 @@ export async function GET() {
     );
 
     addLine(
-      "Écrans en ligne",
+      "�?crans en ligne",
       `${onlineScreens}/${totalScreens}`
     );
 
@@ -557,8 +550,8 @@ export async function GET() {
     } else {
       screenStats.forEach((screen, index) => {
         addBullet(
-          `${index + 1}. ${screen.name} (${screen.code}) — ` +
-            `${screen.count} diffusions — ` +
+          `${index + 1}. ${screen.name} (${screen.code}) �?" ` +
+            `${screen.count} diffusions �?" ` +
             `${formatDuration(screen.duration)}`
         );
       });
@@ -576,8 +569,8 @@ export async function GET() {
     } else {
       campaignStats.forEach((campaign, index) => {
         addBullet(
-          `${index + 1}. ${campaign.name} — ` +
-            `${campaign.count} diffusions — ` +
+          `${index + 1}. ${campaign.name} �?" ` +
+            `${campaign.count} diffusions �?" ` +
             `${formatDuration(campaign.duration)}`
         );
       });
@@ -595,8 +588,8 @@ export async function GET() {
     } else {
       mediaStats.forEach((media, index) => {
         addBullet(
-          `${index + 1}. ${media.name} — ` +
-            `${media.count} diffusions — ` +
+          `${index + 1}. ${media.name} �?" ` +
+            `${media.count} diffusions �?" ` +
             `${formatDuration(media.duration)}`
         );
       });
@@ -616,7 +609,7 @@ export async function GET() {
         const screenName =
           cleanText(log.screen.name) ||
           cleanText(log.screen.screenCode) ||
-          "Écran inconnu";
+          "�?cran inconnu";
 
         const campaignText = log.campaign
           ? cleanText(log.campaign.name)
@@ -661,7 +654,7 @@ export async function GET() {
       doc.setFontSize(7.5);
 
       doc.text(
-        "SeetuAds • Rapport Analytics",
+        "SeetuAds �?� Rapport Analytics",
         marginLeft,
         footerY
       );
@@ -723,6 +716,8 @@ export async function GET() {
     );
   }
 }
+
+
 
 
 

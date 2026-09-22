@@ -25,6 +25,20 @@ export async function DELETE(
       );
     }
 
+    const playbackLogs = await prisma.playbackLog.count({
+      where: { mediaId: media.id },
+    });
+
+    if (playbackLogs > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "M\u00e9dia avec historique de diffusion : suppression impossible.",
+        },
+        { status: 409 }
+      );
+    }
+
     console.log("MEDIA DELETE:", {
       id: media.id,
       name: media.name,

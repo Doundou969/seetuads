@@ -150,7 +150,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (parsedEndDate < parsedStartDate) {
+    if (parsedEndDate <= parsedStartDate) {
       return NextResponse.json(
         {
           error:
@@ -225,13 +225,11 @@ export async function POST(req: Request) {
     }
 
     const MS_PER_DAY = 24 * 60 * 60 * 1000;
-    const numberOfDays = Math.max(
-      1,
-      Math.ceil(
+    const numberOfDays =
+      Math.floor(
         (parsedEndDate.getTime() - parsedStartDate.getTime()) /
           MS_PER_DAY
-      )
-    );
+      ) ;
 
     const result = await prisma.$transaction(async (tx) => {
       const advertiserRecord = await tx.advertiser.findFirst({
@@ -295,13 +293,18 @@ export async function POST(req: Request) {
           status: "ACTIVE",
           campaign: {
             status: {
-              in: ["SCHEDULED", "ACTIVE"],
+              in: [
+                "PENDING_REVIEW",
+                "AWAITING_PAYMENT",
+                "SCHEDULED",
+                "ACTIVE",
+              ],
             },
             startDate: {
-              lte: parsedEndDate,
+              lt: parsedEndDate,
             },
             endDate: {
-              gte: parsedStartDate,
+              gt: parsedStartDate,
             },
           },
         },
@@ -418,7 +421,7 @@ export async function POST(req: Request) {
         data: screenIds.map((screenId) => ({
           campaignId: campaign.id,
           screenId,
-          reservedSeconds: spotDuration,
+          reservedSeconds: spotDuration * frequencyPerLoop,
           status: "ACTIVE",
         })),
       });

@@ -51,7 +51,6 @@ type HoursMap = { [key: string]: number };
   const [hours, setHours] = useState<HoursMap>({});
   type GeneratedLinksMap = { [key: string]: string };
   const [generatedLinks, setGeneratedLinks] = useState<GeneratedLinksMap>({});
-({});
 const [message, setMessage] = useState("");
 const [search, setSearch] = useState("");
 const [statusFilter, setStatusFilter] =
@@ -369,7 +368,7 @@ return (
         className="ml-4 text-blue-500 hover:text-blue-700"
         aria-label="Fermer"
       >
-        ×
+        �-
       </button>
     </div>
   )}
@@ -573,7 +572,7 @@ return (
                 {/* Contact */}
                 <td className="px-5 py-5">
                   <div className="font-medium text-slate-800">
-                    {advertiser.contactName || "—"}
+                    {advertiser.contactName || "-"}
                   </div>
 
                   <div className="mt-1 text-xs text-slate-500">
@@ -876,3 +875,4 @@ return (
 
 );
 }
+

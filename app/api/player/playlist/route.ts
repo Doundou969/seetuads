@@ -108,6 +108,7 @@ export async function GET(req: Request) {
     const validItems = playlist.items
       .filter((item) => {
         return (
+          item.media?.status === "APPROVED" &&
           Boolean(item.media?.id) &&
           Boolean(item.media?.fileUrl) &&
           Boolean(item.media?.fileType)
@@ -131,6 +132,7 @@ export async function GET(req: Request) {
           mimeType: item.media.mimeType,
         },
       }));
+
 
     console.log("Playlist API :", {
       deviceId,

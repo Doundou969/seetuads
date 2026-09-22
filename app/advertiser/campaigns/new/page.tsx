@@ -109,14 +109,13 @@ export default function NewCampaignPage() {
     if (
       Number.isNaN(start.getTime()) ||
       Number.isNaN(end.getTime()) ||
-      end < start
+      end <= start
     ) {
       return 0;
     }
 
-    return Math.max(
-      1,
-      Math.ceil((end.getTime() - start.getTime()) / 86400000)
+    return Math.floor(
+      (end.getTime() - start.getTime()) / 86400000
     );
   }, [form.startDate, form.endDate]);
 
@@ -215,9 +214,9 @@ export default function NewCampaignPage() {
         );
       }
 
-      if (new Date(`${form.endDate}T00:00:00`) < new Date(`${form.startDate}T00:00:00`)) {
+      if (new Date(`${form.endDate}T00:00:00`) <= new Date(`${form.startDate}T00:00:00`)) {
         throw new Error(
-          "La date de fin doit être postérieure ou égale à la date de début."
+          "La date de fin doit être strictement postérieure à la date de début."
         );
       }
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 
@@ -89,48 +89,6 @@ export default function MediaPage() {
     []
   );
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      setDragActive(false);
-
-      if (e.dataTransfer.files?.[0]) {
-        handleFile(e.dataTransfer.files[0]);
-      }
-    },
-    []
-  );
-
-  const handleFileInput = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    if (e.target.files?.[0]) {
-      handleFile(e.target.files[0]);
-    }
-  };
-
-  const handleFile = (file: File) => {
-    const url = URL.createObjectURL(file);
-
-    setPreviewUrl(url);
-
-    const isVideo = file.type.startsWith("video/");
-
-    setForm((prev) => ({
-      ...prev,
-      name: file.name.replace(/\.[^/.]+$/, ""),
-      fileType: isVideo ? "video" : "image",
-      mimeType: file.type,
-      fileSizeBytes: file.size,
-    }));
-
-    setShowForm(true);
-
-    uploadFile(file);
-  };
-
   const uploadFile = async (file: File) => {
     setUploading(true);
     setUploadProgress(0);
@@ -173,6 +131,81 @@ export default function MediaPage() {
       setUploading(false);
     }
   };
+  const handleFile = useCallback((file: File) => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+
+    const isVideo = file.type.startsWith("video/");
+
+    setForm((prev) => ({
+      ...prev,
+      name: file.name.replace(/\.[^/.]+$/, ""),
+      fileType: isVideo ? "video" : "image",
+      mimeType: file.type,
+      fileSizeBytes: file.size,
+      durationSeconds: 15,
+      widthPx: null,
+      heightPx: null,
+    }));
+
+    setShowForm(true);
+
+    if (isVideo) {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.src = url;
+
+      video.onloadedmetadata = () => {
+        setForm((prev) => ({
+          ...prev,
+          durationSeconds:
+            Number.isFinite(video.duration) && video.duration > 0
+              ? Math.round(video.duration * 100) / 100
+              : 15,
+          widthPx: video.videoWidth || null,
+          heightPx: video.videoHeight || null,
+        }));
+      };
+    } else {
+      const image = new Image();
+
+      image.onload = () => {
+        setForm((prev) => ({
+          ...prev,
+          durationSeconds: 15,
+          widthPx: image.naturalWidth || null,
+          heightPx: image.naturalHeight || null,
+        }));
+      };
+
+      image.src = url;
+    }
+
+    uploadFile(file);
+  }, []);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      setDragActive(false);
+
+      if (e.dataTransfer.files?.[0]) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    },
+    [handleFile]
+  );
+
+  const handleFileInput = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (e.target.files?.[0]) {
+      handleFile(e.target.files[0]);
+    }
+  };
+
+
 
   const handleSubmit = async (
     e: React.FormEvent
@@ -540,3 +573,11 @@ export default function MediaPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+

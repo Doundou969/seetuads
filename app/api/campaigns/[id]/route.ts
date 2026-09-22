@@ -48,8 +48,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: "Campagne non trouvée" }, { status: 404 });
     }
 
-    // On ne modifie que si DRAFT ou PENDING_REVIEW
-    if (campaign.status !== "DRAFT" && campaign.status !== "PENDING_REVIEW") {
+    // On ne modifie que si DRAFT
+    if (campaign.status !== "DRAFT") {
       return NextResponse.json(
         { error: "Impossible de modifier une campagne en cours ou terminée" },
         { status: 400 }

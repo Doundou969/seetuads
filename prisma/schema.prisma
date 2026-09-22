@@ -46,6 +46,7 @@ model Advertiser {
   user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   campaigns    Campaign[]
   media        Media[]
+  mediaOrders  MediaOrder[]
   payments     Payment[]
 
   @@map("advertisers")
@@ -148,6 +149,7 @@ model Screen {
   contracts             Contract[]
   inventoryReservations InventoryReservation[]
   maintenanceTickets    MaintenanceTicket[]
+  orderItemScreens      MediaOrderItemScreen[]
   partnerPayouts        PartnerPayout[]
   playbackLogs          PlaybackLog[]
   player                Player?
@@ -183,21 +185,22 @@ model Player {
 }
 
 model Media {
-  id              String          @id @default(uuid())
-  advertiserId    String          @map("advertiser_id")
+  id              String                @id @default(uuid())
+  advertiserId    String                @map("advertiser_id")
   name            String
-  fileUrl         String          @map("file_url")
-  fileType        String          @map("file_type")
-  mimeType        String?         @map("mime_type")
-  widthPx         Int?            @map("width_px")
-  heightPx        Int?            @map("height_px")
-  durationSeconds Int             @default(15) @map("duration_seconds")
-  fileSizeBytes   BigInt?         @map("file_size_bytes")
-  status          MediaStatus     @default(UPLOADED)
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
+  fileUrl         String                @map("file_url")
+  fileType        String                @map("file_type")
+  mimeType        String?               @map("mime_type")
+  widthPx         Int?                  @map("width_px")
+  heightPx        Int?                  @map("height_px")
+  durationSeconds Int                   @default(15) @map("duration_seconds")
+  fileSizeBytes   BigInt?               @map("file_size_bytes")
+  status          MediaStatus           @default(UPLOADED)
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
   campaignMedia   CampaignMedia[]
-  advertiser      Advertiser      @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  advertiser      Advertiser            @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  media           MediaOrderItemMedia[]
   playbackLogs    PlaybackLog[]
   playlistItems   PlaylistItem[]
 
@@ -214,15 +217,16 @@ model Campaign {
   spotDuration          Int                    @default(15) @map("spot_duration")
   frequencyPerLoop      Int                    @default(1) @map("frequency_per_loop")
   status                CampaignStatus         @default(DRAFT)
-  rejectionReason       String?                @map("rejection_reason")
   estimatedPrice        Decimal?               @map("estimated_price") @db.Decimal(12, 2)
   finalPrice            Decimal?               @map("final_price") @db.Decimal(12, 2)
   createdAt             DateTime               @default(now()) @map("created_at")
   updatedAt             DateTime               @updatedAt @map("updated_at")
+  rejectionReason       String?                @map("rejection_reason")
   campaignMedia         CampaignMedia[]
   campaignScreens       CampaignScreen[]
   advertiser            Advertiser             @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
   inventoryReservations InventoryReservation[]
+  orderItems            MediaOrderItem[]
   payments              Payment[]
   playbackLogs          PlaybackLog[]
   playlistItems         PlaylistItem[]
@@ -319,9 +323,9 @@ model PlaybackLog {
   status          PlaybackStatus @default(PLAYED)
   createdAt       DateTime       @default(now()) @map("created_at")
   campaign        Campaign?      @relation(fields: [campaignId], references: [id])
-  media           Media          @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  player          Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  screen          Screen         @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  media           Media          @relation(fields: [mediaId], references: [id])
+  player          Player         @relation(fields: [playerId], references: [id])
+  screen          Screen         @relation(fields: [screenId], references: [id])
 
   @@map("playback_logs")
 }
@@ -340,8 +344,10 @@ model Payment {
   metadata             Json?           @default("{}")
   createdAt            DateTime        @default(now()) @map("created_at")
   updatedAt            DateTime        @updatedAt @map("updated_at")
+  invoiceId            String?         @map("invoice_id")
   advertiser           Advertiser      @relation(fields: [advertiserId], references: [id])
   campaign             Campaign?       @relation(fields: [campaignId], references: [id])
+  invoice              Invoice?        @relation(fields: [invoiceId], references: [id])
 
   @@map("payments")
 }
@@ -435,19 +441,20 @@ model AuditLog {
 }
 
 model PricingRule {
-  id                  String   @id @default(uuid())
+  id                  String                 @id @default(uuid())
   name                String
-  zoneId              String?  @map("zone_id")
-  screenId            String?  @map("screen_id")
-  basePrice           Decimal  @default(50000.00) @map("base_price") @db.Decimal(12, 2)
-  durationMultiplier  Decimal  @default(1.0) @map("duration_multiplier") @db.Decimal(5, 2)
-  frequencyMultiplier Decimal  @default(1.0) @map("frequency_multiplier") @db.Decimal(5, 2)
-  zoneMultiplier      Decimal  @default(1.0) @map("zone_multiplier") @db.Decimal(5, 2)
-  active              Boolean  @default(true)
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
-  screen              Screen?  @relation(fields: [screenId], references: [id])
-  zone                Zone?    @relation(fields: [zoneId], references: [id])
+  zoneId              String?                @map("zone_id")
+  screenId            String?                @map("screen_id")
+  basePrice           Decimal                @default(50000.00) @map("base_price") @db.Decimal(12, 2)
+  durationMultiplier  Decimal                @default(1.0) @map("duration_multiplier") @db.Decimal(5, 2)
+  frequencyMultiplier Decimal                @default(1.0) @map("frequency_multiplier") @db.Decimal(5, 2)
+  zoneMultiplier      Decimal                @default(1.0) @map("zone_multiplier") @db.Decimal(5, 2)
+  active              Boolean                @default(true)
+  createdAt           DateTime               @default(now()) @map("created_at")
+  updatedAt           DateTime               @updatedAt @map("updated_at")
+  orderItemScreens    MediaOrderItemScreen[]
+  screen              Screen?                @relation(fields: [screenId], references: [id])
+  zone                Zone?                  @relation(fields: [zoneId], references: [id])
 
   @@map("pricing_rules")
 }
@@ -468,6 +475,124 @@ model ScreenCost {
   screen      Screen    @relation(fields: [screenId], references: [id], onDelete: Cascade)
 
   @@map("screen_costs")
+}
+
+model MediaOrder {
+  id           String           @id @default(uuid())
+  orderNumber  String           @unique @map("order_number")
+  advertiserId String           @map("advertiser_id")
+  status       MediaOrderStatus @default(DRAFT)
+  currency     String           @default("XOF")
+  subtotal     Decimal          @db.Decimal(12, 2)
+  taxAmount    Decimal          @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  totalAmount  Decimal          @map("total_amount") @db.Decimal(12, 2)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  invoices     Invoice[]
+  items        MediaOrderItem[]
+  advertiser   Advertiser       @relation(fields: [advertiserId], references: [id])
+
+  @@index([advertiserId])
+  @@map("media_orders")
+}
+
+model MediaOrderItem {
+  id               String                 @id @default(uuid())
+  orderId          String                 @map("order_id")
+  campaignId       String?                @map("campaign_id")
+  name             String
+  startDate        DateTime               @map("start_date") @db.Date
+  endDate          DateTime               @map("end_date") @db.Date
+  spotDuration     Int                    @map("spot_duration")
+  frequencyPerLoop Int                    @map("frequency_per_loop")
+  subtotal         Decimal                @db.Decimal(12, 2)
+  currency         String                 @default("XOF")
+  pricingSnapshot  Json                   @map("pricing_snapshot")
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  media            MediaOrderItemMedia[]
+  screens          MediaOrderItemScreen[]
+  campaign         Campaign?              @relation(fields: [campaignId], references: [id])
+  order            MediaOrder             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([campaignId])
+  @@map("media_order_items")
+}
+
+model MediaOrderItemScreen {
+  id              String         @id @default(uuid())
+  orderItemId     String         @map("order_item_id")
+  screenId        String         @map("screen_id")
+  pricingRuleId   String?        @map("pricing_rule_id")
+  unitPrice       Decimal        @map("unit_price") @db.Decimal(12, 2)
+  subtotal        Decimal        @db.Decimal(12, 2)
+  pricingSnapshot Json           @map("pricing_snapshot")
+  createdAt       DateTime       @default(now())
+  orderItem       MediaOrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  pricingRule     PricingRule?   @relation(fields: [pricingRuleId], references: [id])
+  screen          Screen         @relation(fields: [screenId], references: [id])
+
+  @@unique([orderItemId, screenId])
+  @@index([screenId])
+  @@index([pricingRuleId])
+  @@map("media_order_item_screens")
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique @map("invoice_number")
+  orderId       String        @map("order_id")
+  status        InvoiceStatus @default(DRAFT)
+  currency      String        @default("XOF")
+  subtotal      Decimal       @db.Decimal(12, 2)
+  taxAmount     Decimal       @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  totalAmount   Decimal       @map("total_amount") @db.Decimal(12, 2)
+  dueDate       DateTime?     @map("due_date") @db.Date
+  issuedAt      DateTime?     @map("issued_at")
+  paidAt        DateTime?     @map("paid_at")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  order         MediaOrder    @relation(fields: [orderId], references: [id])
+  payments      Payment[]
+
+  @@index([orderId])
+  @@map("invoices")
+}
+
+model MediaOrderItemMedia {
+  id              String         @id @default(uuid())
+  orderItemId     String         @map("order_item_id")
+  mediaId         String         @map("media_id")
+  displayOrder    Int            @default(1) @map("display_order")
+  durationSeconds Int            @default(15) @map("duration_seconds")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  media           Media          @relation(fields: [mediaId], references: [id])
+  orderItem       MediaOrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@unique([orderItemId, mediaId, displayOrder])
+  @@index([mediaId])
+  @@map("media_order_item_media")
+}
+
+enum MediaOrderStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
 }
 
 enum UserRole {
@@ -590,4 +715,3 @@ enum NotificationType {
   SUCCESS
   ERROR
 }
-

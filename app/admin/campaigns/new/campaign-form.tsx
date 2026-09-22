@@ -132,7 +132,7 @@ export function CampaignForm({
     if (
       Number.isNaN(start.getTime()) ||
       Number.isNaN(end.getTime()) ||
-      end < start
+      end <= start
     ) {
       return 0;
     }
@@ -143,12 +143,9 @@ export function CampaignForm({
      *
      * 19/08 -> 31/08 = 12 jours
      */
-    return Math.max(
-      1,
-      Math.ceil(
-        (end.getTime() - start.getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
+    return Math.floor(
+      (end.getTime() - start.getTime()) /
+        (1000 * 60 * 60 * 24)
     );
   }, [startDate, endDate]);
 
@@ -228,7 +225,7 @@ export function CampaignForm({
   const invalidDates =
     Boolean(startDate) &&
     Boolean(endDate) &&
-    new Date(`${endDate}T00:00:00`) <
+    new Date(`${endDate}T00:00:00`) <=
       new Date(`${startDate}T00:00:00`);
 
   /*
@@ -292,7 +289,7 @@ export function CampaignForm({
 
     if (invalidDates) {
       window.alert(
-        "La date de fin doit être postérieure ou égale à la date de début."
+        "La date de fin doit être strictement postérieure à la date de début."
       );
       return;
     }
