@@ -25,6 +25,127 @@ const PLAYLIST_REFRESH_MS = 60000;
 const HEARTBEAT_INTERVAL_MS = 60000;
 
 const PENDING_LOGS_KEY = "seetuads_pending_playback_logs";
+const OFFLINE_PLAYLIST_PREFIX = "seetuads_offline_playlist_";
+const OFFLINE_PLAYLIST_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const OFFLINE_CACHE_TIMEOUT_MS = 10 * 60 * 1000;
+
+type SavedPlaylist = {
+  items: PlaylistItem[];
+  orientation: string;
+  savedAt: number;
+};
+
+function isValidPlaylistItem(value: unknown): value is PlaylistItem {
+  if (!value || typeof value !== "object") return false;
+
+  const item = value as Partial<PlaylistItem>;
+
+  return Boolean(
+    typeof item.id === "string" &&
+      item.media &&
+      typeof item.media.id === "string" &&
+      typeof item.media.name === "string" &&
+      typeof item.media.fileUrl === "string" &&
+      typeof item.media.fileType === "string"
+  );
+}
+
+function getSavedPlaylist(deviceId: string): SavedPlaylist | null {
+  const key = `${OFFLINE_PLAYLIST_PREFIX}${deviceId}`;
+
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+
+    const saved = JSON.parse(raw) as Partial<SavedPlaylist>;
+
+    if (
+      typeof saved.savedAt !== "number" ||
+      saved.savedAt > Date.now() ||
+      Date.now() - saved.savedAt > OFFLINE_PLAYLIST_MAX_AGE_MS ||
+      !Array.isArray(saved.items)
+    ) {
+      localStorage.removeItem(key);
+      return null;
+    }
+
+    const items = saved.items.filter(isValidPlaylistItem);
+    if (items.length === 0) return null;
+
+    return {
+      items,
+      orientation:
+        typeof saved.orientation === "string"
+          ? saved.orientation
+          : "landscape",
+      savedAt: saved.savedAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveOfflinePlaylist(
+  deviceId: string,
+  items: PlaylistItem[],
+  orientation: string
+) {
+  try {
+    localStorage.setItem(
+      `${OFFLINE_PLAYLIST_PREFIX}${deviceId}`,
+      JSON.stringify({ items, orientation, savedAt: Date.now() })
+    );
+  } catch (error) {
+    console.warn("Impossible de sauvegarder la playlist hors ligne :", error);
+  }
+}
+
+async function cachePlaylistOffline(items: PlaylistItem[]): Promise<boolean> {
+  if (!("serviceWorker" in navigator)) return false;
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const worker = navigator.serviceWorker.controller || registration.active;
+    if (!worker) return false;
+
+    const urls = items.map((item) => item.media.fileUrl);
+
+    return await new Promise<boolean>((resolve) => {
+      const channel = new MessageChannel();
+      let finished = false;
+
+      const finish = (allCached: boolean) => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timeout);
+        channel.port1.close();
+        resolve(allCached);
+      };
+
+      const timeout = setTimeout(
+        () => finish(false),
+        OFFLINE_CACHE_TIMEOUT_MS
+      );
+
+      channel.port1.onmessage = (event) => {
+        finish(event.data?.allCached === true);
+      };
+
+      try {
+        worker.postMessage(
+          { type: "UPDATE_PLAYLIST", urls },
+          [channel.port2]
+        );
+      } catch (error) {
+        console.warn("Envoi de la playlist au service worker impossible :", error);
+        finish(false);
+      }
+    });
+  } catch (error) {
+    console.warn("Préparation de la playlist hors ligne impossible :", error);
+    return false;
+  }
+}
 
 function getPendingLogs(): any[] {
   try {
@@ -129,6 +250,7 @@ export default function PlayerView() {
 
   const itemsRef = useRef<PlaylistItem[]>([]);
   const currentIndexRef = useRef(0);
+  const playlistFetchInFlightRef = useRef(false);
 
   const startTimeRef = useRef<Date | null>(null);
 
@@ -260,9 +382,11 @@ export default function PlayerView() {
    */
 
   const fetchPlaylist = useCallback(async () => {
-    if (!deviceId || !playerKey) {
+    if (!deviceId || !playerKey || playlistFetchInFlightRef.current) {
       return;
     }
+
+    playlistFetchInFlightRef.current = true;
 
     try {
       const response = await fetch(
@@ -284,9 +408,19 @@ export default function PlayerView() {
         loggedSessionRef.current = null;
         startTimeRef.current = null;
 
+        itemsRef.current = [];
+        currentIndexRef.current = 0;
         setItems([]);
         setCurrentIndex(0);
         setError("Aucune publicité active actuellement");
+
+        try {
+          localStorage.removeItem(`${OFFLINE_PLAYLIST_PREFIX}${deviceId}`);
+        } catch {
+          // Le lecteur peut continuer même si le stockage local est indisponible.
+        }
+
+        void cachePlaylistOffline([]);
 
         return;
       }
@@ -334,94 +468,91 @@ export default function PlayerView() {
           rawPlaylistItems.length - playlistItems.length,
       });
 
-      /**
-       * Playlist non vide.
-       */
-      if (playlistItems.length > 0) {
-        const previousItems = itemsRef.current;
-        const previousIndex = currentIndexRef.current;
+      const orientation =
+        typeof data.playlist?.orientation === "string"
+          ? data.playlist.orientation
+          : "landscape";
 
-        const oldSignature =
-          playlistSignature(previousItems);
+      setScreenOrientation(orientation);
 
-        const newSignature =
-          playlistSignature(playlistItems);
+      if (playlistItems.length === 0) {
+        itemsRef.current = [];
+        currentIndexRef.current = 0;
+        setItems([]);
+        setCurrentIndex(0);
+        setError("Aucune playlist active");
 
-        /**
-         * On ne touche pas à l'index si la playlist
-         * est identique.
-         */
-        if (newSignature !== oldSignature) {
-          const currentItemId =
-            previousItems[previousIndex]?.id;
-
-          const newCurrentIndex =
-            playlistItems.findIndex(
-              (item) => item.id === currentItemId
-            );
-
-          const safeIndex =
-            newCurrentIndex >= 0
-              ? newCurrentIndex
-              : 0;
-
-          console.log("Playlist mise à jour :", {
-            previousItems: previousItems.length,
-            newItems: playlistItems.length,
-            currentItemId,
-            newCurrentIndex: safeIndex,
-          });
-
-          setItems(playlistItems);
-          setCurrentIndex(safeIndex);
-
-          if (navigator.serviceWorker.controller) {
-            const mediaUrls = playlistItems.map((item) => item.media.fileUrl);
-
-            navigator.serviceWorker.controller.postMessage({
-              type: "SET_PLAYLIST_URLS",
-              urls: mediaUrls,
-            });
-
-            navigator.serviceWorker.controller.postMessage({
-              type: "PREFETCH_URLS",
-              urls: mediaUrls,
-            });
-          }
+        try {
+          localStorage.removeItem(`${OFFLINE_PLAYLIST_PREFIX}${deviceId}`);
+        } catch {
+          // Le lecteur peut continuer même si le stockage local est indisponible.
         }
 
-        setError("");
-
+        void cachePlaylistOffline([]);
         return;
       }
 
-      /**
-       * Playlist vide.
-       */
-      if (itemsRef.current.length > 0) {
-        clearPlaybackTimers();
+      const previousItems = itemsRef.current;
+      const previousIndex = currentIndexRef.current;
+      const oldSignature = playlistSignature(previousItems);
+      const newSignature = playlistSignature(playlistItems);
 
-        playbackSessionRef.current += 1;
-        transitionLockRef.current = false;
-        loggedSessionRef.current = null;
-        startTimeRef.current = null;
+      // N’enregistrer la playlist hors ligne qu’après confirmation du cache complet.
+      const offlineReady = await cachePlaylistOffline(playlistItems);
+
+      if (offlineReady) {
+        saveOfflinePlaylist(deviceId, playlistItems, orientation);
+      } else if (
+        previousItems.length > 0 &&
+        newSignature !== oldSignature
+      ) {
+        // Garder la playlist déjà lue si les nouveaux médias ne sont pas prêts.
+        console.warn(
+          "Nouvelle playlist non prête hors ligne; ancienne playlist conservée."
+        );
+        return;
       }
 
-      setItems([]);
-      setCurrentIndex(0);
-      setError("Aucune playlist active");
+      if (newSignature !== oldSignature) {
+        const currentItemId = previousItems[previousIndex]?.id;
+        const newCurrentIndex = playlistItems.findIndex(
+          (item) => item.id === currentItemId
+        );
+        const safeIndex = newCurrentIndex >= 0 ? newCurrentIndex : 0;
+
+        itemsRef.current = playlistItems;
+        currentIndexRef.current = safeIndex;
+        setItems(playlistItems);
+        setCurrentIndex(safeIndex);
+      }
+
+      setError("");
+      return;
     } catch (err) {
       console.error("Erreur playlist :", err);
 
-      /**
-       * On ne remplace pas une playlist fonctionnelle
-       * par un écran d'erreur à cause d'une erreur réseau
-       * temporaire.
-       */
       if (itemsRef.current.length === 0) {
-        setError("Erreur de connexion au serveur");
+        const saved = getSavedPlaylist(deviceId);
+
+        if (saved) {
+          const offlineReady = await cachePlaylistOffline(saved.items);
+
+          if (offlineReady) {
+            itemsRef.current = saved.items;
+            currentIndexRef.current = 0;
+            setItems(saved.items);
+            setCurrentIndex(0);
+            setScreenOrientation(saved.orientation);
+            setError("");
+          } else {
+            setError("Playlist hors ligne incomplète ou médias indisponibles.");
+          }
+        } else {
+          setError("Erreur de connexion et aucune playlist valide hors ligne disponible.");
+        }
       }
     } finally {
+      playlistFetchInFlightRef.current = false;
       setLoading(false);
     }
   }, [
