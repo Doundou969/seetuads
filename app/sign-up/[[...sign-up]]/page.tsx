@@ -1,9 +1,32 @@
 import { SignUp } from "@clerk/nextjs";
+import { Suspense } from "react";
 
-export default function Page() {
+type PageProps = {
+  searchParams: Promise<{
+    profile?: string;
+  }>;
+};
+
+export default async function SignUpPage({ searchParams }: PageProps) {
+  const { profile } = await searchParams;
+
+  const redirectUrl =
+    profile === "partner" ? "/partner/onboarding" : "/dashboard";
+
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
-      <SignUp />
-    </div>
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
+      <Suspense
+        fallback={
+          <p className="text-sm text-gray-600">
+            Chargement de l’inscription…
+          </p>
+        }
+      >
+        <SignUp
+          forceRedirectUrl={redirectUrl}
+          signInFallbackRedirectUrl="/dashboard"
+        />
+      </Suspense>
+    </main>
   );
 }
