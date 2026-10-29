@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -21,78 +20,72 @@ import {
   ShoppingCart,
   Store,
   Target,
-  TrendingUp,
-  UsersRound,
   Zap,
 } from "lucide-react";
 
-type Stats = {
-  zones: number;
-  partners: number;
-  screens: number;
-  campaigns: number;
-};
+const categories = [
+  { label: "Boutiques", icon: Store },
+  { label: "Supérettes", icon: ShoppingCart },
+  { label: "Restaurants & snacks", icon: Coffee },
+  { label: "Stations-service", icon: Fuel },
+  { label: "Pharmacies", icon: PlusCircle },
+  { label: "Salles de sport & salons", icon: Dumbbell },
+];
 
-export function LandingContent({ stats }: { stats: Stats }) {
-  const steps = [
-    {
-      number: "01",
-      title: "Choisissez vos zones",
-      text: "Sélectionnez les quartiers et zones qui correspondent à votre audience.",
-      icon: MapPin,
-    },
-    {
-      number: "02",
-      title: "Sélectionnez vos écrans",
-      text: "Choisissez les emplacements les plus pertinents pour votre campagne.",
-      icon: MonitorPlay,
-    },
-    {
-      number: "03",
-      title: "Ajoutez votre média",
-      text: "Importez votre visuel et définissez les paramètres de diffusion.",
-      icon: PlayCircle,
-    },
-    {
-      number: "04",
-      title: "Suivez votre campagne",
-      text: "Pilotez votre présence depuis votre espace SeetuAds.",
-      icon: BarChart3,
-    },
-  ];
+const steps = [
+  {
+    number: "01",
+    title: "Choisissez vos zones",
+    text: "Repérez les zones qui correspondent à votre audience.",
+    icon: MapPin,
+  },
+  {
+    number: "02",
+    title: "Sélectionnez vos écrans",
+    text: "Choisissez les emplacements adaptés à votre campagne.",
+    icon: MonitorPlay,
+  },
+  {
+    number: "03",
+    title: "Ajoutez votre média",
+    text: "Importez votre visuel et préparez les paramètres de diffusion.",
+    icon: PlayCircle,
+  },
+  {
+    number: "04",
+    title: "Suivez votre campagne",
+    text: "Retrouvez le suivi de votre campagne dans votre espace SeetuAds.",
+    icon: BarChart3,
+  },
+];
 
-  const categories = [
-    { label: "Boutiques", icon: Store },
-    { label: "Superettes", icon: ShoppingCart },
-    { label: "Restaurants & Snacks", icon: Coffee },
-    { label: "Stations service", icon: Fuel },
-    { label: "Pharmacies", icon: PlusCircle },
-    { label: "Salles de sport & salons", icon: Dumbbell },
-  ];
+const advertiserBenefits = [
+  "Choisissez les zones et les emplacements adaptés à votre campagne.",
+  "Diffusez votre contenu sur des écrans dans des commerces de proximité.",
+  "Gérez votre campagne depuis votre espace SeetuAds.",
+];
 
-  const advertiserBenefits = [
-    "Ciblez les zones les plus pertinentes pour votre audience.",
-    "Diffusez vos contenus sur des écrans installés dans les commerces.",
-    "Suivez vos campagnes depuis un espace simple et centralisé.",
-  ];
+const partnerBenefits = [
+  "Proposez votre commerce pour rejoindre le réseau SeetuAds.",
+  "Accueillez un écran publicitaire dans votre établissement.",
+  "Échangez avec l’équipe SeetuAds sur les modalités de partenariat.",
+];
 
-  const partnerBenefits = [
-    "Valorisez l'espace disponible dans votre commerce.",
-    "Accueillez un écran publicitaire sans gestion technique complexe.",
-    "Développez une nouvelle source de revenus pour votre établissement.",
-  ];
-
+export function LandingContent() {
   return (
-    <main className="min-h-screen bg-slate-50 text-[#0F1B2E]">
+    <main className="min-h-screen bg-[#F8F6F1] text-[#0F1B2E]">
       <section className="relative overflow-hidden bg-[#0F1B2E] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,130,31,0.16),transparent_35%),radial-gradient(circle_at_top_right,rgba(245,130,31,0.10),transparent_40%)]" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(245,130,31,0.2),transparent_32%),radial-gradient(circle_at_90%_15%,rgba(245,130,31,0.1),transparent_32%)]"
+        />
 
-        <header className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
-          <Link href="/" className="text-2xl font-bold tracking-tight">
+        <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
+          <Link href="/" className="text-2xl font-extrabold tracking-tight">
             Seetu<span className="text-[#F5821F]">Ads</span>
           </Link>
 
-          <nav className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
+          <nav className="hidden items-center gap-7 text-sm text-slate-300 md:flex">
             <Link href="/carte" className="transition hover:text-white">
               Le réseau
             </Link>
@@ -109,92 +102,79 @@ export function LandingContent({ stats }: { stats: Stats }) {
 
           <Link
             href="/sign-in"
-            className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold transition hover:bg-white/10"
+            className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold transition hover:bg-white/10 sm:px-5"
           >
             Se connecter
           </Link>
         </header>
 
-        <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-6 pb-24 pt-16 lg:grid-cols-[1fr_0.95fr] lg:pb-32 lg:pt-24">
+        <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-12 sm:px-8 md:pb-28 md:pt-16 lg:grid-cols-[1.05fr_0.95fr]">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#F5821F]/25 bg-[#F5821F]/10 px-4 py-2 text-sm font-medium text-[#F5821F]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#F5821F]/30 bg-[#F5821F]/10 px-4 py-2 text-sm font-semibold text-[#FFAA5C]">
               <Zap className="h-4 w-4" />
-              Publicité digitale locale au Sénégal
+              Affichage digital à Dakar
             </div>
 
-            <h1 className="mt-7 max-w-3xl text-5xl font-bold leading-[1.02] tracking-tight md:text-6xl lg:text-7xl">
-              Donnez plus de visibilité à votre marque, là où vos clients
-              passent.
+            <h1 className="mt-7 max-w-3xl text-5xl font-extrabold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
+              Faites-vous voir là où{" "}
+              <span className="text-[#F5821F]">Dakar vit.</span>
             </h1>
 
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300 md:text-xl">
-              SeetuAds connecte les annonceurs à un réseau d'écrans
-              publicitaires installés dans les commerces de proximité au
-              Sénégal.
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300 sm:text-xl">
+              SeetuAds rapproche les marques des commerces de proximité grâce
+              à la publicité sur écran.
             </p>
 
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F5821F] px-6 py-3.5 font-semibold text-[#0F1B2E] transition hover:bg-[#FF9A45]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F5821F] px-6 py-3.5 font-bold text-[#0F1B2E] transition hover:bg-[#FF9A45]"
               >
                 Lancer une campagne
                 <ArrowRight className="h-5 w-5" />
               </Link>
 
               <Link
-                href="/carte"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3.5 font-semibold transition hover:bg-white/10"
+                href="/register"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-6 py-3.5 font-semibold text-white transition hover:bg-white/10"
               >
-                Découvrir le réseau
-                <MapPin className="h-5 w-5" />
+                Proposer mon commerce
+                <Store className="h-5 w-5 text-[#F5821F]" />
               </Link>
             </div>
 
-            <div className="mt-8 flex items-center gap-2 text-sm text-slate-400">
-              <ShieldCheck className="h-5 w-5 text-[#F5821F]" />
-              Une plateforme pensée pour les annonceurs et les commerçants.
+            <div className="mt-7 flex items-center gap-2 text-sm text-slate-400">
+              <ShieldCheck className="h-5 w-5 shrink-0 text-[#F5821F]" />
+              Une plateforme pour les annonceurs et les commerçants.
             </div>
           </div>
 
-          <div className="relative">
-            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 p-3 shadow-2xl backdrop-blur">
+          <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
+            <div className="absolute -inset-3 rounded-[2rem] bg-[#F5821F]/20 blur-2xl" />
+
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-2 shadow-2xl">
               <div className="relative overflow-hidden rounded-[1.5rem]">
                 <Image
                   src="/images/seetuads-dooh.png"
-                  alt="Écran publicitaire SeetuAds dans une boutique de quartier au Sénégal"
+                  alt="Écran publicitaire SeetuAds dans un commerce de proximité"
                   width={900}
                   height={650}
                   priority
-                  className="h-[420px] w-full object-cover md:h-[520px]"
+                  className="h-[340px] w-full object-cover sm:h-[460px]"
                 />
 
-                <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/20 bg-[#0F1B2E]/80 p-4 backdrop-blur-md">
-                  <div className="flex items-center justify-between">
+                <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/15 bg-[#0F1B2E]/85 p-4 backdrop-blur-md sm:inset-x-5 sm:bottom-5 sm:p-5">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-xs text-slate-400">
-                        Diffusion locale
+                      <p className="text-xs font-medium text-slate-300">
+                        Votre marque, au cœur des lieux de vie
                       </p>
-                      <p className="mt-1 font-semibold">
-                        Votre marque au bon endroit
+                      <p className="mt-1 text-lg font-bold sm:text-xl">
+                        Dakar en mouvement
                       </p>
                     </div>
-                    <MonitorPlay className="h-7 w-7 text-[#F5821F]" />
+                    <MonitorPlay className="h-8 w-8 shrink-0 text-[#F5821F]" />
                   </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute -bottom-6 -left-4 rounded-2xl border border-white/10 bg-slate-900 p-4 shadow-xl md:-left-8">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-[#F5821F]/15 p-2">
-                  <TrendingUp className="h-5 w-5 text-[#F5821F]" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400">Pilotage simple</p>
-                  <p className="text-sm font-semibold">
-                    Une seule plateforme
-                  </p>
                 </div>
               </div>
             </div>
@@ -202,190 +182,113 @@ export function LandingContent({ stats }: { stats: Stats }) {
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto -mt-8 max-w-7xl px-6">
-        <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl md:grid-cols-4">
-          {[
-            { value: stats.zones, label: "Reseau en expansion a Dakar", icon: MapPin },
-            {
-              value: stats.partners,
-              label: "Nouveaux partenaires chaque mois",
-              icon: Store,
-            },
-            {
-              value: stats.screens,
-              label: "écrans actifs",
-              icon: MonitorPlay,
-            },
-            {
-              value: stats.campaigns,
-              label: "campagnes créées",
-              icon: PlayCircle,
-            },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="border-b border-r border-slate-100 p-6 last:border-r-0 md:border-b-0"
-            >
-              <item.icon className="h-5 w-5 text-[#F5821F]" />
-
-              <p className="mt-1 text-sm text-slate-500">{item.label}</p>
-            </div>
-          ))}
+      <section className="border-b border-slate-200 bg-white px-5 py-5 sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-3 text-center sm:flex-row sm:gap-6">
+          <span className="text-sm font-bold uppercase tracking-[0.15em] text-[#DB6E10]">
+            SeetuAds
+          </span>
+          <span className="hidden h-1 w-1 rounded-full bg-slate-300 sm:block" />
+          <p className="text-sm text-slate-600">
+            Des marques, des commerces de proximité et des écrans digitaux.
+          </p>
         </div>
       </section>
 
-      <section className="bg-[#0F1B2E] py-14 text-white">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="grid gap-10 md:grid-cols-[1.5fr_1fr] md:items-center">
-            <div>
-              <h2 className="text-xl font-bold sm:text-2xl">
-                Présent dans les lieux qui comptent
-              </h2>
-              <div className="mt-8 grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-6">
-                {categories.map(({ label, icon: Icon }) => (
-                  <div key={label} className="flex flex-col items-center gap-3 text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
-                      <Icon className="h-6 w-6 text-[#F5821F]" strokeWidth={1.75} />
-                    </div>
-                    <span className="text-xs leading-tight text-white/70">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 rounded-2xl bg-[#F5821F] px-6 py-5">
-              <MapPin className="h-8 w-8 shrink-0 text-[#0F1B2E]" strokeWidth={1.75} />
-              <p className="text-sm font-bold leading-snug text-[#0F1B2E]">
-                Dakar et bientôt partout au Sénégal
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden bg-white px-6 py-24 md:py-32">
-        <div className="absolute left-1/2 top-0 h-80 w-[700px] -translate-x-1/2 rounded-full bg-[#F5821F]/10 blur-3xl" />
-
-        <div className="relative mx-auto max-w-7xl">
+      <section className="px-5 py-20 sm:px-8 md:py-28">
+        <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#F5821F]/20 bg-[#F5821F]/10 px-4 py-2 text-sm font-semibold text-[#F5821F]">
-              <Zap className="h-4 w-4" />
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#DB6E10]">
               Comment ça marche ?
-            </div>
-
-            <h2 className="mt-6 text-4xl font-bold tracking-tight text-[#0F1B2E] md:text-5xl">
-              Lancez votre campagne en quelques étapes.
+            </p>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl">
+              Votre campagne, étape par étape.
             </h2>
-
             <p className="mt-5 text-lg leading-8 text-slate-600">
-              De la sélection des emplacements jusqu'au suivi de votre
-              campagne, SeetuAds simplifie chaque étape de votre diffusion.
+              Choisissez vos emplacements, préparez votre contenu et gérez
+              votre campagne depuis SeetuAds.
             </p>
           </div>
 
-          <div className="relative mt-16">
-            <div className="absolute left-[12%] right-[12%] top-16 hidden h-px bg-gradient-to-r from-[#F5821F]/20 via-[#F5821F]/50 to-[#F5821F]/20 lg:block" />
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {steps.map((step, index) => (
-                <motion.div
-                  key={step.number}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{
-                    duration: 0.5,
-                    delay: index * 0.12,
-                  }}
-                  className="group relative"
-                >
-                  <div className="relative rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-[#F5821F]/20 hover:shadow-xl">
-                    <div className="flex items-center justify-between">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0F1B2E] text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
-                        <step.icon className="h-6 w-6" />
-                      </div>
-
-                      <span className="text-5xl font-black tracking-tighter text-slate-100 transition-colors duration-300 group-hover:text-white/80">
-                        {step.number}
-                      </span>
-                    </div>
-
-                    <div className="mt-8">
-                      <h3 className="text-xl font-bold text-[#0F1B2E]">
-                        {step.title}
-                      </h3>
-
-                      <p className="mt-3 leading-7 text-slate-600">
-                        {step.text}
-                      </p>
-                    </div>
-
-                    <div className="mt-7 flex items-center gap-2 text-sm font-semibold text-[#F5821F]">
-                      <span>
-                        {index === 3
-                          ? "Campagne prête"
-                          : "Étape suivante"}
-                      </span>
-                      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                    </div>
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((step, index) => (
+              <motion.article
+                key={step.number}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.45, delay: index * 0.08 }}
+                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:p-7"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0F1B2E] text-white">
+                    <step.icon className="h-5 w-5" />
                   </div>
-                </motion.div>
+                  <span className="text-4xl font-black text-slate-100">
+                    {step.number}
+                  </span>
+                </div>
+                <h3 className="mt-6 text-lg font-bold">{step.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {step.text}
+                </p>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#0F1B2E] px-5 py-16 text-white sm:px-8 md:py-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-10 md:grid-cols-[1.2fr_1fr] md:items-center">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#F5821F]">
+                Les lieux du quotidien
+              </p>
+              <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">
+                Une publicité plus proche de votre public.
+              </h2>
+              <p className="mt-4 max-w-2xl leading-7 text-slate-300">
+                Les commerces de proximité sont des lieux de passage et de vie.
+                SeetuAds permet aux marques de présenter leurs contenus sur des
+                écrans dans cet environnement.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {categories.map(({ label, icon: Icon }) => (
+                <div
+                  key={label}
+                  className="flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-4 text-center"
+                >
+                  <Icon className="h-6 w-6 text-[#F5821F]" strokeWidth={1.75} />
+                  <span className="text-xs font-medium leading-5 text-slate-200">
+                    {label}
+                  </span>
+                </div>
               ))}
             </div>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="mx-auto mt-14 max-w-4xl rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm md:p-8"
-          >
-            <div className="flex flex-col items-center gap-5 text-center md:flex-row md:text-left">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#F5821F]/15">
-                <ShieldCheck className="h-7 w-7 text-[#F5821F]" />
-              </div>
-
-              <div className="flex-1">
-                <p className="font-bold text-[#0F1B2E]">
-                  Une expérience pensée pour être simple
-                </p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Sélectionnez vos emplacements, préparez votre contenu et
-                  pilotez votre présence publicitaire depuis SeetuAds.
-                </p>
-              </div>
-
-              <Link
-                href="/register"
-                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#0F1B2E] px-5 py-3 font-semibold text-white transition hover:bg-slate-800"
-              >
-                Commencer
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </motion.div>
         </div>
       </section>
-      <section className="bg-slate-100 px-6 py-24">
-        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-2">
-          <div className="rounded-[2rem] bg-[#0F1B2E] p-8 text-white md:p-10">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F5821F]/15">
+
+      <section className="px-5 py-20 sm:px-8 md:py-28">
+        <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-2">
+          <article className="rounded-[2rem] bg-[#0F1B2E] p-8 text-white sm:p-10">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5821F]/15">
               <Target className="h-6 w-6 text-[#F5821F]" />
             </div>
 
-            <h2 className="mt-8 text-3xl font-bold">
+            <h2 className="mt-7 text-3xl font-extrabold">
               Vous êtes annonceur ?
             </h2>
-
             <p className="mt-4 leading-7 text-slate-300">
-              Faites connaître votre marque dans les lieux du quotidien et
-              rapprochez votre publicité de vos clients.
+              Faites connaître votre marque dans les commerces de proximité
+              avec une campagne préparée depuis votre espace SeetuAds.
             </p>
 
-            <ul className="mt-7 space-y-4">
+            <ul className="mt-6 space-y-3">
               {advertiserBenefits.map((benefit) => (
-                <li key={benefit} className="flex gap-3 text-slate-200">
+                <li key={benefit} className="flex gap-3 text-sm text-slate-200">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#F5821F]" />
                   <span>{benefit}</span>
                 </li>
@@ -394,30 +297,30 @@ export function LandingContent({ stats }: { stats: Stats }) {
 
             <Link
               href="/register"
-              className="mt-9 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-[#0F1B2E] transition hover:bg-slate-200"
+              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#F5821F] px-5 py-3 font-bold text-[#0F1B2E] transition hover:bg-[#FF9A45]"
             >
-              Créer une campagne
+              Lancer une campagne
               <ArrowRight className="h-5 w-5" />
             </Link>
-          </div>
+          </article>
 
-          <div className="rounded-[2rem] bg-[#F5821F] p-8 text-[#0F1B2E] md:p-10">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/40">
+          <article className="rounded-[2rem] bg-[#F5821F] p-8 text-[#0F1B2E] sm:p-10">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/40">
               <Store className="h-6 w-6" />
             </div>
 
-            <h2 className="mt-8 text-3xl font-bold">
+            <h2 className="mt-7 text-3xl font-extrabold">
               Vous êtes commerçant ?
             </h2>
-
             <p className="mt-4 leading-7 text-[#0F1B2E]/80">
-              Rejoignez le réseau SeetuAds et transformez votre emplacement en
-              opportunité de revenus.
+              Vous souhaitez proposer votre établissement comme lieu
+              d’installation d’un écran SeetuAds ? Présentez votre profil pour
+              démarrer l’échange.
             </p>
 
-            <ul className="mt-7 space-y-4">
+            <ul className="mt-6 space-y-3">
               {partnerBenefits.map((benefit) => (
-                <li key={benefit} className="flex gap-3">
+                <li key={benefit} className="flex gap-3 text-sm">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
                   <span>{benefit}</span>
                 </li>
@@ -426,367 +329,76 @@ export function LandingContent({ stats }: { stats: Stats }) {
 
             <Link
               href="/register"
-              className="mt-9 inline-flex items-center gap-2 rounded-xl bg-[#0F1B2E] px-5 py-3 font-semibold text-white transition hover:bg-[#16233A]"
+              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#0F1B2E] px-5 py-3 font-bold text-white transition hover:bg-[#1B2A44]"
             >
-              Devenir partenaire
+              Proposer mon commerce
               <ArrowRight className="h-5 w-5" />
             </Link>
-          </div>
+          </article>
         </div>
       </section>
 
       <section
         id="contact"
-        className="bg-white px-6 py-24"
+        className="border-t border-slate-200 bg-white px-5 py-16 sm:px-8 md:py-20"
       >
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1fr_1.2fr] lg:items-center">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#DB6E10]">
               Contact
             </p>
-
-            <h2 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
+            <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">
               Parlons de votre projet.
             </h2>
-
-            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
-              Vous souhaitez lancer une campagne, devenir partenaire ou
-              obtenir plus d'informations sur SeetuAds ? Notre équipe est à
-              votre écoute.
+            <p className="mt-4 max-w-xl leading-7 text-slate-600">
+              Vous souhaitez lancer une campagne ou proposer votre commerce ?
+              Contactez l’équipe SeetuAds.
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             <a
               href="tel:+221788241442"
-              className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-[#F5821F]/40 hover:bg-white hover:shadow-lg"
+              className="rounded-2xl border border-slate-200 bg-[#F8F6F1] p-5 transition hover:border-[#F5821F]/50"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F5821F]/15">
-                <Phone className="h-5 w-5 text-[#DB6E10]" />
-              </div>
-              <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <Phone className="h-5 w-5 text-[#DB6E10]" />
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Téléphone
               </p>
-              <p className="mt-2 font-bold text-[#0F1B2E]">
-                +221 78 824 14 42
-              </p>
+              <p className="mt-1 font-bold">+221 78 824 14 42</p>
             </a>
 
             <a
               href="tel:+221777020818"
-              className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-[#F5821F]/40 hover:bg-white hover:shadow-lg"
+              className="rounded-2xl border border-slate-200 bg-[#F8F6F1] p-5 transition hover:border-[#F5821F]/50"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F5821F]/15">
-                <Phone className="h-5 w-5 text-[#DB6E10]" />
-              </div>
-              <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <Phone className="h-5 w-5 text-[#DB6E10]" />
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Téléphone
               </p>
-              <p className="mt-2 font-bold text-[#0F1B2E]">
-                +221 77 702 08 18
-              </p>
+              <p className="mt-1 font-bold">+221 77 702 08 18</p>
             </a>
 
             <a
               href="mailto:seetuads@gmail.com"
-              className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-[#F5821F]/30 hover:bg-white hover:shadow-lg"
+              className="rounded-2xl border border-slate-200 bg-[#F8F6F1] p-5 transition hover:border-[#F5821F]/50"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F5821F]/10">
-                <Mail className="h-5 w-5 text-[#DB6E10]" />
-              </div>
-              <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <Mail className="h-5 w-5 text-[#DB6E10]" />
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Email
               </p>
-              <p className="mt-2 break-all font-bold text-[#0F1B2E]">
-                seetuads@gmail.com
-              </p>
+              <p className="mt-1 break-all font-bold">seetuads@gmail.com</p>
             </a>
           </div>
         </div>
       </section>
 
-      <section className="px-6 py-20">
-        <div className="mx-auto max-w-5xl rounded-[2rem] bg-gradient-to-br from-[#0F1B2E] to-[#1B2A44] px-8 py-14 text-center text-white shadow-xl md:px-16">
-          <UsersRound className="mx-auto h-8 w-8 text-[#F5821F]" />
-
-          <h2 className="mt-5 text-3xl font-bold md:text-4xl">
-            Prêt à faire voir votre marque ?
-          </h2>
-
-          <p className="mx-auto mt-4 max-w-2xl text-white/80">
-            Lancez votre première campagne ou découvrez les opportunités de
-            partenariat avec SeetuAds.
-          </p>
-
-          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link
-              href="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-[#DB6E10] transition hover:bg-[#F5821F]/10"
-            >
-              Commencer avec SeetuAds
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-
-            <a
-              href="tel:+221788241442"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-6 py-3.5 font-semibold transition hover:bg-white/10"
-            >
-              <Phone className="h-5 w-5" />
-              Nous appeler
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden bg-[#0F1B2E] px-6 py-24 text-white md:py-32">
-        <div className="absolute inset-0 -z-0">
-          <div className="absolute left-1/4 top-0 h-72 w-72 rounded-full bg-[#F5821F]/20 blur-3xl" />
-          <div className="absolute right-1/4 bottom-0 h-72 w-72 rounded-full bg-[#F5821F]/10 blur-3xl" />
-        </div>
-
-        <div className="relative z-10 mx-auto max-w-6xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#F5821F]">
-              Pourquoi SeetuAds ?
-            </p>
-
-            <h2 className="mt-4 text-3xl font-bold tracking-tight md:text-5xl">
-              Votre marque. Votre zone. Votre moment.
-            </h2>
-
-            <p className="mt-5 text-lg leading-8 text-slate-300">
-              Une solution DOOH locale pensée pour rapprocher les marques
-              de leurs clients, directement dans les lieux du quotidien.
-            </p>
-          </div>
-
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                icon: MapPin,
-                title: "Ciblage de précision",
-                text: "Touchez les quartiers et zones où votre clientèle est réellement présente.",
-              },
-              {
-                icon: MonitorPlay,
-                title: "Impact en point de vente",
-                text: "Diffusez vos messages sur des écrans visibles directement dans les commerces de proximité.",
-              },
-              {
-                icon: BarChart3,
-                title: "Pilotage intelligent",
-                text: "Créez, planifiez et suivez vos campagnes depuis un seul espace SeetuAds.",
-              },
-            ].map((item, index) => (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group rounded-3xl border border-white/10 bg-white/[0.06] p-7 backdrop-blur transition duration-300 hover:-translate-y-2 hover:border-[#F5821F]/30 hover:bg-white/[0.09]"
-              >
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5821F]/10 text-[#F5821F] transition duration-300 group-hover:scale-110 group-hover:bg-[#F5821F]/20">
-                  <item.icon className="h-7 w-7" />
-                </div>
-
-                <h3 className="mt-7 text-xl font-bold">
-                  {item.title}
-                </h3>
-
-                <p className="mt-3 leading-7 text-slate-300">
-                  {item.text}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.6 }}
-            className="mt-10 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.05] p-3 shadow-2xl"
-          >
-            <div className="relative overflow-hidden rounded-2xl">
-              <img
-                src="/images/seetuads-dooh.png"
-                alt="Écran publicitaire SeetuAds dans une boutique de quartier au Sénégal"
-                className="h-[300px] w-full object-cover transition duration-700 hover:scale-105 md:h-[430px]"
-              />
-
-              <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/10 bg-slate-950/80 p-5 backdrop-blur-md md:inset-x-6 md:bottom-6">
-                <p className="text-sm font-medium text-[#F5821F]">
-                  Publicité digitale locale
-                </p>
-                <p className="mt-1 text-xl font-bold md:text-2xl">
-                  Une présence visible au cœur des commerces sénégalais.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-      <section className="relative overflow-hidden bg-slate-100 px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.6 }}
-            >
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#DB6E10]">
-                Notre réseau
-              </p>
-
-              <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 md:text-5xl">
-                Un réseau local pensé pour votre visibilité.
-              </h2>
-
-              <p className="mt-5 text-lg leading-8 text-slate-600">
-                SeetuAds rapproche les annonceurs des consommateurs grâce à
-                des écrans installés dans des commerces de proximité.
-              </p>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700">
-                  Dakar
-                </span>
-                <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700">
-                  Commerces de proximité
-                </span>
-                <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700">
-                  Écrans digitaux
-                </span>
-              </div>
-
-              <Link
-                href="/carte"
-                className="mt-9 inline-flex items-center gap-2 rounded-xl bg-[#0F1B2E] px-6 py-3.5 font-semibold text-white transition hover:bg-[#16233A]"
-              >
-                Découvrir le réseau
-                <MapPin className="h-5 w-5" />
-              </Link>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="grid grid-cols-2 gap-4"
-            >
-              {[
-                {
-                  value: stats.zones,
-                  label: "Presence multi-zones",
-                  icon: MapPin,
-                },
-                {
-                  value: stats.partners,
-                  label: "Reseau en croissance",
-                  icon: Store,
-                },
-                {
-                  value: stats.screens,
-                  label: "Écrans actifs",
-                  icon: MonitorPlay,
-                },
-                {
-                  value: stats.campaigns,
-                  label: "Campagnes créées",
-                  icon: PlayCircle,
-                },
-              ].map((item, index) => (
-                <motion.div
-                  key={item.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.4, delay: 0.15 + index * 0.08 }}
-                  className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5821F]/10 text-[#DB6E10] transition group-hover:bg-[#F5821F] group-hover:text-white">
-                    <item.icon className="h-6 w-6" />
-                  </div>
-
-                  <p className="mt-1 text-sm font-medium text-slate-500">
-                    {item.label}
-                  </p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.6 }}
-            className="mt-12 overflow-hidden rounded-3xl border border-slate-200 bg-[#0F1B2E] shadow-2xl"
-          >
-            <div className="grid items-center gap-0 lg:grid-cols-[1fr_0.8fr]">
-              <div className="p-8 md:p-10">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F5821F]/10 text-[#F5821F]">
-                    <TrendingUp className="h-5 w-5" />
-                  </div>
-                  <span className="text-sm font-semibold uppercase tracking-wider text-[#F5821F]">
-                    Impact local
-                  </span>
-                </div>
-
-                <h3 className="mt-6 text-2xl font-bold text-white md:text-3xl">
-                  Votre publicité au plus près de vos clients.
-                </h3>
-
-                <p className="mt-4 max-w-xl leading-7 text-slate-300">
-                  Sélectionnez vos zones, choisissez vos emplacements et
-                  diffusez votre message dans les lieux où votre audience
-                  vit, travaille et consomme.
-                </p>
-
-                <div className="mt-7 grid grid-cols-3 gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-lg font-bold text-white">Local</p>
-                    <p className="mt-1 text-xs text-slate-400">Ciblage</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-lg font-bold text-white">Digital</p>
-                    <p className="mt-1 text-xs text-slate-400">Diffusion</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-lg font-bold text-white">Simple</p>
-                    <p className="mt-1 text-xs text-slate-400">Pilotage</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative min-h-[280px] overflow-hidden lg:min-h-full">
-                <img
-                  src="/images/seetuads-dooh.png"
-                  alt="Réseau d'écran publicitaire SeetuAds dans un commerce de proximité au Sénégal"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#0F1B2E] via-[#0F1B2E]/30 to-transparent lg:bg-gradient-to-r" />
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-      <footer className="border-t border-slate-200 bg-white px-6 py-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-sm text-slate-500 md:flex-row">
-          <p>
-            © {new Date().getFullYear()} SeetuAds · Dakar, Sénégal
-          </p>
-
-          <a
-            href="mailto:seetuads@gmail.com"
-            className="transition hover:text-[#0F1B2E]"
-          >
-            seetuads@gmail.com
-          </a>
+      <footer className="bg-[#0F1B2E] px-5 py-7 text-white sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-sm text-slate-400 sm:flex-row">
+          <p>© {new Date().getFullYear()} SeetuAds · Dakar, Sénégal</p>
+          <Link href="#contact" className="transition hover:text-white">
+            Nous contacter
+          </Link>
         </div>
       </footer>
     </main>
