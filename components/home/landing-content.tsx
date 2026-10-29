@@ -329,10 +329,12 @@ export function LandingContent() {
 
             <Link
               href="/register"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#0F1B2E] px-5 py-3 font-bold text-white transition hover:bg-[#1B2A44]"
+              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-[#0F1B2E] transition hover:bg-slate-100"
             >
-              Proposer mon commerce
-              <ArrowRight className="h-5 w-5" />
+              <span className="text-[#0F1B2E]">
+                Proposer mon commerce
+              </span>
+              <ArrowRight className="h-5 w-5 text-[#0F1B2E]" />
             </Link>
           </article>
         </div>
@@ -395,7 +397,9 @@ export function LandingContent() {
 
       <footer className="bg-[#0F1B2E] px-5 py-7 text-white sm:px-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-sm text-slate-400 sm:flex-row">
-          <p>© {new Date().getFullYear()} SeetuAds · Dakar, Sénégal</p>
+          <p>
+            © {new Date().getFullYear()} SeetuAds · Dakar, Sénégal
+          </p>
           <Link href="#contact" className="transition hover:text-white">
             Nous contacter
           </Link>
