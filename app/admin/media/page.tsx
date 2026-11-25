@@ -4,38 +4,50 @@ import { MediaDataTable } from "./media-data-table";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function MediaPage() {
   const media = await prisma.media.findMany({
     orderBy: { createdAt: "desc" },
-    include: { advertiser: true },
+    include: {
+      advertiser: true,
+      partner: true,
+    },
   });
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Medias</h1>
-          <p className="text-gray-600">Gerer les images et videos publicitaires</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Médias
+          </h1>
+          <p className="text-gray-600">
+            Gérer les médias des annonceurs et des partenaires
+          </p>
         </div>
+
         <Link href="/admin/media/new">
           <Button className="gap-2">
-            <Plus className="w-4 h-4" />
-            Nouveau media
+            <Plus className="h-4 w-4" />
+            Nouveau média
           </Button>
         </Link>
       </div>
 
       <MediaDataTable
-        media={media.map((m) => ({
-          id: m.id,
-          name: m.name,
-          fileUrl: m.fileUrl,
-          fileType: m.fileType,
-          durationSeconds: m.durationSeconds,
-          status: String(m.status),
-          advertiser: m.advertiser?.companyName || "-",
+        media={media.map((item) => ({
+          id: item.id,
+          name: item.name,
+          fileUrl: item.fileUrl,
+          fileType: item.fileType,
+          durationSeconds: item.durationSeconds,
+          status: String(item.status),
+          owner: item.partner
+            ? `Partenaire — ${item.partner.businessName}`
+            : item.advertiser
+              ? `Annonceur — ${item.advertiser.companyName}`
+              : "Propriétaire inconnu",
         }))}
       />
     </div>
