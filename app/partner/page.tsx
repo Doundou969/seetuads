@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requirePartner } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import PartnerSignOut from "./PartnerSignOut";
@@ -59,6 +60,20 @@ export default async function PartnerDashboardPage() {
           <p className="text-sm text-muted-foreground">Écrans actifs</p>
           <p className="mt-2 text-3xl font-bold">{activeScreensCount}</p>
         </div>
+      </div>
+
+      <div className="rounded-lg border bg-card p-6">
+        <h2 className="text-lg font-semibold">Médias du partenaire</h2>
+        <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          Ajoutez et consultez les images et vidéos de votre compte.
+        </p>
+
+        <Link
+          href="/partner/media"
+          className="inline-flex rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+        >
+          Gérer mes médias
+        </Link>
       </div>
     </div>
   );
