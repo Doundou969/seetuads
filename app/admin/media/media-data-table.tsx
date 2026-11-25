@@ -21,7 +21,7 @@ type MediaRow = Record<string, unknown> & {
   fileType: string;
   durationSeconds: number;
   status: string;
-  advertiser: string;
+  owner: string;
 };
 
 export function MediaDataTable({
@@ -35,18 +35,17 @@ export function MediaDataTable({
         { key: "name", label: "Nom" },
         { key: "fileType", label: "Type" },
         { key: "durationSeconds", label: "Durée (s)" },
-        { key: "advertiser", label: "Annonceur" },
+        { key: "owner", label: "Propriétaire" },
         { key: "status", label: "Statut" },
       ]}
       rows={media}
       actions={(row) => {
-        const m = row as MediaRow;
+        const item = row as MediaRow;
 
         return (
-          <div className="flex items-center gap-2 justify-end">
-
+          <div className="flex items-center justify-end gap-2">
             <a
-              href={m.fileUrl}
+              href={item.fileUrl}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -55,15 +54,13 @@ export function MediaDataTable({
                 size="sm"
                 title="Voir le média"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="h-4 w-4" />
               </Button>
             </a>
 
-            {m.status === "UPLOADED" && (
+            {item.status === "UPLOADED" && (
               <>
-                <form
-                  action={approveMedia.bind(null, m.id)}
-                >
+                <form action={approveMedia.bind(null, item.id)}>
                   <Button
                     type="submit"
                     variant="ghost"
@@ -71,13 +68,11 @@ export function MediaDataTable({
                     className="text-green-600 hover:text-green-700"
                     title="Approuver le média"
                   >
-                    <Check className="w-4 h-4" />
+                    <Check className="h-4 w-4" />
                   </Button>
                 </form>
 
-                <form
-                  action={rejectMedia.bind(null, m.id)}
-                >
+                <form action={rejectMedia.bind(null, item.id)}>
                   <Button
                     type="submit"
                     variant="ghost"
@@ -85,15 +80,13 @@ export function MediaDataTable({
                     className="text-orange-600 hover:text-orange-700"
                     title="Refuser le média"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </form>
               </>
             )}
 
-            <form
-              action={deleteMedia.bind(null, m.id)}
-            >
+            <form action={deleteMedia.bind(null, item.id)}>
               <Button
                 type="submit"
                 variant="ghost"
@@ -101,10 +94,9 @@ export function MediaDataTable({
                 className="text-red-600 hover:text-red-700"
                 title="Supprimer le média"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </form>
-
           </div>
         );
       }}
