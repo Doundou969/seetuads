@@ -111,6 +111,69 @@ export async function deleteZone(id: string) {
 // PARTNERS
 // ============================================================================
 
+export async function completePartnerOnboarding(formData: FormData) {
+  const user = await requireAuth();
+
+  const businessName = String(
+    formData.get("businessName") ?? ""
+  ).trim();
+  const ownerName = String(
+    formData.get("ownerName") ?? ""
+  ).trim();
+  const phone = String(
+    formData.get("phone") ?? ""
+  ).trim();
+
+  if (!businessName) {
+    throw new Error("Le nom du commerce est obligatoire.");
+  }
+
+  if (!phone) {
+    throw new Error("Le téléphone est obligatoire.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const existingPartner = await tx.partner.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (existingPartner) {
+      await tx.partner.update({
+        where: { id: existingPartner.id },
+        data: {
+          businessName,
+          ownerName: ownerName || user.firstName || null,
+          phone,
+          email: user.email,
+        },
+      });
+    } else {
+      await tx.partner.create({
+        data: {
+          userId: user.id,
+          businessName,
+          ownerName: ownerName || user.firstName || null,
+          phone,
+          email: user.email,
+        },
+      });
+    }
+
+    await tx.user.update({
+      where: { id: user.id },
+      data: {
+        role: "PARTNER",
+        phone,
+      },
+    });
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/partner");
+  redirect("/partner");
+}
+
+
 export async function createPartner(formData: FormData) {
   await requireAdmin();
   const businessName = String(
@@ -734,7 +797,7 @@ export async function createCampaign(formData: FormData) {
       approvedMedia.length !== mediaIds.length
     ) {
       throw new Error(
-        "Un ou plusieurs mÃƒÂ©dias sÃƒÂ©lectionnÃƒÂ©s sont introuvables, appartiennent ÃƒÂ  un autre annonceur ou ne sont pas approuvÃƒÂ©s."
+        "Un ou plusieurs mÃƒÂ©dias sÃƒÂ©lectionnÃƒÂ©s sont introuvables, appartiennent ÃƒÂ  un autre annonceur ou ne sont pas approuvÃƒÂ©s."
       );
     }
 
@@ -971,7 +1034,7 @@ async function getAuthorizedCampaign(
   }
 
   // ANNONCEUR :
-  // accÃƒÂ¨s uniquement ÃƒÂ  ses propres campagnes.
+  // accÃƒÂ¨s uniquement ÃƒÂ  ses propres campagnes.
   if (!user.advertiser) {
     throw new Error(
       "AccÃƒÂ¨s rÃƒÂ©servÃƒÂ© aux annonceurs."
@@ -1437,7 +1500,7 @@ export async function activateCampaign(
 
   if (campaign.startDate > todayUtc) {
     throw new Error(
-      "La campagne ne peut ÃƒÂªtre activÃƒÂ©e qu'ÃƒÂ  partir de sa date de dÃƒÂ©but."
+      "La campagne ne peut ÃƒÂªtre activÃƒÂ©e qu'ÃƒÂ  partir de sa date de dÃƒÂ©but."
     );
   }
 
@@ -1503,7 +1566,7 @@ export async function activateCampaign(
 
     if (currentCampaign.startDate > todayUtc) {
       throw new Error(
-        "La campagne ne peut ÃƒÂªtre activÃƒÂ©e qu'ÃƒÂ  partir de sa date de dÃƒÂ©but."
+        "La campagne ne peut ÃƒÂªtre activÃƒÂ©e qu'ÃƒÂ  partir de sa date de dÃƒÂ©but."
       );
     }
 
@@ -2373,4 +2436,3 @@ export async function updateAdvertiserStatus(
 
   revalidatePath("/admin/advertisers");
 }
-
