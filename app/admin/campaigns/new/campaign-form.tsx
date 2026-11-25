@@ -27,7 +27,7 @@ interface Media {
   fileType: string;
   mimeType: string | null;
   durationSeconds: number;
-  advertiserId: string;
+  advertiserId: string | null;
 }
 
 interface PricingRule {
