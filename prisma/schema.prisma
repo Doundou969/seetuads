@@ -187,7 +187,7 @@ model Player {
 
 model Media {
   id              String                @id @default(uuid())
-  advertiserId    String?               @map("advertiser_id")
+  advertiserId String?                 @map("advertiser_id")
   partnerId       String?               @map("partner_id")
   name            String
   fileUrl         String                @map("file_url")
