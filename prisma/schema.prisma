@@ -84,6 +84,7 @@ model Partner {
   updatedAt    DateTime        @updatedAt @map("updated_at")
   contracts    Contract[]
   locations    Location[]
+  media        Media[]
   payouts      PartnerPayout[]
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -186,7 +187,8 @@ model Player {
 
 model Media {
   id              String                @id @default(uuid())
-  advertiserId    String                @map("advertiser_id")
+  advertiserId    String?               @map("advertiser_id")
+  partnerId       String?               @map("partner_id")
   name            String
   fileUrl         String                @map("file_url")
   fileType        String                @map("file_type")
@@ -199,11 +201,13 @@ model Media {
   createdAt       DateTime              @default(now()) @map("created_at")
   updatedAt       DateTime              @updatedAt @map("updated_at")
   campaignMedia   CampaignMedia[]
-  advertiser      Advertiser            @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  advertiser      Advertiser?           @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  partner         Partner?              @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   media           MediaOrderItemMedia[]
   playbackLogs    PlaybackLog[]
   playlistItems   PlaylistItem[]
 
+  @@index([partnerId])
   @@map("media")
 }
 
