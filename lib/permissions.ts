@@ -15,6 +15,7 @@ export class HttpError extends Error {
     this.statusCode = statusCode;
   }
 }
+
 const TEMP_ADVERTISER_COOKIE =
   "seetuads_advertiser_access";
 
@@ -137,9 +138,9 @@ export async function requireAuth() {
 export async function requireAdvertiser() {
   const user = await getCurrentUser();
 
-  // Un utilisateur reellement connecte via Clerk a toujours priorite
-  // sur un cookie d'acces temporaire, meme s'il n'a pas encore
-  // de ligne Advertiser (on la cree ici au besoin).
+  // Un utilisateur réellement connecté via Clerk a toujours priorité
+  // sur un cookie d'accès temporaire, même s'il n'a pas encore
+  // de ligne Advertiser (on la crée ici au besoin).
   if (user) {
     if (user.advertiser) {
       return {
@@ -174,8 +175,8 @@ export async function requireAdvertiser() {
     };
   }
 
-  // Pas d'utilisateur Clerk authentifie : on retombe sur le cookie
-  // d'acces temporaire (lien envoye a un annonceur sans compte).
+  // Pas d'utilisateur Clerk authentifié : on retombe sur le cookie
+  // d'accès temporaire (lien envoyé à un annonceur sans compte).
   const temporaryAdvertiser =
     await getAdvertiserFromTemporaryToken();
 
@@ -187,7 +188,7 @@ export async function requireAdvertiser() {
     };
   }
 
-  throw new HttpError("Non authentifie", 401);
+  throw new HttpError("Non authentifié", 401);
 }
 
 export async function requireMediaUploader() {
@@ -198,7 +199,8 @@ export async function requireMediaUploader() {
     (
       user.role === "ADMIN" ||
       user.role === "OPERATOR" ||
-      !!user.advertiser
+      !!user.advertiser ||
+      (user.role === "PARTNER" && !!user.partner)
     )
   ) {
     return user;
@@ -244,5 +246,3 @@ export {
   TEMP_ADVERTISER_COOKIE,
   hashToken,
 };
-
-
