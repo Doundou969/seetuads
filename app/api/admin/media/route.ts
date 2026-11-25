@@ -19,7 +19,14 @@ export async function GET() {
         fileUrl: true,
         fileType: true,
         durationSeconds: true,
+        partnerId: true,
         advertiser: { select: { companyName: true } },
+        partner: {
+          select: {
+            id: true,
+            businessName: true,
+          },
+        },
       },
     });
 
