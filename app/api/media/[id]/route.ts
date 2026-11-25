@@ -1,72 +1,72 @@
 import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
-import { requireAdvertiser } from "@/lib/permissions";
+import {
+  HttpError,
+  requirePartner,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { advertiser } = await requireAdvertiser();
+    const { partner } = await requirePartner();
     const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Identifiant du média manquant." },
+        { status: 400 }
+      );
+    }
 
     const media = await prisma.media.findFirst({
       where: {
         id,
-        advertiserId: advertiser.id,
+        partnerId: partner.id,
       },
     });
 
     if (!media) {
       return NextResponse.json(
-        { error: "Média non trouvé" },
+        { error: "Média introuvable." },
         { status: 404 }
       );
     }
 
     const playbackLogs = await prisma.playbackLog.count({
-      where: { mediaId: media.id },
+      where: {
+        mediaId: media.id,
+      },
     });
 
     if (playbackLogs > 0) {
       return NextResponse.json(
         {
           error:
-            "M\u00e9dia avec historique de diffusion : suppression impossible.",
+            "Ce média a déjà été diffusé et ne peut pas être supprimé.",
         },
         { status: 409 }
       );
     }
 
-    console.log("MEDIA DELETE:", {
-      id: media.id,
-      name: media.name,
-      fileUrl: media.fileUrl,
-      advertiserId: media.advertiserId,
-    });
-
-    // Supprime le fichier du Vercel Blob.
-    // Si l'URL n'est pas un Blob Vercel, on continue quand même
-    // afin de ne pas bloquer la suppression de l'enregistrement DB.
-    try {
-      if (
-        media.fileUrl &&
-        media.fileUrl.includes("public.blob.vercel-storage.com")
-      ) {
+    if (
+      media.fileUrl &&
+      media.fileUrl.includes("public.blob.vercel-storage.com")
+    ) {
+      try {
         await del(media.fileUrl, {
           token: process.env.BLOB_READ_WRITE_TOKEN,
         });
-
-        console.log("VERCEL BLOB DELETED:", media.fileUrl);
-      } else {
-        console.log(
-          "VERCEL BLOB DELETE SKIPPED: URL non Vercel Blob",
-          media.fileUrl
+      } catch (error) {
+        // On poursuit la suppression de l'enregistrement en base,
+        // comme dans la route de suppression des médias annonceur.
+        console.error(
+          "PARTNER MEDIA BLOB DELETE ERROR:",
+          error
         );
       }
-    } catch (blobError) {
-      console.error("VERCEL BLOB DELETE ERROR:", blobError);
     }
 
     await prisma.media.delete({
@@ -75,22 +75,19 @@ export async function DELETE(
       },
     });
 
-    console.log("MEDIA DATABASE DELETED:", media.id);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
+    }
 
-    return NextResponse.json({
-      success: true,
-      id: media.id,
-    });
-  } catch (err: unknown) {
-    console.error("MEDIA DELETE ERROR:", err);
-
-    const details =
-      err instanceof Error ? err.message : String(err);
+    console.error("PARTNER MEDIA DELETE ERROR:", error);
 
     return NextResponse.json(
-      {
-        error: details,
-      },
+      { error: "Impossible de supprimer le média." },
       { status: 500 }
     );
   }
