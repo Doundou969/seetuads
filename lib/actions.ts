@@ -340,6 +340,62 @@ export async function createLocation(formData: FormData) {
   redirect("/admin/locations");
 }
 
+export async function createPartnerLocation(formData: FormData) {
+  const { partner } = await requirePartner();
+
+  const name = String(formData.get("name") ?? "").trim();
+  const address = String(formData.get("address") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim() || "Dakar";
+  const district = String(formData.get("district") ?? "").trim();
+  const latitudeValue = String(formData.get("latitude") ?? "").trim();
+  const longitudeValue = String(formData.get("longitude") ?? "").trim();
+
+  const latitude = latitudeValue ? Number(latitudeValue) : null;
+  const longitude = longitudeValue ? Number(longitudeValue) : null;
+
+  if (!name) {
+    throw new Error("Le nom de l'emplacement est requis.");
+  }
+
+  if (!address) {
+    throw new Error("L'adresse est requise.");
+  }
+
+  if (
+    latitude !== null &&
+    (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)
+  ) {
+    throw new Error("La latitude doit être comprise entre -90 et 90.");
+  }
+
+  if (
+    longitude !== null &&
+    (!Number.isFinite(longitude) || longitude < -180 || longitude > 180)
+  ) {
+    throw new Error("La longitude doit être comprise entre -180 et 180.");
+  }
+
+  await prisma.location.create({
+    data: {
+      // Toujours rattacher l'emplacement au partenaire de la session.
+      // Ne jamais accepter de partnerId provenant du formulaire.
+      partnerId: partner.id,
+      name,
+      address,
+      city,
+      district: district || null,
+      latitude,
+      longitude,
+    },
+  });
+
+  revalidatePath("/partner/locations");
+  revalidatePath("/partner/screens");
+  revalidatePath("/partner");
+  revalidatePath("/admin/locations");
+  redirect("/partner/locations");
+}
+
 export async function deleteLocation(id: string) {
   await requireAdmin();
   if (!id) {
