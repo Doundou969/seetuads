@@ -45,6 +45,24 @@ type AnalyticsReportData = {
   mediaStats: MediaStat[];
 };
 
+function pdfSafeText(value: string, maxLength = 80) {
+  const cleaned = (value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    // jsPDF's built-in Helvetica font does not cover emoji and all Unicode.
+    // Replace unsupported glyphs before writing them to the PDF.
+    .replace(/[^\x20-\x7E]/g, " ")
+    .replace(/[\\/_*]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const safeName = cleaned || "Media without name";
+  return safeName.length > maxLength
+    ? `${safeName.slice(0, maxLength - 3).trim()}...`
+    : safeName;
+}
+
 function formatDuration(seconds: number) {
   if (seconds < 60) {
     return `${seconds}s`;
@@ -171,7 +189,7 @@ export function DownloadPdfButton({
     } else {
       data.screenStats.forEach((screen, index) => {
         addText(
-          `${index + 1}. ${screen.name} (${screen.code}) - ${
+          `${index + 1}. ${pdfSafeText(screen.name)} (${pdfSafeText(screen.code)}) - ${
             screen.count
           } diffusions - ${formatDuration(screen.duration)}`
         );
@@ -185,11 +203,11 @@ export function DownloadPdfButton({
     addSection("Top campagnes");
 
     if (data.campaignStats.length === 0) {
-      addText("Aucune campagne associee aux diffusions.");
+      addText("Aucune campagne rattachee aux diffusions de cette periode.");
     } else {
       data.campaignStats.forEach((campaign, index) => {
         addText(
-          `${index + 1}. ${campaign.name} - ${
+          `${index + 1}. ${pdfSafeText(campaign.name)} - ${
             campaign.count
           } diffusions - ${formatDuration(campaign.duration)}`
         );
@@ -207,7 +225,7 @@ export function DownloadPdfButton({
     } else {
       data.mediaStats.forEach((media, index) => {
         addText(
-          `${index + 1}. ${media.name} - ${
+          `${index + 1}. ${pdfSafeText(media.name)} - ${
             media.count
           } diffusions - ${formatDuration(media.duration)}`
         );
