@@ -25,6 +25,119 @@ const PLAYLIST_REFRESH_MS = 60000;
 const HEARTBEAT_INTERVAL_MS = 60000;
 
 const PENDING_LOGS_KEY = "seetuads_pending_playback_logs";
+const OFFLINE_PLAYLIST_KEY_PREFIX = "seetuads_cached_playlist:";
+
+type OfflinePlaylistSnapshot = {
+  orientation: string;
+  items: PlaylistItem[];
+  savedAt: string;
+};
+
+function offlinePlaylistKey(deviceId: string) {
+  return `${OFFLINE_PLAYLIST_KEY_PREFIX}${encodeURIComponent(deviceId)}`;
+}
+
+function isValidPlaylistItem(value: unknown): value is PlaylistItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<PlaylistItem>;
+  return Boolean(
+    item.id &&
+      item.media &&
+      item.media.id &&
+      item.media.fileUrl &&
+      item.media.fileType &&
+      Number.isFinite(item.durationSeconds)
+  );
+}
+
+function readOfflinePlaylist(deviceId: string): OfflinePlaylistSnapshot | null {
+  try {
+    const raw = localStorage.getItem(offlinePlaylistKey(deviceId));
+    if (!raw) return null;
+    const snapshot = JSON.parse(raw) as Partial<OfflinePlaylistSnapshot>;
+    if (
+      !Array.isArray(snapshot.items) ||
+      snapshot.items.length === 0 ||
+      !snapshot.items.every(isValidPlaylistItem)
+    ) {
+      return null;
+    }
+    return {
+      orientation:
+        typeof snapshot.orientation === "string"
+          ? snapshot.orientation
+          : "landscape",
+      items: snapshot.items,
+      savedAt:
+        typeof snapshot.savedAt === "string"
+          ? snapshot.savedAt
+          : new Date(0).toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveOfflinePlaylist(
+  deviceId: string,
+  items: PlaylistItem[],
+  orientation: string
+) {
+  try {
+    localStorage.setItem(
+      offlinePlaylistKey(deviceId),
+      JSON.stringify({ items, orientation, savedAt: new Date().toISOString() })
+    );
+  } catch (error) {
+    console.warn("Impossible de sauvegarder la playlist hors ligne :", error);
+  }
+}
+
+function clearOfflinePlaylist(deviceId: string) {
+  try {
+    localStorage.removeItem(offlinePlaylistKey(deviceId));
+  } catch {
+    // Le stockage local peut être désactivé par le navigateur.
+  }
+}
+
+async function updateWorkerPlaylist(urls: string[]): Promise<boolean> {
+  if (!("serviceWorker" in navigator)) return false;
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const worker = navigator.serviceWorker.controller || registration.active;
+    if (!worker) return false;
+
+    return await new Promise<boolean>((resolve) => {
+      const channel = new MessageChannel();
+      let settled = false;
+      const finish = (result: boolean) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        channel.port1.close();
+        resolve(result);
+      };
+      const timeout = setTimeout(() => finish(false), 30000);
+
+      channel.port1.onmessage = (event) =>
+        finish(event.data?.allCached === true);
+
+      try {
+        worker.postMessage(
+          { type: "UPDATE_PLAYLIST", urls },
+          [channel.port2]
+        );
+      } catch {
+        finish(false);
+      }
+    });
+  } catch (error) {
+    console.warn("Préchargement hors ligne indisponible :", error);
+    return false;
+  }
+}
 
 function getPendingLogs(): any[] {
   try {
@@ -37,52 +150,60 @@ function getPendingLogs(): any[] {
 
 function savePendingLogs(logs: any[]) {
   try {
-    localStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(logs));
+    // Migration des anciennes entrées : ne jamais conserver la clé du player.
+    const sanitized = logs.map((entry) => ({
+      payload: entry?.payload,
+      queuedAt: entry?.queuedAt,
+    }));
+    localStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(sanitized));
   } catch (err) {
     console.warn("Impossible de sauvegarder les logs en attente :", err);
   }
 }
 
-function queuePendingLog(payload: unknown, playerKey: string) {
+function queuePendingLog(payload: unknown) {
   const logs = getPendingLogs();
-  logs.push({ payload, playerKey, queuedAt: new Date().toISOString() });
+  logs.push({ payload, queuedAt: new Date().toISOString() });
   savePendingLogs(logs);
   console.log("Log playback mis en file d'attente (hors ligne) :", payload);
 }
 
-async function flushPendingLogs() {
-  const logs = getPendingLogs();
+async function flushPendingLogs(
+  playerKey: string | null,
+  deviceId: string | null
+) {
+  if (!playerKey || !deviceId) return;
 
-  if (logs.length === 0) {
-    return;
-  }
+  const logs = getPendingLogs();
+  if (logs.length === 0) return;
 
   const remaining: typeof logs = [];
-
   for (const entry of logs) {
+    if (entry?.payload?.deviceId !== deviceId) {
+      remaining.push(entry);
+      continue;
+    }
+
     try {
       const response = await fetch("/api/player/log", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Player-Key": entry.playerKey,
+          "X-Player-Key": playerKey,
         },
         body: JSON.stringify(entry.payload),
       });
-
-      if (!response.ok) {
-        remaining.push(entry);
-      }
+      if (!response.ok) remaining.push(entry);
     } catch {
       remaining.push(entry);
     }
   }
 
+  // Supprime aussi la clé présente dans d'anciennes entrées stockées.
   savePendingLogs(remaining);
-
   if (remaining.length !== logs.length) {
     console.log(
-      "Logs en attente envoyes :",
+      "Logs en attente envoyés :",
       logs.length - remaining.length,
       "restants :",
       remaining.length
@@ -167,6 +288,28 @@ export default function PlayerView() {
       .register("/sw-player.js")
       .then((registration) => {
         console.log("Service Worker enregistre :", registration.scope);
+        navigator.serviceWorker.ready.then((readyRegistration) => {
+          const worker =
+            navigator.serviceWorker.controller || readyRegistration.active;
+          if (!worker) return;
+
+          const assets = performance
+            .getEntriesByType("resource")
+            .map((entry) => entry.name)
+            .filter((url) => {
+              try {
+                const parsed = new URL(url);
+                return (
+                  parsed.origin === window.location.origin &&
+                  parsed.pathname.startsWith("/_next/static/")
+                );
+              } catch {
+                return false;
+              }
+            });
+
+          worker.postMessage({ type: "CACHE_PLAYER_SHELL", assets });
+        });
       })
       .catch((err) => {
         console.error("Erreur enregistrement Service Worker :", err);
@@ -285,7 +428,11 @@ export default function PlayerView() {
         startTimeRef.current = null;
 
         setItems([]);
+        itemsRef.current = [];
         setCurrentIndex(0);
+        currentIndexRef.current = 0;
+        clearOfflinePlaylist(deviceId);
+        void updateWorkerPlaylist([]);
         setError("Aucune publicité active actuellement");
 
         return;
@@ -299,9 +446,10 @@ export default function PlayerView() {
 
       const data = await response.json();
 
-      if (data.playlist?.orientation) {
-        setScreenOrientation(data.playlist.orientation);
-      }
+      const playlistOrientation =
+        typeof data.playlist?.orientation === "string"
+          ? data.playlist.orientation
+          : "landscape";
 
       const rawPlaylistItems = Array.isArray(data.playlist?.items)
         ? data.playlist.items
@@ -335,63 +483,47 @@ export default function PlayerView() {
       });
 
       /**
-       * Playlist non vide.
+       * Playlist non vide : on ne remplace l'ancienne qu'après
+       * confirmation que les nouveaux médias sont disponibles hors ligne.
        */
       if (playlistItems.length > 0) {
         const previousItems = itemsRef.current;
         const previousIndex = currentIndexRef.current;
+        const oldSignature = playlistSignature(previousItems);
+        const newSignature = playlistSignature(playlistItems);
+        const mediaUrls = playlistItems.map((item) => item.media.fileUrl);
+        const allMediaCached = await updateWorkerPlaylist(mediaUrls);
 
-        const oldSignature =
-          playlistSignature(previousItems);
-
-        const newSignature =
-          playlistSignature(playlistItems);
-
-        /**
-         * On ne touche pas à l'index si la playlist
-         * est identique.
-         */
-        if (newSignature !== oldSignature) {
-          const currentItemId =
-            previousItems[previousIndex]?.id;
-
-          const newCurrentIndex =
-            playlistItems.findIndex(
-              (item) => item.id === currentItemId
-            );
-
-          const safeIndex =
-            newCurrentIndex >= 0
-              ? newCurrentIndex
-              : 0;
-
-          console.log("Playlist mise à jour :", {
-            previousItems: previousItems.length,
-            newItems: playlistItems.length,
-            currentItemId,
-            newCurrentIndex: safeIndex,
-          });
-
-          setItems(playlistItems);
-          setCurrentIndex(safeIndex);
-
-          if (navigator.serviceWorker.controller) {
-            const mediaUrls = playlistItems.map((item) => item.media.fileUrl);
-
-            navigator.serviceWorker.controller.postMessage({
-              type: "SET_PLAYLIST_URLS",
-              urls: mediaUrls,
-            });
-
-            navigator.serviceWorker.controller.postMessage({
-              type: "PREFETCH_URLS",
-              urls: mediaUrls,
-            });
-          }
+        if (
+          previousItems.length > 0 &&
+          newSignature !== oldSignature &&
+          !allMediaCached
+        ) {
+          console.warn(
+            "Nouvelle playlist différée : préchargement des médias incomplet."
+          );
+          setError("");
+          return;
         }
 
-        setError("");
+        if (newSignature !== oldSignature) {
+          const currentItemId = previousItems[previousIndex]?.id;
+          const foundIndex = playlistItems.findIndex(
+            (item) => item.id === currentItemId
+          );
+          const safeIndex = foundIndex >= 0 ? foundIndex : 0;
 
+          setItems(playlistItems);
+          itemsRef.current = playlistItems;
+          setCurrentIndex(safeIndex);
+          currentIndexRef.current = safeIndex;
+        }
+
+        setScreenOrientation(playlistOrientation);
+        if (allMediaCached) {
+          saveOfflinePlaylist(deviceId, playlistItems, playlistOrientation);
+        }
+        setError("");
         return;
       }
 
@@ -408,7 +540,11 @@ export default function PlayerView() {
       }
 
       setItems([]);
+      itemsRef.current = [];
       setCurrentIndex(0);
+      currentIndexRef.current = 0;
+      clearOfflinePlaylist(deviceId);
+      void updateWorkerPlaylist([]);
       setError("Aucune playlist active");
     } catch (err) {
       console.error("Erreur playlist :", err);
@@ -438,6 +574,27 @@ export default function PlayerView() {
    */
 
   useEffect(() => {
+    if (deviceId) {
+      const cached = readOfflinePlaylist(deviceId);
+      if (cached) {
+        itemsRef.current = cached.items;
+        setItems(cached.items);
+        setCurrentIndex(0);
+        currentIndexRef.current = 0;
+        setScreenOrientation(cached.orientation);
+        setError("");
+
+        navigator.serviceWorker?.ready.then((registration) => {
+          const worker =
+            navigator.serviceWorker.controller || registration.active;
+          worker?.postMessage({
+            type: "SET_PLAYLIST_URLS",
+            urls: cached.items.map((item) => item.media.fileUrl),
+          });
+        });
+      }
+    }
+
     fetchPlaylist();
 
     const interval = setInterval(() => {
@@ -450,24 +607,24 @@ export default function PlayerView() {
   }, [fetchPlaylist]);
 
   useEffect(() => {
-    flushPendingLogs();
+    flushPendingLogs(playerKey, deviceId);
 
     const handleOnline = () => {
       console.log("Connexion retablie : envoi des logs en attente");
-      flushPendingLogs();
+      flushPendingLogs(playerKey, deviceId);
     };
 
     window.addEventListener("online", handleOnline);
 
     const flushInterval = setInterval(() => {
-      flushPendingLogs();
+      flushPendingLogs(playerKey, deviceId);
     }, 30000);
 
     return () => {
       window.removeEventListener("online", handleOnline);
       clearInterval(flushInterval);
     };
-  }, []);
+  }, [deviceId, playerKey]);
 
   /**
    * ============================================================
@@ -722,7 +879,7 @@ export default function PlayerView() {
           err
         );
 
-        queuePendingLog(payload, playerKey);
+        queuePendingLog(payload);
       }
     },
     [deviceId, playerKey]
