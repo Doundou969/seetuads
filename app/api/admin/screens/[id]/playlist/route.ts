@@ -66,7 +66,7 @@ export async function PUT(
     return NextResponse.json(
       {
         error:
-          "Chaque Ã©lÃ©ment doit contenir un mÃ©dia et une durÃ©e de 1 Ã  300 secondes",
+          "Chaque Ã©lÃ©ment doit contenir un mÃ©dia et une durÃ©e de 1 Ã  300 secondes",
       },
       { status: 400 }
     );
@@ -78,7 +78,14 @@ export async function PUT(
     // VÃ©rifier que l'Ã©cran existe.
     const screen = await prisma.screen.findUnique({
       where: { id: screenId },
-      select: { id: true },
+      select: {
+        id: true,
+        location: {
+          select: {
+            partnerId: true,
+          },
+        },
+      },
     });
 
     if (!screen) {
@@ -97,7 +104,10 @@ export async function PUT(
         id: { in: mediaIds },
         status: "APPROVED",
       },
-      select: { id: true },
+      select: {
+        id: true,
+        partnerId: true,
+      },
     });
 
     if (approvedMedia.length !== mediaIds.length) {
@@ -108,6 +118,22 @@ export async function PUT(
     }
 
     // CrÃ©er une nouvelle version de la playlist dans une transaction.
+    const hasForeignPartnerMedia = approvedMedia.some(
+      (media) =>
+        media.partnerId !== null &&
+        media.partnerId !== screen.location.partnerId
+    );
+
+    if (hasForeignPartnerMedia) {
+      return NextResponse.json(
+        {
+          error:
+            "Un média partenaire ne peut être affecté qu’aux écrans de son propre partenaire.",
+        },
+        { status: 403 }
+      );
+    }
+
     const playlist = await prisma.$transaction(async (tx) => {
       // Verrou transactionnel par ï¿½cran :
       // une seule publication ï¿½ la fois peut calculer la prochaine version.
@@ -231,5 +257,4 @@ export async function PUT(
     );
   }
 }
-
 
