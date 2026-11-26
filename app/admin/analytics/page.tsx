@@ -634,4 +634,3 @@ export default async function AdminAnalyticsPage() {
     </div>
   );
 }
-
