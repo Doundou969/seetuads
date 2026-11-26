@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { DownloadPdfButton } from "./download-pdf-button";
+import { CampaignReportButton } from "./campaign-report-button";
 import {
   BarChart3,
   Monitor,
@@ -93,6 +94,7 @@ export default async function AdminAnalyticsPage() {
     onlineScreens,
     totalPlayers,
     recentLogs,
+    campaigns,
   ] = await Promise.all([
     prisma.playbackLog.count({
       where: { startedAt: { gte: todayStart } },
@@ -157,6 +159,17 @@ export default async function AdminAnalyticsPage() {
           select: { name: true },
         },
       },
+    }),
+
+    prisma.campaign.findMany({
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        startDate: true,
+        endDate: true,
+      },
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
@@ -468,6 +481,45 @@ export default async function AdminAnalyticsPage() {
                     {formatDuration(campaign.duration)}
                   </p>
                 </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-white shadow-sm">
+        <div className="border-b p-6">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Rapports individuels par campagne
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Chaque rapport couvre les dates de la campagne et ses diffusions enregistrées.
+          </p>
+        </div>
+
+        <div className="divide-y">
+          {campaigns.length === 0 ? (
+            <div className="p-6 text-gray-500">
+              Aucune campagne enregistrée.
+            </div>
+          ) : (
+            campaigns.map((campaign) => (
+              <div
+                key={campaign.id}
+                className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-gray-900">
+                    {campaign.name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {campaign.status} ·{" "}
+                    {campaign.startDate.toLocaleDateString("fr-FR")} –{" "}
+                    {campaign.endDate.toLocaleDateString("fr-FR")}
+                  </p>
+                </div>
+
+                <CampaignReportButton campaignId={campaign.id} />
               </div>
             ))
           )}
