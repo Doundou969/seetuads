@@ -62,18 +62,34 @@ export default async function PartnerDashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card p-6">
-        <h2 className="text-lg font-semibold">Médias du partenaire</h2>
-        <p className="mt-1 mb-4 text-sm text-muted-foreground">
-          Ajoutez et consultez les images et vidéos de votre compte.
-        </p>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border bg-card p-6">
+          <h2 className="text-lg font-semibold">Mes écrans</h2>
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            Ajoutez un écran à l’un de vos emplacements avec sa référence.
+          </p>
 
-        <Link
-          href="/partner/media"
-          className="inline-flex rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-        >
-          Gérer mes médias
-        </Link>
+          <Link
+            href="/partner/screens"
+            className="inline-flex rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+          >
+            Gérer mes écrans
+          </Link>
+        </div>
+
+        <div className="rounded-lg border bg-card p-6">
+          <h2 className="text-lg font-semibold">Médias du partenaire</h2>
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            Ajoutez et consultez les images et vidéos de votre compte.
+          </p>
+
+          <Link
+            href="/partner/media"
+            className="inline-flex rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+          >
+            Gérer mes médias
+          </Link>
+        </div>
       </div>
     </div>
   );
