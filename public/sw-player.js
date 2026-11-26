@@ -1,4 +1,5 @@
 const CACHE_NAME = "seetuads-player-media-v1";
+const APP_CACHE_NAME = "seetuads-player-shell-v1";
 
 let currentPlaylistUrls = [];
 
@@ -11,6 +12,15 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "CACHE_PLAYER_SHELL") {
+    const assets = Array.isArray(event.data.assets)
+      ? event.data.assets.filter((url) => typeof url === "string")
+      : [];
+
+    event.waitUntil(cachePlayerShell(assets));
+    return;
+  }
+
   if (event.data && event.data.type === "UPDATE_PLAYLIST") {
     const urls = Array.isArray(event.data.urls)
       ? event.data.urls.filter((url) => typeof url === "string")
@@ -50,18 +60,97 @@ self.addEventListener("message", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
-  const url = request.url;
+  const url = new URL(request.url);
 
-  if (request.method !== "GET") return;
+  if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  const isMediaFile = /\.(mp4|webm|mov|jpg|jpeg|png|webp|gif)(\?|$)/i.test(url);
-  const isPlaylistMedia = currentPlaylistUrls.includes(url);
+  if (request.mode === "navigate" && url.pathname === "/player") {
+    event.respondWith(servePlayerShell(request));
+    return;
+  }
+
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(serveAppAsset(request));
+    return;
+  }
+
+  const isMediaFile = /\.(mp4|webm|mov|jpg|jpeg|png|webp|gif)(\?|$)/i.test(request.url);
+  const isPlaylistMedia = currentPlaylistUrls.includes(request.url);
 
   // Exact playlist URLs also catch blob URLs without file extensions.
   if (!isMediaFile && !isPlaylistMedia) return;
 
   event.respondWith(serveMedia(request));
 });
+
+async function servePlayerShell(request) {
+  const cache = await caches.open(APP_CACHE_NAME);
+  const cacheKey = new Request(new URL("/player", self.location.origin).href);
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) await cache.put(cacheKey, response.clone());
+    return response;
+  } catch {
+    const cached = await cache.match(cacheKey);
+    return cached || new Response("Player non disponible hors ligne", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+}
+
+async function serveAppAsset(request) {
+  const cache = await caches.open(APP_CACHE_NAME);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
+  } catch {
+    return new Response("Ressource player indisponible hors ligne", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+}
+
+async function cachePlayerShell(assets) {
+  const cache = await caches.open(APP_CACHE_NAME);
+  const shellUrl = new URL("/player", self.location.origin);
+  let shellCached = false;
+
+  try {
+    const response = await fetch(new Request(shellUrl.href, { cache: "no-store" }));
+    if (response.ok) {
+      await cache.put(new Request(shellUrl.href), response.clone());
+      shellCached = true;
+    }
+  } catch (error) {
+    console.warn("Player shell prefetch failed:", error);
+  }
+
+  for (const assetUrl of assets) {
+    try {
+      const parsed = new URL(assetUrl);
+      if (
+        parsed.origin !== self.location.origin ||
+        !parsed.pathname.startsWith("/_next/static/")
+      ) continue;
+
+      const request = new Request(parsed.href);
+      if (await cache.match(request)) continue;
+      const response = await fetch(request);
+      if (response.ok) await cache.put(request, response.clone());
+    } catch (error) {
+      console.warn("Player asset prefetch failed:", assetUrl, error);
+    }
+  }
+
+  return shellCached;
+}
 
 async function serveMedia(request) {
   const cache = await caches.open(CACHE_NAME);
