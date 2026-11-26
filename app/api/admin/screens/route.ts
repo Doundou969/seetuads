@@ -13,7 +13,14 @@ export async function GET() {
     const screens = await prisma.screen.findMany({
       include: {
         location: {
-          include: { partner: { select: { businessName: true } } },
+          include: {
+            partner: {
+              select: {
+                id: true,
+                businessName: true,
+              },
+            },
+          },
         },
         player: { select: { deviceId: true, status: true } },
         playlists: {
@@ -51,4 +58,3 @@ export async function GET() {
     );
   }
 }
-
