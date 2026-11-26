@@ -5,6 +5,9 @@ import PartnerSignOut from "./PartnerSignOut";
 
 export const dynamic = "force-dynamic";
 
+const actionButtonClass =
+  "inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2";
+
 export default async function PartnerDashboardPage() {
   const { partner } = await requirePartner();
 
@@ -45,7 +48,7 @@ export default async function PartnerDashboardPage() {
         <PartnerSignOut />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-lg border bg-card p-6">
           <p className="text-sm text-muted-foreground">Emplacements</p>
           <p className="mt-2 text-3xl font-bold">{locationsCount}</p>
@@ -62,37 +65,53 @@ export default async function PartnerDashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border bg-card p-6">
-          <h2 className="text-lg font-semibold">Mes écrans</h2>
-          <p className="mb-4 mt-1 text-sm text-muted-foreground">
-            Ajoutez un écran à l’un de vos emplacements avec sa référence.
-          </p>
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold">Gérer mon compte partenaire</h2>
 
-          <Link
-            href="/partner/screens"
-            className="inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-            style={{ color: "#fff" }}
-          >
-            Gérer mes écrans
-          </Link>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-lg border bg-card p-6">
+            <h3 className="text-lg font-semibold">Mes emplacements</h3>
+            <p className="mb-4 mt-1 text-sm text-muted-foreground">
+              Ajoutez et consultez les lieux de votre activité.
+            </p>
+            <Link
+              href="/partner/locations"
+              className={actionButtonClass}
+              style={{ color: "#fff" }}
+            >
+              Gérer mes emplacements
+            </Link>
+          </div>
+
+          <div className="rounded-lg border bg-card p-6">
+            <h3 className="text-lg font-semibold">Mes écrans</h3>
+            <p className="mb-4 mt-1 text-sm text-muted-foreground">
+              Ajoutez des écrans à vos emplacements avec leurs références.
+            </p>
+            <Link
+              href="/partner/screens"
+              className={actionButtonClass}
+              style={{ color: "#fff" }}
+            >
+              Gérer mes écrans
+            </Link>
+          </div>
+
+          <div className="rounded-lg border bg-card p-6">
+            <h3 className="text-lg font-semibold">Mes médias</h3>
+            <p className="mb-4 mt-1 text-sm text-muted-foreground">
+              Ajoutez et consultez les images et vidéos de votre compte.
+            </p>
+            <Link
+              href="/partner/media"
+              className={actionButtonClass}
+              style={{ color: "#fff" }}
+            >
+              Gérer mes médias
+            </Link>
+          </div>
         </div>
-
-        <div className="rounded-lg border bg-card p-6">
-          <h2 className="text-lg font-semibold">Médias du partenaire</h2>
-          <p className="mb-4 mt-1 text-sm text-muted-foreground">
-            Ajoutez et consultez les images et vidéos de votre compte.
-          </p>
-
-          <Link
-            href="/partner/media"
-            className="inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-            style={{ color: "#fff" }}
-          >
-            Gérer mes médias
-          </Link>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }
