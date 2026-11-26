@@ -8,7 +8,9 @@ interface Media {
   fileUrl: string;
   fileType: string;
   durationSeconds: number;
+  partnerId: string | null;
   advertiser: { companyName: string } | null;
+  partner: { id: string; businessName: string } | null;
 }
 
 interface PlaylistItem {
@@ -29,7 +31,7 @@ interface Screen {
   status: string;
   location: {
     name: string;
-    partner: { businessName: string } | null;
+    partner: { id: string; businessName: string } | null;
   } | null;
   player: { deviceId: string; status: string } | null;
   playlists: {
@@ -141,6 +143,20 @@ export default function AdminPlaylistsPage() {
     if (!selectedScreenId) {
       setSaveError(
         "Sélectionnez d'abord un écran avant d'ajouter un média"
+      );
+      return;
+    }
+
+    const targetScreen = screens.find(
+      (screen) => screen.id === selectedScreenId
+    );
+
+    if (
+      media.partnerId &&
+      media.partnerId !== targetScreen?.location?.partner?.id
+    ) {
+      setSaveError(
+        "Un média partenaire ne peut être ajouté qu’à un écran de son partenaire."
       );
       return;
     }
@@ -287,6 +303,14 @@ export default function AdminPlaylistsPage() {
   const selectedScreen = screens.find(
     (screen) => screen.id === selectedScreenId
   );
+
+  const availableMedia = mediaList.filter((media) => {
+    if (!selectedScreenId || !media.partnerId) {
+      return true;
+    }
+
+    return media.partnerId === selectedScreen?.location?.partner?.id;
+  });
 
   if (loading) {
     return (
@@ -536,7 +560,7 @@ export default function AdminPlaylistsPage() {
 
         <div className="rounded-xl border bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold">
-            Médiathèque ({mediaList.length})
+            Médiathèque ({availableMedia.length})
           </h2>
 
           {!selectedScreenId && (
@@ -546,7 +570,7 @@ export default function AdminPlaylistsPage() {
           )}
 
           <div className="grid max-h-[70vh] grid-cols-1 gap-3 overflow-y-auto">
-            {mediaList.map((media) => (
+            {availableMedia.map((media) => (
               <button
                 key={media.id}
                 type="button"
@@ -572,8 +596,11 @@ export default function AdminPlaylistsPage() {
                     </p>
 
                     <p className="mt-0.5 text-[10px] text-gray-400">
-                      {media.advertiser?.companyName ||
-                        "Sans annonceur"}
+                      {media.partner
+                        ? `Partenaire — ${media.partner.businessName}`
+                        : media.advertiser
+                          ? `Annonceur — ${media.advertiser.companyName}`
+                          : "Média général"}
                     </p>
                   </div>
 
