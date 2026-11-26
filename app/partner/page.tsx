@@ -65,13 +65,14 @@ export default async function PartnerDashboardPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-lg border bg-card p-6">
           <h2 className="text-lg font-semibold">Mes écrans</h2>
-          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          <p className="mb-4 mt-1 text-sm text-muted-foreground">
             Ajoutez un écran à l’un de vos emplacements avec sa référence.
           </p>
 
           <Link
             href="/partner/screens"
-            className="inline-flex rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            className="inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            style={{ color: "#fff" }}
           >
             Gérer mes écrans
           </Link>
@@ -79,13 +80,14 @@ export default async function PartnerDashboardPage() {
 
         <div className="rounded-lg border bg-card p-6">
           <h2 className="text-lg font-semibold">Médias du partenaire</h2>
-          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          <p className="mb-4 mt-1 text-sm text-muted-foreground">
             Ajoutez et consultez les images et vidéos de votre compte.
           </p>
 
           <Link
             href="/partner/media"
-            className="inline-flex rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            className="inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            style={{ color: "#fff" }}
           >
             Gérer mes médias
           </Link>
