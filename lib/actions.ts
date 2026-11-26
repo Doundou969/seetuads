@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import {
   requireAuth,
   requireAdmin,
+  requirePartner,
 } from "@/lib/permissions";
 
 // ============================================================================
@@ -358,6 +359,7 @@ export async function deleteLocation(id: string) {
 
 export async function createScreen(formData: FormData) {
   await requireAdmin();
+
   const locationId = String(
     formData.get("locationId") ?? ""
   ).trim();
@@ -401,7 +403,7 @@ export async function createScreen(formData: FormData) {
   }
 
   if (!screenCode) {
-    throw new Error("Le code ÃƒÂ©cran est requis.");
+    throw new Error("Le code écran est requis.");
   }
 
   await prisma.screen.create({
@@ -421,10 +423,82 @@ export async function createScreen(formData: FormData) {
   redirect("/admin/screens");
 }
 
+export async function createPartnerScreen(formData: FormData) {
+  const { partner } = await requirePartner();
+
+  const locationId = String(
+    formData.get("locationId") ?? ""
+  ).trim();
+
+  const screenCode = String(
+    formData.get("screenCode") ?? ""
+  ).trim();
+
+  const name = String(
+    formData.get("name") ?? ""
+  ).trim();
+
+  if (!locationId) {
+    throw new Error("L'emplacement est requis.");
+  }
+
+  if (!screenCode) {
+    throw new Error("La référence de l'écran est requise.");
+  }
+
+  // L'emplacement doit appartenir au partenaire connecté.
+  const location = await prisma.location.findFirst({
+    where: {
+      id: locationId,
+      partnerId: partner.id,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!location) {
+    throw new Error(
+      "Emplacement introuvable ou non autorisé."
+    );
+  }
+
+  try {
+    await prisma.screen.create({
+      data: {
+        locationId: location.id,
+        screenCode,
+        name: name || null,
+        // Le schéma applique les valeurs par défaut
+        // pour la résolution, l'orientation et le statut.
+      },
+    });
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
+      throw new Error(
+        "Cette référence d'écran est déjà utilisée."
+      );
+    }
+
+    throw error;
+  }
+
+  revalidatePath("/partner");
+  revalidatePath("/partner/screens");
+  revalidatePath("/admin/screens");
+  revalidatePath("/admin/playlists");
+}
+
 export async function deleteScreen(id: string) {
   await requireAdmin();
+
   if (!id) {
-    throw new Error("Ãƒâ€°cran introuvable.");
+    throw new Error("Écran introuvable.");
   }
 
   const playbackLogs = await prisma.playbackLog.count({
@@ -433,7 +507,7 @@ export async function deleteScreen(id: string) {
 
   if (playbackLogs > 0) {
     throw new Error(
-      "\u00c9cran avec historique de diffusion : suppression impossible."
+      "Écran avec historique de diffusion : suppression impossible."
     );
   }
 
@@ -442,7 +516,7 @@ export async function deleteScreen(id: string) {
   });
 
   revalidatePath("/admin/screens");
-}
+}                                                                 
 
 // ============================================================================
 // PLAYERS
