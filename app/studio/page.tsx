@@ -12,5 +12,5 @@ export default async function StudioPage() {
   if (!user) redirect("/sign-in");
   if (!ALLOWED_ROLES.includes(user.role)) redirect("/");
 
-  return <StudioEditor />;
+  return <StudioEditor role={user.role as "ADMIN" | "OPERATOR" | "ADVERTISER" | "PARTNER"} />;
 }
