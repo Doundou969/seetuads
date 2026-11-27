@@ -331,6 +331,7 @@ export default function StudioEditor({ role }: StudioEditorProps) {
   const [exporting, setExporting] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [playingSlideshow, setPlayingSlideshow] = useState(false);
   const [stageWidth, setStageWidth] = useState(0);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -380,6 +381,15 @@ export default function StudioEditor({ role }: StudioEditorProps) {
     observer.observe(stage);
     return () => observer.disconnect();
   }, [hasProject, activeSlideIndex]);
+
+  useEffect(() => {
+    if (!playingSlideshow || !preview || slides.length < 2) return;
+    const durationMs = Math.max(1, activeSlide?.durationSeconds ?? 10) * 1000;
+    const timer = window.setTimeout(() => {
+      setActiveSlideIndex((index) => (index + 1) % slides.length);
+    }, durationMs);
+    return () => window.clearTimeout(timer);
+  }, [playingSlideshow, preview, activeSlideIndex, activeSlide?.durationSeconds, slides.length]);
 
   function updateSlide(patch: Partial<Slide>) {
     setSlides((current) => current.map((slide, index) =>
@@ -648,8 +658,7 @@ export default function StudioEditor({ role }: StudioEditorProps) {
     resizeRef.current = null;
   }
 
-  async function renderCurrentSlide() {
-    if (!activeSlide) throw new Error("Aucune diapositive n’est ouverte.");
+  async function renderSlide(slide: Slide) {
     await document.fonts.ready;
 
     // Draw directly to a clean canvas. This avoids html2canvas parsing Tailwind's
@@ -660,10 +669,10 @@ export default function StudioEditor({ role }: StudioEditorProps) {
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Impossible de créer le canevas PNG.");
 
-    context.fillStyle = activeSlide.background || "#ffffff";
+    context.fillStyle = slide.background || "#ffffff";
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    for (const element of activeSlide.elements) {
+    for (const element of slide.elements) {
       if (element.type === "text") {
         context.save();
         context.beginPath();
@@ -738,7 +747,7 @@ export default function StudioEditor({ role }: StudioEditorProps) {
     setError("");
     setNotice("");
     try {
-      const canvas = await renderCurrentSlide();
+      const canvas = await renderSlide(activeSlide);
       const link = document.createElement("a");
       link.download = `${project.name.replace(/[^a-z0-9-_]+/gi, "-")}-slide-${activeSlideIndex + 1}.png`;
       link.href = canvas.toDataURL("image/png");
@@ -751,58 +760,77 @@ export default function StudioEditor({ role }: StudioEditorProps) {
     }
   }
 
-  async function publishCurrentSlide() {
-    if (!project || !activeSlide) return;
+  async function publishSlidesToLibrary() {
+    if (!project) return;
     if (role !== "ADVERTISER" && role !== "PARTNER") {
       setError("L’envoi direct est réservé aux comptes annonceur et partenaire : ils sont enregistrés dans leur propre médiathèque.");
+      return;
+    }
+
+    const itemsToPublish = project.kind === "SLIDESHOW"
+      ? slides.map((slide, index) => ({ slide, index }))
+      : activeSlide ? [{ slide: activeSlide, index: activeSlideIndex }] : [];
+    if (itemsToPublish.length === 0) return;
+
+    if (project.kind === "SLIDESHOW" && !window.confirm(`Publier les ${itemsToPublish.length} diapositives dans votre médiathèque ? Chaque diapositive deviendra une image distincte avec sa durée.`)) {
       return;
     }
 
     setPublishing(true);
     setError("");
     setNotice("");
+    let publishedCount = 0;
     try {
-      const canvas = await renderCurrentSlide();
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-      if (!blob) throw new Error("Impossible de préparer le fichier PNG.");
-
       const baseName = project.name
         .normalize("NFKD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9_-]+/gi, "-")
         .replace(/^-+|-+$/g, "")
         .slice(0, 70) || "visuel-seetuads";
-      const fileName = `${baseName}-slide-${activeSlideIndex + 1}.png`;
-      const formData = new FormData();
-      formData.append("file", blob, fileName);
 
-      const uploadResponse = await fetch("/api/upload", { method: "POST", body: formData });
-      const uploaded = await uploadResponse.json();
-      if (!uploadResponse.ok || typeof uploaded?.url !== "string") {
-        throw new Error(uploaded?.error || "Le PNG n’a pas pu être envoyé au stockage.");
+      for (const item of itemsToPublish) {
+        const canvas = await renderSlide(item.slide);
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+        if (!blob) throw new Error(`Impossible de préparer la diapositive ${item.index + 1} en PNG.`);
+
+        const fileName = `${baseName}-slide-${item.index + 1}.png`;
+        const formData = new FormData();
+        formData.append("file", blob, fileName);
+        const uploadResponse = await fetch("/api/upload", { method: "POST", body: formData });
+        const uploaded = await uploadResponse.json();
+        if (!uploadResponse.ok || typeof uploaded?.url !== "string") {
+          throw new Error(uploaded?.error || `Échec de l’envoi de la diapositive ${item.index + 1}.`);
+        }
+
+        const mediaResponse = await fetch("/api/studio/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: `${project.name} — Diapositive ${item.index + 1}`,
+            fileUrl: uploaded.url,
+            fileType: "image",
+            mimeType: "image/png",
+            durationSeconds: item.slide.durationSeconds,
+            widthPx: 1920,
+            heightPx: 1080,
+            fileSizeBytes: blob.size,
+          }),
+        });
+        const result = await mediaResponse.json();
+        if (!mediaResponse.ok) {
+          throw new Error(result?.error || `Échec de l’ajout de la diapositive ${item.index + 1} à la médiathèque.`);
+        }
+        publishedCount += 1;
       }
 
-      const mediaResponse = await fetch("/api/studio/publish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `${project.name} — Diapositive ${activeSlideIndex + 1}`,
-          fileUrl: uploaded.url,
-          fileType: "image",
-          mimeType: "image/png",
-          durationSeconds: activeSlide.durationSeconds,
-          widthPx: 1920,
-          heightPx: 1080,
-          fileSizeBytes: blob.size,
-        }),
-      });
-      const result = await mediaResponse.json();
-      if (!mediaResponse.ok) {
-        throw new Error(result?.error || "Le fichier est téléversé, mais son ajout à la médiathèque a échoué.");
-      }
-      setNotice("Diapositive ajoutée à votre médiathèque. Elle suivra le circuit de validation habituel avant diffusion.");
+      setNotice(project.kind === "SLIDESHOW"
+        ? `${publishedCount} diapositives ajoutées à votre médiathèque dans l’ordre du diaporama. Elles suivront le circuit de validation habituel.`
+        : "Diapositive ajoutée à votre médiathèque. Elle suivra le circuit de validation habituel avant diffusion.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Impossible d’ajouter le visuel à la médiathèque.");
+      const message = err instanceof Error ? err.message : "Impossible d’ajouter le visuel à la médiathèque.";
+      setError(publishedCount > 0
+        ? `Publication partielle : ${publishedCount}/${itemsToPublish.length} diapositives ajoutées. ${message}`
+        : message);
     } finally {
       setPublishing(false);
     }
@@ -819,9 +847,25 @@ export default function StudioEditor({ role }: StudioEditorProps) {
           <div className="flex flex-wrap gap-2">
             {project && (
               <>
-                <button onClick={() => setPreview((value) => !value)} className="rounded-lg border px-3 py-2 text-sm font-medium hover:bg-slate-50">
+                <button onClick={() => { setPlayingSlideshow(false); setPreview((value) => !value); }} className="rounded-lg border px-3 py-2 text-sm font-medium hover:bg-slate-50">
                   {preview ? "Modifier" : "Aperçu"}
                 </button>
+                {project.kind === "SLIDESHOW" && slides.length > 1 && (
+                  <button
+                    onClick={() => {
+                      if (playingSlideshow) {
+                        setPlayingSlideshow(false);
+                        setPreview(false);
+                      } else {
+                        setPreview(true);
+                        setPlayingSlideshow(true);
+                      }
+                    }}
+                    className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-100"
+                  >
+                    {playingSlideshow ? "Arrêter le diaporama" : "Lire le diaporama"}
+                  </button>
+                )}
                 <button onClick={saveProject} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Enregistrer
@@ -831,9 +875,9 @@ export default function StudioEditor({ role }: StudioEditorProps) {
                   PNG
                 </button>
                 {(role === "ADVERTISER" || role === "PARTNER") && (
-                  <button onClick={publishCurrentSlide} disabled={publishing || exporting} className="inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                  <button onClick={publishSlidesToLibrary} disabled={publishing || exporting} className="inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">
                     {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-                    Ajouter à ma médiathèque
+                    {project.kind === "SLIDESHOW" ? `Publier le diaporama (${slides.length})` : "Ajouter à ma médiathèque"}
                   </button>
                 )}
               </>
