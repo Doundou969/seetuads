@@ -66,6 +66,15 @@ type DragState = {
   stageWidth: number;
   stageHeight: number;
 };
+type ResizeState = {
+  id: string;
+  pointerX: number;
+  pointerY: number;
+  elementWidth: number;
+  elementHeight: number;
+  stageWidth: number;
+  stageHeight: number;
+};
 
 const KIND_LABELS: Record<CreativeKind, string> = {
   SLIDESHOW: "Diaporama",
@@ -149,6 +158,53 @@ function isTextElement(element: StudioElement): element is TextElement {
   return element.type === "text";
 }
 
+type SizeControlProps = {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+};
+
+function SizeControl({ label, value, min, max, step, onChange }: SizeControlProps) {
+  function setValue(rawValue: number) {
+    if (!Number.isFinite(rawValue)) return;
+    onChange(Math.max(min, Math.min(max, Math.round(rawValue))));
+  }
+
+  return (
+    <label className="block text-sm">
+      <span className="mb-1 block font-medium text-slate-700">{label}</span>
+      <span className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label={`Diminuer ${label.toLowerCase()}`}
+          onClick={() => setValue(value - step)}
+          disabled={value <= min}
+          className="h-11 w-12 shrink-0 rounded-xl border border-slate-300 bg-white text-xl font-semibold text-slate-700 shadow-sm disabled:opacity-40"
+        >−</button>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(event) => setValue(Number(event.target.value))}
+          className="h-11 min-w-0 flex-1 rounded-xl border border-slate-300 px-3 text-center font-semibold tabular-nums"
+        />
+        <button
+          type="button"
+          aria-label={`Augmenter ${label.toLowerCase()}`}
+          onClick={() => setValue(value + step)}
+          disabled={value >= max}
+          className="h-11 w-12 shrink-0 rounded-xl border border-indigo-200 bg-indigo-50 text-xl font-semibold text-indigo-700 shadow-sm disabled:opacity-40"
+        >+</button>
+      </span>
+    </label>
+  );
+}
+
 export default function StudioEditor() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [project, setProject] = useState<StudioProject | null>(null);
@@ -168,6 +224,7 @@ export default function StudioEditor() {
   const stageRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<DragState | null>(null);
+  const resizeRef = useRef<ResizeState | null>(null);
 
   const activeSlide = slides[activeSlideIndex] ?? null;
   const hasProject = project !== null;
@@ -424,16 +481,48 @@ export default function StudioEditor() {
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
+  function handleResizePointerDown(event: React.PointerEvent<HTMLButtonElement>, element: StudioElement) {
+    if (preview || !stageRef.current) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedElementId(element.id);
+    const rect = stageRef.current.getBoundingClientRect();
+    resizeRef.current = {
+      id: element.id,
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      elementWidth: element.width,
+      elementHeight: element.height,
+      stageWidth: rect.width,
+      stageHeight: rect.height,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const resize = resizeRef.current;
+    if (resize) {
+      const element = activeSlide?.elements.find((item) => item.id === resize.id);
+      const maxWidth = Math.max(80, 1920 - (element?.x ?? 0));
+      const maxHeight = Math.max(40, 1080 - (element?.y ?? 0));
+      const width = Math.max(80, Math.min(maxWidth, resize.elementWidth + ((event.clientX - resize.pointerX) * 1920) / resize.stageWidth));
+      const height = Math.max(40, Math.min(maxHeight, resize.elementHeight + ((event.clientY - resize.pointerY) * 1080) / resize.stageHeight));
+      updateElement(resize.id, { width, height });
+      return;
+    }
     const drag = dragRef.current;
     if (!drag) return;
-    const nextX = Math.max(0, Math.min(1840, drag.elementX + ((event.clientX - drag.pointerX) * 1920) / drag.stageWidth));
-    const nextY = Math.max(0, Math.min(1000, drag.elementY + ((event.clientY - drag.pointerY) * 1080) / drag.stageHeight));
+    const element = activeSlide?.elements.find((item) => item.id === drag.id);
+    const maxX = Math.max(0, 1920 - (element?.width ?? 80));
+    const maxY = Math.max(0, 1080 - (element?.height ?? 40));
+    const nextX = Math.max(0, Math.min(maxX, drag.elementX + ((event.clientX - drag.pointerX) * 1920) / drag.stageWidth));
+    const nextY = Math.max(0, Math.min(maxY, drag.elementY + ((event.clientY - drag.pointerY) * 1080) / drag.stageHeight));
     updateElement(drag.id, { x: nextX, y: nextY });
   }
 
   function handlePointerUp() {
     dragRef.current = null;
+    resizeRef.current = null;
   }
 
   async function exportPng() {
@@ -618,12 +707,22 @@ export default function StudioEditor() {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={element.url} alt={element.alt} crossOrigin="anonymous" className="h-full w-full object-contain" />
                         )}
+                        {selectedElementId === element.id && !preview && (
+                          <button
+                            type="button"
+                            aria-label={`Redimensionner ${element.type === "text" ? "le texte" : "l’image"}`}
+                            onPointerDown={(event) => handleResizePointerDown(event, element)}
+                            onClick={(event) => event.stopPropagation()}
+                            className="absolute -bottom-2 -right-2 z-20 h-6 w-6 touch-none rounded-full border-2 border-white bg-indigo-600 shadow-md"
+                            style={{ touchAction: "none" }}
+                          />
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-              <p className="text-center text-xs text-slate-500">Fais glisser un élément pour le déplacer. Le format final est paysage 16:9.</p>
+              <p className="text-center text-xs text-slate-500">Déplace un élément en le faisant glisser. Sélectionne-le puis tire la poignée violette pour le redimensionner, ou utilise les boutons − / + dans Propriétés. Format paysage 16:9.</p>
             </section>
 
             <aside className="space-y-4">
@@ -642,9 +741,11 @@ export default function StudioEditor() {
                         <label className="block text-sm">Contenu
                           <textarea value={selectedElement.text} onChange={(event) => updateElement(selectedElement.id, { text: event.target.value })} rows={4} className="mt-1 w-full rounded-lg border px-3 py-2" />
                         </label>
-                        <label className="block text-sm">Taille du texte
-                          <input type="number" min={16} max={220} value={selectedElement.fontSize} onChange={(event) => updateElement(selectedElement.id, { fontSize: Math.max(16, Math.min(220, Number(event.target.value) || 16)) })} className="mt-1 w-full rounded-lg border px-3 py-2" />
-                        </label>
+                        <SizeControl label="Taille du texte" value={selectedElement.fontSize} min={16} max={220} step={4} onChange={(fontSize) => updateElement(selectedElement.id, { fontSize })} />
+                        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+                          <SizeControl label="Largeur du cadre" value={selectedElement.width} min={80} max={Math.max(80, 1920 - selectedElement.x)} step={40} onChange={(width) => updateElement(selectedElement.id, { width })} />
+                          <SizeControl label="Hauteur du cadre" value={selectedElement.height} min={40} max={Math.max(40, 1080 - selectedElement.y)} step={20} onChange={(height) => updateElement(selectedElement.id, { height })} />
+                        </div>
                         <div className="flex items-center justify-between gap-3">
                           <label className="text-sm">Couleur <input type="color" value={selectedElement.color} onChange={(event) => updateElement(selectedElement.id, { color: event.target.value })} className="ml-2 h-9 w-10 rounded border p-1" /></label>
                           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedElement.bold} onChange={(event) => updateElement(selectedElement.id, { bold: event.target.checked })} /> Gras</label>
@@ -656,7 +757,13 @@ export default function StudioEditor() {
                         </label>
                       </>
                     ) : (
-                      <p className="break-all text-xs text-slate-500">{selectedElement.alt}</p>
+                      <>
+                        <p className="break-all text-xs text-slate-500">{selectedElement.alt}</p>
+                        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+                          <SizeControl label="Largeur de l’image" value={selectedElement.width} min={80} max={Math.max(80, 1920 - selectedElement.x)} step={40} onChange={(width) => updateElement(selectedElement.id, { width })} />
+                          <SizeControl label="Hauteur de l’image" value={selectedElement.height} min={40} max={Math.max(40, 1080 - selectedElement.y)} step={20} onChange={(height) => updateElement(selectedElement.id, { height })} />
+                        </div>
+                      </>
                     )}
                     <button onClick={removeSelectedElement} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"><Trash2 className="h-4 w-4" /> Supprimer l’élément</button>
                   </div>
