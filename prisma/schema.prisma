@@ -24,7 +24,9 @@ model User {
   reportedTickets MaintenanceTicket[] @relation("ReportedBy")
   notifications   Notification[]
   partner         Partner?
+  creativeProjects CreativeProject[]
 
+  
   @@map("users")
 }
 
@@ -718,4 +720,27 @@ enum NotificationType {
   WARNING
   SUCCESS
   ERROR
+}
+
+enum CreativeKind {
+  SLIDESHOW
+  DIGITAL_MENU
+  ADVERTISEMENT
+}
+
+model CreativeProject {
+  id           String       @id @default(uuid())
+  userId       String       @map("user_id")
+  name         String
+  kind         CreativeKind @default(ADVERTISEMENT)
+  canvasWidth  Int          @default(1920) @map("canvas_width")
+  canvasHeight Int          @default(1080) @map("canvas_height")
+  data         Json         @default("{}")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("creative_projects")
 }
