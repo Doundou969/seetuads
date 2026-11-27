@@ -117,40 +117,149 @@ function textElement(
   };
 }
 
-function templateSlides(kind: CreativeKind): Slide[] {
-  if (kind === "DIGITAL_MENU") {
-    const slide = newSlide("#fff8e8");
+type TemplateOption = {
+  id: string;
+  kind: CreativeKind;
+  name: string;
+  description: string;
+  background: string;
+  image?: string;
+};
+
+type StockImage = { name: string; category: string; url: string };
+
+const STOCK_IMAGES: StockImage[] = [
+  { name: "Plat frais", category: "Cuisine", url: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=85" },
+  { name: "Table de restaurant", category: "Restaurant", url: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=85" },
+  { name: "Café", category: "Boissons", url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=1200&q=85" },
+  { name: "Style", category: "Mode", url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=85" },
+  { name: "Soin beauté", category: "Beauté", url: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=1200&q=85" },
+  { name: "Smartphone", category: "Technologie", url: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=85" },
+];
+
+const TEMPLATE_OPTIONS: TemplateOption[] = [
+  { id: "ad-premium", kind: "ADVERTISEMENT", name: "Offre premium", description: "Contraste fort et appel à l’action", background: "#171343" },
+  { id: "ad-beauty", kind: "ADVERTISEMENT", name: "Produit beauté", description: "Photo produit et mise en page élégante", background: "#fff7f1", image: STOCK_IMAGES[4].url },
+  { id: "ad-tech", kind: "ADVERTISEMENT", name: "Lancement tech", description: "Style moderne pour une nouveauté", background: "#eaf3ff", image: STOCK_IMAGES[5].url },
+  { id: "menu-bistro", kind: "DIGITAL_MENU", name: "Bistro gourmand", description: "Menu chaleureux avec photo", background: "#fff6e9", image: STOCK_IMAGES[1].url },
+  { id: "menu-cafe", kind: "DIGITAL_MENU", name: "Carte café", description: "Ambiance café, tons espresso", background: "#281914", image: STOCK_IMAGES[2].url },
+  { id: "menu-fresh", kind: "DIGITAL_MENU", name: "Menu fraîcheur", description: "Palette claire et cuisine saine", background: "#f1f7ec", image: STOCK_IMAGES[0].url },
+  { id: "slide-story", kind: "SLIDESHOW", name: "Histoire de marque", description: "Trois diapositives prêtes à personnaliser", background: "#10243a" },
+  { id: "slide-product", kind: "SLIDESHOW", name: "Présentation produit", description: "Visuels et bénéfices du produit", background: "#eaf3ff", image: STOCK_IMAGES[5].url },
+  { id: "slide-food", kind: "SLIDESHOW", name: "Saveurs en images", description: "Diaporama gourmand prêt à adapter", background: "#fff6e9", image: STOCK_IMAGES[0].url },
+];
+
+function photoElement(url: string, alt: string, x: number, y: number, width: number, height: number): ImageElement {
+  return { id: makeId(), type: "image", x, y, width, height, url, alt };
+}
+
+function templateSlides(kind: CreativeKind, templateId: string): Slide[] {
+  if (templateId === "ad-beauty") {
+    const slide = newSlide("#fff7f1");
     slide.elements = [
-      textElement("MENU DU JOUR", 140, 90, 96, "#17324d", 1640, "center", true),
-      textElement("Plat principal", 200, 350, 62, "#17324d", 1050, "left", true),
-      textElement("Description du plat", 200, 440, 38, "#526170", 1100),
-      textElement("5 000 F", 1370, 350, 58, "#d97706", 380, "right", true),
-      textElement("Entrée • Plat • Dessert", 200, 760, 34, "#526170", 1450, "center"),
+      textElement("NOUVEAUTÉ", 130, 130, 38, "#b45b45", 820, "left", true),
+      textElement("Révélez\nvotre éclat", 130, 275, 106, "#34231f", 900, "left", true),
+      textElement("Une routine pensée pour vous.", 140, 590, 42, "#6b5149", 850),
+      textElement("DÉCOUVRIR", 140, 790, 38, "#ffffff", 440, "center", true),
+      photoElement(STOCK_IMAGES[4].url, "Soin beauté", 1090, 110, 700, 860),
     ];
     return [slide];
   }
-
-  if (kind === "SLIDESHOW") {
+  if (templateId === "ad-tech") {
+    const slide = newSlide("#eaf3ff");
+    slide.elements = [
+      textElement("NOUVEAU", 130, 135, 38, "#2563eb", 750, "left", true),
+      textElement("La technologie\nà votre rythme", 130, 280, 92, "#122340", 920, "left", true),
+      textElement("Simple. Rapide. Pensée pour vous.", 140, 590, 40, "#526170", 840),
+      textElement("DISPONIBLE MAINTENANT", 140, 790, 34, "#ffffff", 630, "center", true),
+      photoElement(STOCK_IMAGES[5].url, "Smartphone", 1080, 160, 720, 760),
+    ];
+    return [slide];
+  }
+  if (templateId === "menu-bistro") {
+    const slide = newSlide("#fff6e9");
+    slide.elements = [
+      textElement("LE BISTRO", 130, 80, 42, "#9a4b2b", 920, "left", true),
+      textElement("Menu du jour", 130, 185, 78, "#30231c", 920, "left", true),
+      textElement("Poulet rôti aux herbes", 150, 390, 48, "#30231c", 850, "left", true),
+      textElement("Légumes de saison · sauce maison", 150, 460, 30, "#67564b", 850),
+      textElement("7 500 F", 150, 525, 42, "#b4532a", 560, "left", true),
+      textElement("Entrée · Plat · Dessert", 150, 760, 34, "#67564b", 850),
+      photoElement(STOCK_IMAGES[1].url, "Table de restaurant", 1070, 145, 720, 780),
+    ];
+    return [slide];
+  }
+  if (templateId === "menu-cafe") {
+    const slide = newSlide("#281914");
+    slide.elements = [
+      textElement("CAFÉ DU COIN", 130, 85, 42, "#e8b87e", 850, "left", true),
+      textElement("Pause\ncafé", 130, 200, 104, "#fff8ee", 780, "left", true),
+      textElement("Espresso ............ 1 000 F", 140, 560, 34, "#fff8ee", 900),
+      textElement("Cappuccino ......... 1 800 F", 140, 635, 34, "#fff8ee", 900),
+      textElement("Café glacé .......... 2 000 F", 140, 710, 34, "#fff8ee", 900),
+      photoElement(STOCK_IMAGES[2].url, "Café", 1070, 150, 700, 760),
+    ];
+    return [slide];
+  }
+  if (templateId === "menu-fresh") {
+    const slide = newSlide("#f1f7ec");
+    slide.elements = [
+      textElement("FRAIS & LOCAL", 120, 70, 38, "#39734a", 1680, "center", true),
+      textElement("Notre menu", 120, 160, 80, "#203d2b", 1680, "center", true),
+      photoElement(STOCK_IMAGES[0].url, "Plat frais", 180, 320, 640, 560),
+      textElement("Bowl du marché", 900, 370, 48, "#203d2b", 760, "left", true),
+      textElement("Légumes croquants, céréales complètes et sauce maison.", 900, 455, 34, "#4f6654", 760),
+      textElement("À PARTIR DE 4 500 F", 900, 670, 34, "#39734a", 760, "left", true),
+    ];
+    return [slide];
+  }
+  if (templateId === "slide-story") {
     const first = newSlide("#10243a");
-    first.elements = [
-      textElement("VOTRE HISTOIRE", 150, 160, 90, "#ffffff", 1600, "center", true),
-      textElement("Ajoutez un message pour votre audience", 220, 390, 48, "#dbeafe", 1480, "center"),
-    ];
-    const second = newSlide("#eff6ff");
-    second.elements = [
-      textElement("Une nouvelle diapositive", 150, 180, 82, "#17324d", 1600, "center", true),
-      textElement("Modifiez ce texte depuis le panneau de droite", 220, 410, 42, "#526170", 1480, "center"),
-    ];
+    first.elements = [textElement("VOTRE HISTOIRE", 150, 190, 90, "#ffffff", 1600, "center", true), textElement("Une idée qui mérite d’être vue.", 220, 400, 48, "#dbeafe", 1480, "center")];
+    const second = newSlide("#eaf3ff");
+    second.elements = [textElement("Notre mission", 120, 120, 80, "#17324d", 900, "left", true), textElement("Présentez ce qui rend votre marque unique.", 130, 270, 44, "#526170", 920), photoElement(STOCK_IMAGES[5].url, "Smartphone", 1090, 170, 670, 740)];
+    const third = newSlide("#fff7ed");
+    third.elements = [textElement("À VOUS DE JOUER", 150, 230, 46, "#c2410c", 1620, "center", true), textElement("Ajoutez votre message et vos coordonnées.", 180, 380, 60, "#292524", 1560, "center"), textElement("MERCI", 150, 690, 42, "#78716c", 1620, "center", true)];
+    return [first, second, third];
+  }
+  if (templateId === "slide-product") {
+    const first = newSlide("#eaf3ff");
+    first.elements = [textElement("À LA UNE", 130, 100, 38, "#2563eb", 820, "left", true), textElement("Le produit\nqui change tout", 130, 240, 88, "#122340", 870, "left", true), photoElement(STOCK_IMAGES[5].url, "Smartphone", 1060, 150, 730, 780)];
+    const second = newSlide("#10243a");
+    second.elements = [textElement("Pensé pour vous", 150, 170, 82, "#ffffff", 1620, "center", true), textElement("Pratique · Fiable · Accessible", 180, 360, 46, "#dbeafe", 1560, "center"), textElement("DÉCOUVRIR", 590, 650, 38, "#10243a", 740, "center", true)];
     return [first, second];
   }
-
+  if (templateId === "slide-food") {
+    const first = newSlide("#fff6e9");
+    first.elements = [photoElement(STOCK_IMAGES[0].url, "Plat frais", 0, 0, 1920, 1080), textElement("LE GOÛT DU FRAIS", 100, 150, 76, "#ffffff", 1720, "center", true), textElement("Des recettes qui donnent envie.", 120, 300, 48, "#ffffff", 1680, "center")];
+    const second = newSlide("#f1f7ec");
+    second.elements = [textElement("À découvrir", 120, 160, 82, "#203d2b", 1680, "center", true), photoElement(STOCK_IMAGES[1].url, "Restaurant", 300, 350, 1320, 600), textElement("Réservez votre table", 150, 920, 36, "#39734a", 1620, "center", true)];
+    return [first, second];
+  }
+  if (templateId === "ad-premium") {
+    const slide = newSlide("#171343");
+    slide.elements = [
+      textElement("OFFRE SPÉCIALE", 130, 125, 40, "#fbbf24", 1660, "center", true),
+      textElement("Faites briller\nvotre marque", 180, 280, 104, "#ffffff", 1560, "center", true),
+      textElement("Une offre à ne pas manquer", 220, 570, 44, "#dbeafe", 1480, "center"),
+      textElement("DÈS 5 000 F", 610, 770, 48, "#171343", 700, "center", true),
+    ];
+    return [slide];
+  }
+  if (kind === "DIGITAL_MENU") {
+    const slide = newSlide("#fff8e8");
+    slide.elements = [textElement("MENU DU JOUR", 140, 90, 96, "#17324d", 1640, "center", true), textElement("Plat principal", 200, 350, 62, "#17324d", 1050, "left", true), textElement("Description du plat", 200, 440, 38, "#526170", 1100), textElement("5 000 F", 1370, 350, 58, "#d97706", 380, "right", true), textElement("Entrée • Plat • Dessert", 200, 760, 34, "#526170", 1450, "center")];
+    return [slide];
+  }
+  if (kind === "SLIDESHOW") {
+    const first = newSlide("#10243a");
+    first.elements = [textElement("VOTRE HISTOIRE", 150, 160, 90, "#ffffff", 1600, "center", true), textElement("Ajoutez un message pour votre audience", 220, 390, 48, "#dbeafe", 1480, "center")];
+    const second = newSlide("#eff6ff");
+    second.elements = [textElement("Une nouvelle diapositive", 150, 180, 82, "#17324d", 1600, "center", true), textElement("Modifiez ce texte depuis le panneau de droite", 220, 410, 42, "#526170", 1480, "center")];
+    return [first, second];
+  }
   const slide = newSlide("#10243a");
-  slide.elements = [
-    textElement("VOTRE MARQUE", 130, 110, 40, "#bfdbfe", 700, "left", true),
-    textElement("Votre offre\ncommence ici", 130, 300, 105, "#ffffff", 1150, "left", true),
-    textElement("Un message simple et mémorable", 140, 640, 42, "#dbeafe", 1200),
-    textElement("DÈS 5 000 F", 140, 830, 48, "#fbbf24", 850, "left", true),
-  ];
+  slide.elements = [textElement("VOTRE MARQUE", 130, 110, 40, "#bfdbfe", 700, "left", true), textElement("Votre offre\ncommence ici", 130, 300, 105, "#ffffff", 1150, "left", true), textElement("Un message simple et mémorable", 140, 640, 42, "#dbeafe", 1200), textElement("DÈS 5 000 F", 140, 830, 48, "#fbbf24", 850, "left", true)];
   return [slide];
 }
 
@@ -213,6 +322,8 @@ export default function StudioEditor() {
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [newKind, setNewKind] = useState<CreativeKind>("ADVERTISEMENT");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("ad-premium");
+  const [showImageLibrary, setShowImageLibrary] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -228,6 +339,7 @@ export default function StudioEditor() {
 
   const activeSlide = slides[activeSlideIndex] ?? null;
   const hasProject = project !== null;
+  const availableTemplates = TEMPLATE_OPTIONS.filter((option) => option.kind === newKind);
   const selectedElement = useMemo(
     () => activeSlide?.elements.find((element) => element.id === selectedElementId) ?? null,
     [activeSlide, selectedElementId],
@@ -289,7 +401,7 @@ export default function StudioEditor() {
     setError("");
     setNotice("");
     const name = newName.trim() || KIND_LABELS[newKind];
-    const initialSlides = templateSlides(newKind);
+    const initialSlides = templateSlides(newKind, selectedTemplateId);
     setSaving(true);
     try {
       const response = await fetch("/api/creative-projects", {
@@ -395,6 +507,15 @@ export default function StudioEditor() {
     const element = textElement("Votre texte", 180, 180, 64, "#17324d", 1100, "left", true);
     updateSlide({ elements: [...activeSlide.elements, element] });
     setSelectedElementId(element.id);
+  }
+
+  function addStockImage(stock: StockImage) {
+    if (!activeSlide) return;
+    const image = photoElement(stock.url, stock.name, 420, 210, 900, 680);
+    updateSlide({ elements: [...activeSlide.elements, image] });
+    setSelectedElementId(image.id);
+    setShowImageLibrary(false);
+    setNotice(`Image « ${stock.name} » ajoutée. Enregistre le projet pour conserver la modification.`);
   }
 
   async function uploadImage(file: File) {
@@ -590,7 +711,11 @@ export default function StudioEditor() {
                 <input value={newName} onChange={(event) => setNewName(event.target.value)} maxLength={100} placeholder="Ex. Promo du week-end" className="mt-1 w-full rounded-lg border px-3 py-2" />
               </label>
               <label className="mt-3 block text-sm font-medium">Type de création
-                <select value={newKind} onChange={(event) => setNewKind(event.target.value as CreativeKind)} className="mt-1 w-full rounded-lg border bg-white px-3 py-2">
+                <select value={newKind} onChange={(event) => {
+                  const kind = event.target.value as CreativeKind;
+                  setNewKind(kind);
+                  setSelectedTemplateId(TEMPLATE_OPTIONS.find((option) => option.kind === kind)?.id ?? "ad-premium");
+                }} className="mt-1 w-full rounded-lg border bg-white px-3 py-2">
                   <option value="ADVERTISEMENT">Visuel publicitaire</option>
                   <option value="SLIDESHOW">Diaporama</option>
                   <option value="DIGITAL_MENU">Menu numérique</option>
@@ -602,9 +727,35 @@ export default function StudioEditor() {
               </button>
               <p className="mt-3 text-xs leading-5 text-slate-500">Les projets sont privés au compte connecté. Tu pourras ensuite modifier les textes, ajouter des images et réordonner les diapositives.</p>
             </section>
-            <section className="rounded-2xl border bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold">Mes projets</h2>
+            <div className="space-y-4">
+              <section className="rounded-2xl border bg-white p-5 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h2 className="text-lg font-semibold">Choisis un modèle</h2>
+                    <p className="text-sm text-slate-500">Des designs modernes à personnaliser.</p>
+                  </div>
+                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">{availableTemplates.length} modèles</span>
+                </div>
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {availableTemplates.map((option) => (
+                    <button key={option.id} type="button" onClick={() => setSelectedTemplateId(option.id)} className={`overflow-hidden rounded-2xl border-2 text-left transition ${selectedTemplateId === option.id ? "border-indigo-600 ring-2 ring-indigo-100" : "border-slate-200 hover:border-indigo-300"}`}>
+                      <div className="relative aspect-video overflow-hidden" style={{ background: option.background }}>
+                        {option.image && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={option.image} alt="" crossOrigin="anonymous" className="absolute inset-0 h-full w-full object-cover opacity-80" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent" />
+                        <span className="absolute bottom-2 left-3 right-3 truncate text-sm font-bold text-white">{option.name}</span>
+                        {selectedTemplateId === option.id && <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-indigo-700">CHOISI</span>}
+                      </div>
+                      <p className="p-3 text-xs leading-5 text-slate-600">{option.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section className="rounded-2xl border bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-lg font-semibold">Mes projets</h2>
                 {loading && <Loader2 className="h-4 w-4 animate-spin text-slate-500" />}
               </div>
               {!loading && projects.length === 0 ? (
@@ -622,7 +773,8 @@ export default function StudioEditor() {
                   ))}
                 </ul>
               )}
-            </section>
+              </section>
+            </div>
           </div>
         ) : (
           <div className="grid gap-4 xl:grid-cols-[230px_minmax(0,1fr)_270px]">
@@ -659,13 +811,39 @@ export default function StudioEditor() {
               <div className="flex flex-wrap items-center gap-2 rounded-2xl border bg-white p-3 shadow-sm">
                 <button onClick={addText} disabled={preview} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50"><Type className="h-4 w-4" /> Texte</button>
                 <button onClick={() => fileRef.current?.click()} disabled={preview || uploading} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50">
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />} Image
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />} Importer une image
+                </button>
+                <button onClick={() => setShowImageLibrary((visible) => !visible)} disabled={preview} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50 ${showImageLibrary ? "border-indigo-300 bg-indigo-50 text-indigo-800" : ""}`}>
+                  <ImagePlus className="h-4 w-4" /> Banque d’images
                 </button>
                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadImage(file); }} />
                 <label className="ml-auto flex items-center gap-2 text-sm">Fond
                   <input type="color" value={activeSlide?.background ?? "#ffffff"} onChange={(event) => updateSlide({ background: event.target.value })} disabled={preview} className="h-9 w-10 rounded border p-1" />
                 </label>
               </div>
+              {showImageLibrary && (
+                <section className="rounded-2xl border bg-white p-3 shadow-sm sm:p-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h2 className="font-semibold">Banque d’images</h2>
+                      <p className="text-xs text-slate-500">Choisis une image pour l’ajouter à ta diapositive.</p>
+                    </div>
+                    <button type="button" onClick={() => setShowImageLibrary(false)} className="rounded-lg border px-3 py-2 text-sm">Fermer</button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+                    {STOCK_IMAGES.map((stock) => (
+                      <button key={stock.url} type="button" onClick={() => addStockImage(stock)} className="overflow-hidden rounded-xl border text-left transition hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100">
+                        <div className="aspect-[4/3] overflow-hidden bg-slate-100">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={stock.url} alt={stock.name} crossOrigin="anonymous" loading="lazy" className="h-full w-full object-cover" />
+                        </div>
+                        <span className="block truncate px-2 pt-2 text-xs font-semibold">{stock.name}</span>
+                        <span className="block px-2 pb-2 text-[11px] text-slate-500">{stock.category}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
               <div className="rounded-2xl border bg-slate-200 p-2 shadow-sm sm:p-4">
                 {activeSlide && (
                   <div
