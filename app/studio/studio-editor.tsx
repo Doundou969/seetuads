@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import html2canvas from "html2canvas";
 import {
   ArrowDown,
   ArrowLeft,
@@ -650,17 +649,87 @@ export default function StudioEditor({ role }: StudioEditorProps) {
   }
 
   async function renderCurrentSlide() {
-    if (!stageRef.current) throw new Error("Le canevas n’est pas prêt.");
+    if (!activeSlide) throw new Error("Aucune diapositive n’est ouverte.");
     await document.fonts.ready;
-    const rect = stageRef.current.getBoundingClientRect();
-    return html2canvas(stageRef.current, {
-      backgroundColor: activeSlide?.background ?? "#ffffff",
-      useCORS: true,
-      scale: 1920 / rect.width,
-      width: rect.width,
-      height: rect.height,
-      logging: false,
-    });
+
+    // Draw directly to a clean canvas. This avoids html2canvas parsing Tailwind's
+    // oklch() colors, which causes export/publish to fail in some browsers.
+    const canvas = document.createElement("canvas");
+    canvas.width = 1920;
+    canvas.height = 1080;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Impossible de créer le canevas PNG.");
+
+    context.fillStyle = activeSlide.background || "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (const element of activeSlide.elements) {
+      if (element.type === "text") {
+        context.save();
+        context.beginPath();
+        context.rect(element.x, element.y, element.width, element.height);
+        context.clip();
+        context.fillStyle = element.color || "#000000";
+        context.font = `${element.bold ? "700" : "400"} ${element.fontSize}px Arial, sans-serif`;
+        context.textAlign = element.align;
+        context.textBaseline = "top";
+        const lineHeight = element.fontSize * 1.08;
+        const anchorX = element.align === "left"
+          ? element.x
+          : element.align === "center"
+            ? element.x + element.width / 2
+            : element.x + element.width;
+        let cursorY = element.y;
+
+        for (const paragraph of element.text.split("\n")) {
+          if (!paragraph) {
+            cursorY += lineHeight;
+            continue;
+          }
+          const words = paragraph.trim().split(/\s+/);
+          let line = "";
+          for (const word of words) {
+            const candidate = line ? `${line} ${word}` : word;
+            if (line && context.measureText(candidate).width > element.width) {
+              context.fillText(line, anchorX, cursorY, element.width);
+              cursorY += lineHeight;
+              line = word;
+            } else {
+              line = candidate;
+            }
+          }
+          if (line && cursorY < element.y + element.height) {
+            context.fillText(line, anchorX, cursorY, element.width);
+            cursorY += lineHeight;
+          }
+          if (cursorY >= element.y + element.height) break;
+        }
+        context.restore();
+        continue;
+      }
+
+      const image = new Image();
+      image.crossOrigin = "anonymous";
+      image.src = element.url;
+      try {
+        await image.decode();
+      } catch {
+        throw new Error(`Impossible de charger l’image « ${element.alt || "visuel"} » pour l’export.`);
+      }
+      const scale = Math.min(element.width / image.naturalWidth, element.height / image.naturalHeight);
+      const drawWidth = image.naturalWidth * scale;
+      const drawHeight = image.naturalHeight * scale;
+      const drawX = element.x + (element.width - drawWidth) / 2;
+      const drawY = element.y + (element.height - drawHeight) / 2;
+      context.save();
+      context.beginPath();
+      context.rect(element.x, element.y, element.width, element.height);
+      context.clip();
+      context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+      context.restore();
+    }
+
+    return canvas;
   }
 
   async function exportPng() {
