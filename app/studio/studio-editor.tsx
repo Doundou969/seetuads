@@ -314,7 +314,9 @@ function SizeControl({ label, value, min, max, step, onChange }: SizeControlProp
   );
 }
 
-export default function StudioEditor() {
+type StudioEditorProps = { role: "ADMIN" | "OPERATOR" | "ADVERTISER" | "PARTNER" };
+
+export default function StudioEditor({ role }: StudioEditorProps) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [project, setProject] = useState<StudioProject | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
@@ -328,6 +330,7 @@ export default function StudioEditor() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [preview, setPreview] = useState(false);
   const [stageWidth, setStageWidth] = useState(0);
   const [notice, setNotice] = useState("");
@@ -646,30 +649,93 @@ export default function StudioEditor() {
     resizeRef.current = null;
   }
 
+  async function renderCurrentSlide() {
+    if (!stageRef.current) throw new Error("Le canevas n’est pas prêt.");
+    await document.fonts.ready;
+    const rect = stageRef.current.getBoundingClientRect();
+    return html2canvas(stageRef.current, {
+      backgroundColor: activeSlide?.background ?? "#ffffff",
+      useCORS: true,
+      scale: 1920 / rect.width,
+      width: rect.width,
+      height: rect.height,
+      logging: false,
+    });
+  }
+
   async function exportPng() {
     if (!stageRef.current || !project) return;
     setExporting(true);
     setError("");
+    setNotice("");
     try {
-      await document.fonts.ready;
-      const rect = stageRef.current.getBoundingClientRect();
-      const canvas = await html2canvas(stageRef.current, {
-        backgroundColor: activeSlide?.background ?? "#ffffff",
-        useCORS: true,
-        scale: 1920 / rect.width,
-        width: rect.width,
-        height: rect.height,
-        logging: false,
-      });
+      const canvas = await renderCurrentSlide();
       const link = document.createElement("a");
       link.download = `${project.name.replace(/[^a-z0-9-_]+/gi, "-")}-slide-${activeSlideIndex + 1}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
-      setNotice("PNG téléchargé. L’envoi direct vers la médiathèque sera ajouté à l’étape suivante.");
+      setNotice("PNG téléchargé.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible d’exporter l’image.");
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function publishCurrentSlide() {
+    if (!project || !activeSlide) return;
+    if (role !== "ADVERTISER" && role !== "PARTNER") {
+      setError("L’envoi direct est réservé aux comptes annonceur et partenaire : ils sont enregistrés dans leur propre médiathèque.");
+      return;
+    }
+
+    setPublishing(true);
+    setError("");
+    setNotice("");
+    try {
+      const canvas = await renderCurrentSlide();
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Impossible de préparer le fichier PNG.");
+
+      const baseName = project.name
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9_-]+/gi, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 70) || "visuel-seetuads";
+      const fileName = `${baseName}-slide-${activeSlideIndex + 1}.png`;
+      const formData = new FormData();
+      formData.append("file", blob, fileName);
+
+      const uploadResponse = await fetch("/api/upload", { method: "POST", body: formData });
+      const uploaded = await uploadResponse.json();
+      if (!uploadResponse.ok || typeof uploaded?.url !== "string") {
+        throw new Error(uploaded?.error || "Le PNG n’a pas pu être envoyé au stockage.");
+      }
+
+      const mediaResponse = await fetch("/api/studio/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${project.name} — Diapositive ${activeSlideIndex + 1}`,
+          fileUrl: uploaded.url,
+          fileType: "image",
+          mimeType: "image/png",
+          durationSeconds: activeSlide.durationSeconds,
+          widthPx: 1920,
+          heightPx: 1080,
+          fileSizeBytes: blob.size,
+        }),
+      });
+      const result = await mediaResponse.json();
+      if (!mediaResponse.ok) {
+        throw new Error(result?.error || "Le fichier est téléversé, mais son ajout à la médiathèque a échoué.");
+      }
+      setNotice("Diapositive ajoutée à votre médiathèque. Elle suivra le circuit de validation habituel avant diffusion.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible d’ajouter le visuel à la médiathèque.");
+    } finally {
+      setPublishing(false);
     }
   }
 
@@ -691,10 +757,16 @@ export default function StudioEditor() {
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Enregistrer
                 </button>
-                <button onClick={exportPng} disabled={exporting} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-60">
+                <button onClick={exportPng} disabled={exporting || publishing} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-60">
                   {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   PNG
                 </button>
+                {(role === "ADVERTISER" || role === "PARTNER") && (
+                  <button onClick={publishCurrentSlide} disabled={publishing || exporting} className="inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                    {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                    Ajouter à ma médiathèque
+                  </button>
+                )}
               </>
             )}
           </div>
