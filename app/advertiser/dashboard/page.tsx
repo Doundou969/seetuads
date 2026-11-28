@@ -198,6 +198,7 @@ export default function AdvertiserDashboard() {
         <Link
           href="/advertiser/campaigns/new"
           className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-sky-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2 sm:w-auto"
+          style={{ color: "#fff" }}
         >
           <svg
             aria-hidden="true"
@@ -320,6 +321,7 @@ export default function AdvertiserDashboard() {
             <Link
               href="/advertiser/campaigns/new"
               className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2"
+              style={{ color: "#fff" }}
             >
               Créer ma première campagne
             </Link>
