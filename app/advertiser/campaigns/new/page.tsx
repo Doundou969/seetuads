@@ -46,10 +46,25 @@ const SCREEN_STATUS_CONFIG: Record<
     classes: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
     dot: "bg-emerald-500",
   },
+  ACTIVE: {
+    label: "En ligne",
+    classes: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+    dot: "bg-emerald-500",
+  },
   OFFLINE: {
     label: "Hors ligne",
     classes: "bg-rose-50 text-rose-700 ring-rose-600/20",
     dot: "bg-rose-500",
+  },
+  INACTIVE: {
+    label: "Inactif",
+    classes: "bg-slate-100 text-slate-700 ring-slate-600/10",
+    dot: "bg-slate-400",
+  },
+  MAINTENANCE: {
+    label: "En maintenance",
+    classes: "bg-amber-50 text-amber-700 ring-amber-600/20",
+    dot: "bg-amber-500",
   },
 };
 
@@ -57,8 +72,9 @@ const inputClass =
   "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20";
 
 function ScreenStatus({ status }: { status: string }) {
-  const config = SCREEN_STATUS_CONFIG[status] ?? {
-    label: "À vérifier",
+  const normalizedStatus = status.trim().toUpperCase();
+  const config = SCREEN_STATUS_CONFIG[normalizedStatus] ?? {
+    label: status.replaceAll("_", " ") || "Statut inconnu",
     classes: "bg-slate-100 text-slate-700 ring-slate-600/10",
     dot: "bg-slate-400",
   };
@@ -71,6 +87,12 @@ function ScreenStatus({ status }: { status: string }) {
       {config.label}
     </span>
   );
+}
+
+function formatPrice(value: number) {
+  return `${new Intl.NumberFormat("fr-FR", {
+    maximumFractionDigits: 0,
+  }).format(value)} XOF`;
 }
 
 export default function NewCampaignPage() {
@@ -102,19 +124,28 @@ export default function NewCampaignPage() {
         setLoadingOptions(true);
         setError("");
 
-        const res = await fetch("/api/advertiser/campaign-options");
+        const response = await fetch("/api/advertiser/campaign-options");
 
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
           throw new Error(
             data.error || "Impossible de charger les options de campagne."
           );
         }
 
-        const data = await res.json();
+        const data = await response.json();
+
+        if (
+          !data ||
+          !Array.isArray(data.screens) ||
+          !Array.isArray(data.pricingRules) ||
+          !Array.isArray(data.media)
+        ) {
+          throw new Error("Les options de campagne reçues sont invalides.");
+        }
 
         if (!cancelled) {
-          setOptions(data);
+          setOptions(data as CampaignOptions);
         }
       } catch (err) {
         if (!cancelled) {
@@ -139,7 +170,9 @@ export default function NewCampaignPage() {
   }, [optionsRetry]);
 
   const numberOfDays = useMemo(() => {
-    if (!form.startDate || !form.endDate) return 0;
+    if (!form.startDate || !form.endDate) {
+      return 0;
+    }
 
     const start = new Date(`${form.startDate}T00:00:00`);
     const end = new Date(`${form.endDate}T00:00:00`);
@@ -165,7 +198,9 @@ export default function NewCampaignPage() {
     for (const screenId of selectedScreens) {
       const screen = options.screens.find((item) => item.id === screenId);
 
-      if (!screen) continue;
+      if (!screen) {
+        continue;
+      }
 
       const screenRule = options.pricingRules.find(
         (rule) => rule.screenId === screen.id
@@ -179,7 +214,9 @@ export default function NewCampaignPage() {
 
       const rule = screenRule ?? zoneRule;
 
-      if (!rule) continue;
+      if (!rule) {
+        continue;
+      }
 
       total +=
         rule.basePrice *
@@ -193,12 +230,16 @@ export default function NewCampaignPage() {
   }, [options, selectedScreens, numberOfDays]);
 
   const screensWithoutPricing = useMemo(() => {
-    if (!options) return [];
+    if (!options) {
+      return [];
+    }
 
     return selectedScreens.filter((screenId) => {
       const screen = options.screens.find((item) => item.id === screenId);
 
-      if (!screen) return true;
+      if (!screen) {
+        return true;
+      }
 
       const screenRule = options.pricingRules.find(
         (rule) => rule.screenId === screen.id
@@ -230,8 +271,8 @@ export default function NewCampaignPage() {
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setLoading(true);
     setError("");
 
@@ -241,15 +282,21 @@ export default function NewCampaignPage() {
       }
 
       if (!form.startDate || !form.endDate) {
-        throw new Error("Veuillez sélectionner les dates de début et de fin.");
+        throw new Error(
+          "Veuillez sélectionner les dates de début et de fin."
+        );
       }
 
+      const start = new Date(`${form.startDate}T00:00:00`);
+      const end = new Date(`${form.endDate}T00:00:00`);
+
       if (
-        new Date(`${form.endDate}T00:00:00`) <=
-        new Date(`${form.startDate}T00:00:00`)
+        Number.isNaN(start.getTime()) ||
+        Number.isNaN(end.getTime()) ||
+        end <= start
       ) {
         throw new Error(
-          "La date de fin doit être strictement postérieure à la date de début."
+          "La date de fin doit être postérieure à la date de début."
         );
       }
 
@@ -258,7 +305,7 @@ export default function NewCampaignPage() {
       }
 
       if (selectedMedia.length === 0) {
-        throw new Error("Veuillez sélectionner au moins un média.");
+        throw new Error("Veuillez sélectionner au moins un média approuvé.");
       }
 
       if (screensWithoutPricing.length > 0) {
@@ -271,7 +318,7 @@ export default function NewCampaignPage() {
         throw new Error("Impossible de calculer le prix de la campagne.");
       }
 
-      const res = await fetch("/api/campaigns", {
+      const response = await fetch("/api/campaigns", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -288,9 +335,9 @@ export default function NewCampaignPage() {
         }),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data = await response.json().catch(() => ({}));
 
-      if (!res.ok) {
+      if (!response.ok) {
         throw new Error(
           data.error || "Erreur lors de la création de la campagne."
         );
@@ -303,6 +350,7 @@ export default function NewCampaignPage() {
           ? err.message
           : "Erreur lors de la création de la campagne."
       );
+    } finally {
       setLoading(false);
     }
   };
@@ -313,6 +361,7 @@ export default function NewCampaignPage() {
         <div
           className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
           role="status"
+          aria-busy="true"
         >
           <span className="sr-only">Chargement des options de campagne…</span>
           <div className="h-8 w-2/5 animate-pulse rounded-xl bg-slate-100" />
@@ -334,7 +383,7 @@ export default function NewCampaignPage() {
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
           Renseigne les informations, choisis des écrans et des médias, puis
-          vérifie le résumé avant de creer la campagne.
+          vérifie le résumé avant de créer la campagne.
         </p>
       </header>
 
@@ -351,10 +400,7 @@ export default function NewCampaignPage() {
             key={step}
             className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"
           >
-            <span
-              aria-hidden="true"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-50 text-xs font-bold text-sky-700"
-            >
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-50 text-xs font-bold text-sky-700">
               {step}
             </span>
             <span className="text-sm font-medium text-slate-700">{label}</span>
@@ -412,10 +458,10 @@ export default function NewCampaignPage() {
                   id="campaign-name"
                   type="text"
                   value={form.name}
-                  onChange={(e) =>
+                  onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      name: e.target.value,
+                      name: event.target.value,
                     }))
                   }
                   className={inputClass}
@@ -437,15 +483,15 @@ export default function NewCampaignPage() {
                 <textarea
                   id="campaign-objective"
                   value={form.objective}
-                  onChange={(e) =>
+                  onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      objective: e.target.value,
+                      objective: event.target.value,
                     }))
                   }
                   className={`${inputClass} min-h-24 resize-y`}
                   rows={3}
-                  placeholder="Décris l'objectif de la campagne"
+                  placeholder="Décris l’objectif de la campagne"
                 />
               </div>
             </div>
@@ -471,17 +517,17 @@ export default function NewCampaignPage() {
                   id="campaign-start-date"
                   type="date"
                   value={form.startDate}
-                  onChange={(e) =>
+                  onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      startDate: e.target.value,
+                      startDate: event.target.value,
                       endDate:
-                        current.endDate && current.endDate < e.target.value
+                        current.endDate &&
+                        current.endDate < event.target.value
                           ? ""
                           : current.endDate,
                     }))
                   }
-                  min={form.startDate || undefined}
                   className={inputClass}
                   required
                 />
@@ -498,10 +544,10 @@ export default function NewCampaignPage() {
                   id="campaign-end-date"
                   type="date"
                   value={form.endDate}
-                  onChange={(e) =>
+                  onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      endDate: e.target.value,
+                      endDate: event.target.value,
                     }))
                   }
                   min={form.startDate || undefined}
@@ -524,9 +570,7 @@ export default function NewCampaignPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Écrans
-                </h2>
+                <h2 className="text-lg font-semibold text-slate-900">Écrans</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   Sélectionne les écrans sur lesquels diffuser.
                 </p>
@@ -579,7 +623,6 @@ export default function NewCampaignPage() {
                                 : ""}
                             </p>
                           </div>
-
                           <ScreenStatus status={screen.status} />
                         </div>
                       </div>
@@ -593,9 +636,7 @@ export default function NewCampaignPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Médias
-                </h2>
+                <h2 className="text-lg font-semibold text-slate-900">Médias</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   Seuls tes médias approuvés sont disponibles.
                 </p>
@@ -615,7 +656,7 @@ export default function NewCampaignPage() {
                   </p>
                   <p className="mt-1">
                     Ajoute un média dans la médiathèque et attends son
-                    approbation avant de creer la campagne.
+                    approbation avant de créer la campagne.
                   </p>
                   <Link
                     href="/advertiser/media"
@@ -683,10 +724,10 @@ export default function NewCampaignPage() {
                 <select
                   id="spot-duration"
                   value={form.spotDuration}
-                  onChange={(e) =>
+                  onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      spotDuration: Number(e.target.value),
+                      spotDuration: Number(event.target.value),
                     }))
                   }
                   className={inputClass}
@@ -709,10 +750,10 @@ export default function NewCampaignPage() {
                 <select
                   id="frequency-per-loop"
                   value={form.frequencyPerLoop}
-                  onChange={(e) =>
+                  onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      frequencyPerLoop: Number(e.target.value),
+                      frequencyPerLoop: Number(event.target.value),
                     }))
                   }
                   className={inputClass}
@@ -732,9 +773,14 @@ export default function NewCampaignPage() {
           <section className="rounded-2xl border border-sky-100 bg-sky-50 p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-sm font-semibold text-sky-800">Prix estimé</p>
+                <p className="text-sm font-semibold text-sky-800">
+                  Prix estimé
+                </p>
                 <p className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
-                  {estimatedPrice.toLocaleString("fr-FR")} XOF
+                  {formatPrice(estimatedPrice)}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Le prix apparaît après sélection d’écrans et de dates valides.
                 </p>
               </div>
 
@@ -748,8 +794,7 @@ export default function NewCampaignPage() {
                 </div>
                 <div>
                   {form.spotDuration} secondes • {form.frequencyPerLoop}{" "}
-                  diffusion
-                  {form.frequencyPerLoop > 1 ? "s" : ""} par boucle
+                  diffusion{form.frequencyPerLoop > 1 ? "s" : ""} par boucle
                 </div>
               </div>
             </div>
