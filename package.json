@@ -42,5 +42,9 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.23.15",
     "typescript": "^5.6.0"
+  },
+  "overrides": {
+    "postcss": "$postcss",
+    "zod": "4.6.6"
   }
 }
