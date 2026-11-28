@@ -50,6 +50,11 @@ const MEDIA_STATUS_CONFIG: Record<
   string,
   { label: string; classes: string; dot: string }
 > = {
+  UPLOADED: {
+    label: "Téléversé",
+    classes: "bg-sky-50 text-sky-700 ring-sky-600/20",
+    dot: "bg-sky-500",
+  },
   PENDING: {
     label: "En attente de validation",
     classes: "bg-amber-50 text-amber-700 ring-amber-600/20",
@@ -97,8 +102,9 @@ function formatFileSize(value: number | null) {
 }
 
 function MediaStatus({ status }: { status: string }) {
-  const config = MEDIA_STATUS_CONFIG[status.toUpperCase()] ?? {
-    label: status.replaceAll("_", " ") || "Statut inconnu",
+  const normalizedStatus = status.trim().toUpperCase();
+  const config = MEDIA_STATUS_CONFIG[normalizedStatus] ?? {
+    label: status.trim().replaceAll("_", " ") || "Statut inconnu",
     classes: "bg-slate-100 text-slate-700 ring-slate-600/10",
     dot: "bg-slate-400",
   };
@@ -219,7 +225,9 @@ export default function MediaPage() {
         fileSizeBytes: data.size || file.size,
       }));
 
-      setNotice("Fichier transféré. Complète les informations puis enregistre le média.");
+      setNotice(
+        "Fichier transféré. Complète les informations puis enregistre le média."
+      );
     } catch (error) {
       setFormError(
         error instanceof Error
@@ -515,10 +523,7 @@ export default function MediaPage() {
                 id="media-file-upload"
               />
 
-              <label
-                htmlFor="media-file-upload"
-                className="cursor-pointer"
-              >
+              <label htmlFor="media-file-upload" className="cursor-pointer">
                 <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-sky-700 shadow-sm">
                   <svg
                     aria-hidden="true"
@@ -588,7 +593,8 @@ export default function MediaPage() {
 
               {form.fileUrl && (
                 <p className="mt-2 text-sm font-medium text-emerald-700">
-                  Fichier transféré{form.fileSizeBytes
+                  Fichier transféré
+                  {form.fileSizeBytes
                     ? ` · ${formatFileSize(form.fileSizeBytes)}`
                     : ""}
                 </p>
@@ -776,9 +782,7 @@ export default function MediaPage() {
       ) : (
         <section>
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Tes médias
-            </h2>
+            <h2 className="text-lg font-semibold text-slate-900">Tes médias</h2>
             <span className="text-sm text-slate-500">
               {media.length} élément{media.length > 1 ? "s" : ""}
             </span>
